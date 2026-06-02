@@ -1,6 +1,7 @@
 'use client'
 
 import { useEditor } from '@/lib/editor-store'
+import type { Layer, EffectLayer, EffectType } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
@@ -14,17 +15,67 @@ import {
   ChevronUp,
   ChevronDown,
   Image,
-  Sparkles
+  Sparkles,
+  Cloud,
+  CloudRain,
+  Snowflake,
+  Flame,
+  Zap,
+  Waves,
+  Wind,
+  RefreshCw
 } from 'lucide-react'
 
-interface LayerRowProps {
-  layer: {
-    id: string
-    name: string
-    type: 'map' | 'asset'
-    visible: boolean
-    locked: boolean
+// Get icon for effect type
+function getEffectIcon(effectType: EffectType) {
+  switch (effectType) {
+    case 'fog':
+      return Cloud
+    case 'rain':
+      return CloudRain
+    case 'snow':
+      return Snowflake
+    case 'torchlight':
+    case 'campfire':
+    case 'lavaShimmer':
+      return Flame
+    case 'runes':
+    case 'portal':
+      return Sparkles
+    case 'waterRipple':
+      return Waves
+    case 'dustMotes':
+      return Wind
+    default:
+      return Sparkles
   }
+}
+
+// Get effect type color
+function getEffectColor(effectType: EffectType) {
+  switch (effectType) {
+    case 'fog':
+    case 'snow':
+      return 'text-slate-400 bg-slate-400/20'
+    case 'rain':
+    case 'waterRipple':
+      return 'text-blue-400 bg-blue-400/20'
+    case 'torchlight':
+    case 'campfire':
+    case 'lavaShimmer':
+      return 'text-orange-400 bg-orange-400/20'
+    case 'runes':
+    case 'portal':
+      return 'text-purple-400 bg-purple-400/20'
+    case 'dustMotes':
+      return 'text-amber-300 bg-amber-300/20'
+    default:
+      return 'text-primary bg-primary/20'
+  }
+}
+
+interface LayerRowProps {
+  layer: Layer
   isSelected: boolean
   onSelect: () => void
   onToggleVisibility: () => void
@@ -46,6 +97,11 @@ function LayerRow({
   canMoveUp,
   canMoveDown,
 }: LayerRowProps) {
+  const isEffect = layer.type === 'effect'
+  const effectType = isEffect ? (layer as EffectLayer).effectType : null
+  const EffectIcon = effectType ? getEffectIcon(effectType) : null
+  const effectColorClass = effectType ? getEffectColor(effectType) : ''
+
   return (
     <div
       className={cn(
@@ -62,12 +118,14 @@ function LayerRow({
       {/* Layer type icon */}
       <div className={cn(
         "w-6 h-6 rounded flex items-center justify-center",
-        layer.type === 'map' ? "bg-emerald-magic/20" : "bg-purple-energy/20"
+        isEffect ? effectColorClass : (layer.type === 'map' ? "bg-emerald-500/20" : "bg-purple-energy/20")
       )}>
-        {layer.type === 'map' ? (
-          <Image className="w-3 h-3 text-emerald-magic" />
+        {isEffect && EffectIcon ? (
+          <EffectIcon className={cn("w-3 h-3", effectColorClass.split(' ')[0])} />
+        ) : layer.type === 'map' ? (
+          <Image className="w-3 h-3 text-emerald-500" />
         ) : (
-          <Sparkles className="w-3 h-3 text-purple-energy" />
+          <Image className="w-3 h-3 text-purple-energy" />
         )}
       </div>
       
@@ -78,6 +136,13 @@ function LayerRow({
       )}>
         {layer.name}
       </span>
+      
+      {/* Loop indicator for effects */}
+      {isEffect && (
+        <div className="flex items-center" title="Animated (Looping)">
+          <RefreshCw className="w-3 h-3 text-arcane-blue/60 animate-spin" style={{ animationDuration: '3s' }} />
+        </div>
+      )}
       
       {/* Controls */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -150,6 +215,10 @@ export function LayerTimeline() {
   const layers = state.project?.layers || []
   // Display layers in reverse order (top layer first in the list)
   const sortedLayers = [...layers].sort((a, b) => b.zIndex - a.zIndex)
+  
+  // Count effect layers
+  const effectCount = layers.filter(l => l.type === 'effect').length
+  const mapCount = layers.filter(l => l.type === 'map').length
 
   const handleSelectLayer = (layerId: string) => {
     dispatch({ type: 'SELECT_LAYER', layerId })
@@ -225,9 +294,23 @@ export function LayerTimeline() {
             Layer Timeline
           </span>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {layers.length} layer{layers.length !== 1 ? 's' : ''}
-        </span>
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          {effectCount > 0 && (
+            <span className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-purple-400" />
+              {effectCount} effect{effectCount !== 1 ? 's' : ''}
+            </span>
+          )}
+          {mapCount > 0 && (
+            <span className="flex items-center gap-1">
+              <Image className="w-3 h-3 text-emerald-500" />
+              {mapCount} map{mapCount !== 1 ? 's' : ''}
+            </span>
+          )}
+          {layers.length === 0 && (
+            <span>{layers.length} layer{layers.length !== 1 ? 's' : ''}</span>
+          )}
+        </div>
       </div>
 
       {/* Layer list */}
@@ -239,7 +322,7 @@ export function LayerTimeline() {
             </div>
           ) : sortedLayers.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-sm">
-              No layers yet. Upload a map or add assets to begin.
+              No layers yet. Upload a map or add effects to begin.
             </div>
           ) : (
             sortedLayers.map((layer, index) => (

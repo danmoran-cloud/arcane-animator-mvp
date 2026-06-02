@@ -2,10 +2,10 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { useEditor } from '@/lib/editor-store'
-import type { Layer, Position } from '@/lib/types'
+import type { Layer, Position, EffectLayer, MapLayer, AssetLayer } from '@/lib/types'
+import { EffectRenderer } from './effect-renderer'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { 
@@ -76,17 +76,85 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
   )
 }
 
-// Layer rendering component
-function CanvasLayer({ 
+// Effect layer rendering component
+function EffectLayerRenderer({ 
   layer, 
   isSelected,
-  zoom,
   onSelect,
   onDragStart,
 }: { 
-  layer: Layer
+  layer: EffectLayer
   isSelected: boolean
-  zoom: number
+  onSelect: () => void
+  onDragStart: (e: React.MouseEvent) => void
+}) {
+  if (!layer.visible) return null
+
+  return (
+    <div
+      className={cn(
+        "absolute cursor-move overflow-hidden rounded-lg",
+        isSelected && "ring-2 ring-arcane-blue shadow-[0_0_20px_rgba(100,150,255,0.4)]"
+      )}
+      style={{
+        left: layer.position.x,
+        top: layer.position.y,
+        width: layer.size.width,
+        height: layer.size.height,
+        transform: `rotate(${layer.rotation}deg)`,
+        opacity: layer.opacity,
+        zIndex: layer.zIndex,
+        pointerEvents: layer.locked ? 'none' : 'auto',
+      }}
+      onClick={(e) => {
+        e.stopPropagation()
+        onSelect()
+      }}
+      onMouseDown={(e) => {
+        if (!layer.locked) {
+          e.stopPropagation()
+          onSelect()
+          onDragStart(e)
+        }
+      }}
+    >
+      {/* Effect content */}
+      <EffectRenderer
+        effectType={layer.effectType}
+        settings={layer.settings}
+        width={layer.size.width}
+        height={layer.size.height}
+      />
+
+      {/* Selection handles */}
+      {isSelected && !layer.locked && (
+        <>
+          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-nw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+          <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-ne-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-sw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+          <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-se-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+        </>
+      )}
+
+      {/* Lock indicator */}
+      {layer.locked && (
+        <div className="absolute top-1 right-1 w-5 h-5 rounded bg-background/80 flex items-center justify-center">
+          <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Image layer rendering component (map or asset)
+function ImageLayerRenderer({ 
+  layer, 
+  isSelected,
+  onSelect,
+  onDragStart,
+}: { 
+  layer: MapLayer | AssetLayer
+  isSelected: boolean
   onSelect: () => void
   onDragStart: (e: React.MouseEvent) => void
 }) {
@@ -121,7 +189,7 @@ function CanvasLayer({
       }}
     >
       {/* Layer content - image or placeholder */}
-      {layer.src.startsWith('data:') || layer.src.startsWith('/') ? (
+      {layer.src.startsWith('data:') || layer.src.startsWith('/') || layer.src.startsWith('http') ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img 
           src={layer.src} 
@@ -155,11 +223,41 @@ function CanvasLayer({
   )
 }
 
+// Unified layer renderer
+function CanvasLayer({ 
+  layer, 
+  isSelected,
+  onSelect,
+  onDragStart,
+}: { 
+  layer: Layer
+  isSelected: boolean
+  onSelect: () => void
+  onDragStart: (e: React.MouseEvent) => void
+}) {
+  if (layer.type === 'effect') {
+    return (
+      <EffectLayerRenderer
+        layer={layer}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        onDragStart={onDragStart}
+      />
+    )
+  }
+  
+  return (
+    <ImageLayerRenderer
+      layer={layer}
+      isSelected={isSelected}
+      onSelect={onSelect}
+      onDragStart={onDragStart}
+    />
+  )
+}
+
 // Grid overlay component
 function GridOverlay({ gridSize, canvasSize }: { gridSize: number; canvasSize: { width: number; height: number } }) {
-  const cols = Math.ceil(canvasSize.width / gridSize)
-  const rows = Math.ceil(canvasSize.height / gridSize)
-
   return (
     <svg 
       className="absolute inset-0 pointer-events-none" 
@@ -429,7 +527,6 @@ export function MapCanvas() {
                     key={layer.id}
                     layer={layer}
                     isSelected={state.selectedLayerId === layer.id}
-                    zoom={state.zoom}
                     onSelect={() => dispatch({ type: 'SELECT_LAYER', layerId: layer.id })}
                     onDragStart={(e) => handleLayerDragStart(e, layer.id)}
                   />

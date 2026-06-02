@@ -2,27 +2,120 @@
 
 import { createContext, useContext, useReducer, type ReactNode } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import type { Project, Layer, EditorState, Position, Size, Asset } from './types'
+import type { 
+  Project, 
+  Layer, 
+  EditorState, 
+  Position, 
+  Asset, 
+  EffectDefinition,
+  EffectType,
+  EffectSettings,
+  EffectLayer,
+  Size
+} from './types'
 
-// Mock assets for the asset library
-export const mockAssets: Asset[] = [
+// Effect definitions with default settings
+export const effectDefinitions: EffectDefinition[] = [
   // Weather
-  { id: 'fog-1', name: 'Dense Fog', category: 'weather', thumbnail: '/assets/fog.png', src: '/assets/fog.png' },
-  { id: 'rain-1', name: 'Heavy Rain', category: 'weather', thumbnail: '/assets/rain.png', src: '/assets/rain.png' },
-  { id: 'snow-1', name: 'Snowfall', category: 'weather', thumbnail: '/assets/snow.png', src: '/assets/snow.png' },
+  {
+    id: 'fog',
+    name: 'Rolling Fog',
+    description: 'Semi-transparent drifting fog layer',
+    effectType: 'fog',
+    category: 'weather',
+    defaultSettings: { speed: 0.4, density: 0.7, tint: '#a8b5c4' },
+    defaultSize: { width: 600, height: 300 },
+  },
+  {
+    id: 'rain',
+    name: 'Rainfall',
+    description: 'Animated diagonal rain streaks',
+    effectType: 'rain',
+    category: 'weather',
+    defaultSettings: { speed: 0.6, intensity: 0.5, angle: 15 },
+    defaultSize: { width: 400, height: 400 },
+  },
+  {
+    id: 'snow',
+    name: 'Snowfall',
+    description: 'Slow drifting snow particles',
+    effectType: 'snow',
+    category: 'weather',
+    defaultSettings: { speed: 0.3, flakeSize: 0.5, density: 0.6 },
+    defaultSize: { width: 400, height: 400 },
+  },
   // Fire
-  { id: 'torch-1', name: 'Torch Flame', category: 'fire', thumbnail: '/assets/torch.png', src: '/assets/torch.png' },
-  { id: 'campfire-1', name: 'Campfire', category: 'fire', thumbnail: '/assets/campfire.png', src: '/assets/campfire.png' },
-  { id: 'lava-1', name: 'Lava Flow', category: 'fire', thumbnail: '/assets/lava.png', src: '/assets/lava.png' },
+  {
+    id: 'torchlight',
+    name: 'Torchlight',
+    description: 'Warm pulsing radial glow',
+    effectType: 'torchlight',
+    category: 'fire',
+    defaultSettings: { flickerSpeed: 0.5, radius: 0.8, color: '#ff9933' },
+    defaultSize: { width: 200, height: 200 },
+  },
+  {
+    id: 'campfire',
+    name: 'Campfire Glow',
+    description: 'Flickering light with ember particles',
+    effectType: 'campfire',
+    category: 'fire',
+    defaultSettings: { flickerSpeed: 0.6, emberCount: 12, radius: 0.7 },
+    defaultSize: { width: 250, height: 250 },
+  },
+  {
+    id: 'lavaShimmer',
+    name: 'Lava Shimmer',
+    description: 'Orange/red animated shimmer with heat waves',
+    effectType: 'lavaShimmer',
+    category: 'fire',
+    defaultSettings: { shimmerSpeed: 0.4, glowIntensity: 0.7 },
+    defaultSize: { width: 300, height: 200 },
+  },
   // Water
-  { id: 'waterfall-1', name: 'Waterfall', category: 'water', thumbnail: '/assets/waterfall.png', src: '/assets/waterfall.png' },
-  { id: 'river-1', name: 'River Current', category: 'water', thumbnail: '/assets/river.png', src: '/assets/river.png' },
-  { id: 'ocean-1', name: 'Ocean Waves', category: 'water', thumbnail: '/assets/ocean.png', src: '/assets/ocean.png' },
+  {
+    id: 'waterRipple',
+    name: 'Water Ripple',
+    description: 'Subtle transparent ripple distortion',
+    effectType: 'waterRipple',
+    category: 'water',
+    defaultSettings: { waveSpeed: 0.5, rippleScale: 0.6, tint: '#4a90d9' },
+    defaultSize: { width: 300, height: 300 },
+  },
   // Magic
-  { id: 'runes-1', name: 'Glowing Runes', category: 'magic', thumbnail: '/assets/runes.png', src: '/assets/runes.png' },
-  { id: 'portal-1', name: 'Magic Portal', category: 'magic', thumbnail: '/assets/portal.png', src: '/assets/portal.png' },
-  { id: 'energy-1', name: 'Energy Field', category: 'magic', thumbnail: '/assets/energy.png', src: '/assets/energy.png' },
+  {
+    id: 'runes',
+    name: 'Magical Runes',
+    description: 'Glowing rotating rune circle',
+    effectType: 'runes',
+    category: 'magic',
+    defaultSettings: { rotationSpeed: 0.3, glowIntensity: 0.8, color: '#7c3aed' },
+    defaultSize: { width: 200, height: 200 },
+  },
+  {
+    id: 'portal',
+    name: 'Portal',
+    description: 'Circular swirling magical portal',
+    effectType: 'portal',
+    category: 'magic',
+    defaultSettings: { swirlSpeed: 0.5, glowIntensity: 0.9, color: '#06b6d4' },
+    defaultSize: { width: 200, height: 200 },
+  },
+  // Atmosphere
+  {
+    id: 'dustMotes',
+    name: 'Dust Motes',
+    description: 'Small floating atmospheric particles',
+    effectType: 'dustMotes',
+    category: 'atmosphere',
+    defaultSettings: { speed: 0.2, density: 0.5 },
+    defaultSize: { width: 400, height: 400 },
+  },
 ]
+
+// Mock assets for the asset library (legacy)
+export const mockAssets: Asset[] = []
 
 type EditorAction =
   | { type: 'CREATE_PROJECT'; name: string }
@@ -31,6 +124,7 @@ type EditorAction =
   | { type: 'ADD_LAYER'; layer: Layer }
   | { type: 'REMOVE_LAYER'; layerId: string }
   | { type: 'UPDATE_LAYER'; layerId: string; updates: Partial<Layer> }
+  | { type: 'UPDATE_EFFECT_SETTINGS'; layerId: string; settings: Partial<EffectSettings> }
   | { type: 'SELECT_LAYER'; layerId: string | null }
   | { type: 'REORDER_LAYERS'; layers: Layer[] }
   | { type: 'DUPLICATE_LAYER'; layerId: string }
@@ -131,6 +225,25 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         },
       }
     
+    case 'UPDATE_EFFECT_SETTINGS':
+      if (!state.project) return state
+      return {
+        ...state,
+        project: {
+          ...state.project,
+          layers: state.project.layers.map(l => {
+            if (l.id === action.layerId && l.type === 'effect') {
+              return {
+                ...l,
+                settings: { ...l.settings, ...action.settings },
+              }
+            }
+            return l
+          }),
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    
     case 'SELECT_LAYER':
       return {
         ...state,
@@ -161,7 +274,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
           y: layerToDuplicate.position.y + 20,
         },
         zIndex: state.project.layers.length,
-      }
+      } as Layer
       return {
         ...state,
         project: {
@@ -232,6 +345,8 @@ interface EditorContextType {
   getSavedProjects: () => { id: string; name: string; updatedAt: string }[]
   addMapLayer: (src: string, name: string) => void
   addAssetLayer: (asset: Asset) => void
+  addEffectLayer: (effect: EffectDefinition) => void
+  updateEffectSettings: (layerId: string, settings: Partial<EffectSettings>) => void
 }
 
 const EditorContext = createContext<EditorContextType | null>(null)
@@ -307,6 +422,28 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'ADD_LAYER', layer })
   }
 
+  const addEffectLayer = (effect: EffectDefinition) => {
+    const layer: EffectLayer = {
+      id: uuidv4(),
+      name: effect.name,
+      type: 'effect',
+      effectType: effect.effectType,
+      settings: { ...effect.defaultSettings },
+      position: { x: 100, y: 100 },
+      size: { ...effect.defaultSize },
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      zIndex: state.project?.layers.length || 0,
+    }
+    dispatch({ type: 'ADD_LAYER', layer })
+  }
+
+  const updateEffectSettings = (layerId: string, settings: Partial<EffectSettings>) => {
+    dispatch({ type: 'UPDATE_EFFECT_SETTINGS', layerId, settings })
+  }
+
   return (
     <EditorContext.Provider
       value={{
@@ -318,6 +455,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         getSavedProjects,
         addMapLayer,
         addAssetLayer,
+        addEffectLayer,
+        updateEffectSettings,
       }}
     >
       {children}
