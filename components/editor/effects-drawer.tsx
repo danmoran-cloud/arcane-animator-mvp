@@ -611,45 +611,6 @@ function MiniDronePatrol() {
     </div>
   )
 }
-            animation: 'miniDataFall 1s linear infinite',
-            animationDelay: `${i * 0.3}s`,
-          }}
-        >
-          10
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function MiniReactorCore() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-      <div
-        className="w-3 h-3 rounded-full"
-        style={{
-          background: 'radial-gradient(circle, #facc15, #f97316)',
-          boxShadow: '0 0 8px #f97316',
-          animation: 'miniReactorPulse 0.5s ease-in-out infinite',
-        }}
-      />
-    </div>
-  )
-}
-
-function MiniDronePatrol() {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <div
-        className="absolute w-2 h-1 bg-slate-400 rounded-sm"
-        style={{
-          top: '40%',
-          animation: 'miniDroneFly 2s ease-in-out infinite',
-        }}
-      />
-    </div>
-  )
-}
 
 // Map effect IDs to their preview components
 const effectPreviews: Record<EffectId, React.FC> = {
