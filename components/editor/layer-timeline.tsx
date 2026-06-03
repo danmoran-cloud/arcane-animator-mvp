@@ -1,7 +1,8 @@
 'use client'
 
 import { useEditor } from '@/lib/editor-store'
-import type { Layer, EffectLayer, EffectType } from '@/lib/types'
+import type { Layer, ExpandedEffectLayer } from '@/lib/types'
+import { getEffectById, EFFECT_CATEGORIES } from '@/lib/effects-library'
 import { Button } from '@/components/ui/button'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
@@ -16,63 +17,8 @@ import {
   ChevronDown,
   Image,
   Sparkles,
-  Cloud,
-  CloudRain,
-  Snowflake,
-  Flame,
-  Zap,
-  Waves,
-  Wind,
   RefreshCw
 } from 'lucide-react'
-
-// Get icon for effect type
-function getEffectIcon(effectType: EffectType) {
-  switch (effectType) {
-    case 'fog':
-      return Cloud
-    case 'rain':
-      return CloudRain
-    case 'snow':
-      return Snowflake
-    case 'torchlight':
-    case 'campfire':
-    case 'lavaShimmer':
-      return Flame
-    case 'runes':
-    case 'portal':
-      return Sparkles
-    case 'waterRipple':
-      return Waves
-    case 'dustMotes':
-      return Wind
-    default:
-      return Sparkles
-  }
-}
-
-// Get effect type color
-function getEffectColor(effectType: EffectType) {
-  switch (effectType) {
-    case 'fog':
-    case 'snow':
-      return 'text-slate-400 bg-slate-400/20'
-    case 'rain':
-    case 'waterRipple':
-      return 'text-blue-400 bg-blue-400/20'
-    case 'torchlight':
-    case 'campfire':
-    case 'lavaShimmer':
-      return 'text-orange-400 bg-orange-400/20'
-    case 'runes':
-    case 'portal':
-      return 'text-purple-400 bg-purple-400/20'
-    case 'dustMotes':
-      return 'text-amber-300 bg-amber-300/20'
-    default:
-      return 'text-primary bg-primary/20'
-  }
-}
 
 interface LayerRowProps {
   layer: Layer
@@ -98,9 +44,22 @@ function LayerRow({
   canMoveDown,
 }: LayerRowProps) {
   const isEffect = layer.type === 'effect'
-  const effectType = isEffect ? (layer as EffectLayer).effectType : null
-  const EffectIcon = effectType ? getEffectIcon(effectType) : null
-  const effectColorClass = effectType ? getEffectColor(effectType) : ''
+  const effectLayer = isEffect ? (layer as ExpandedEffectLayer) : null
+  const effectDef = effectLayer ? getEffectById(effectLayer.effectId) : null
+  
+  // Get category color
+  const getCategoryColor = () => {
+    if (!effectDef) return { bg: 'bg-muted', text: 'text-muted-foreground' }
+    const category = EFFECT_CATEGORIES.find(c => c.id === effectDef.category)
+    if (!category) return { bg: 'bg-muted', text: 'text-muted-foreground' }
+    return { 
+      bg: `bg-[${category.color}]/20`,
+      text: `text-[${category.color}]`,
+      style: { backgroundColor: `${category.color}20`, color: category.color }
+    }
+  }
+  
+  const categoryColors = getCategoryColor()
 
   return (
     <div
@@ -116,12 +75,12 @@ function LayerRow({
       <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab" />
       
       {/* Layer type icon */}
-      <div className={cn(
-        "w-6 h-6 rounded flex items-center justify-center",
-        isEffect ? effectColorClass : (layer.type === 'map' ? "bg-emerald-500/20" : "bg-purple-energy/20")
-      )}>
-        {isEffect && EffectIcon ? (
-          <EffectIcon className={cn("w-3 h-3", effectColorClass.split(' ')[0])} />
+      <div 
+        className="w-6 h-6 rounded flex items-center justify-center text-sm"
+        style={effectDef ? { backgroundColor: `${effectDef.color}20` } : undefined}
+      >
+        {isEffect && effectDef ? (
+          <span style={{ filter: 'grayscale(0)' }}>{effectDef.icon}</span>
         ) : layer.type === 'map' ? (
           <Image className="w-3 h-3 text-emerald-500" />
         ) : (
@@ -322,7 +281,7 @@ export function LayerTimeline() {
             </div>
           ) : sortedLayers.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground text-sm">
-              No layers yet. Upload a map or add effects to begin.
+              No layers yet. Browse effects or upload a map to begin.
             </div>
           ) : (
             sortedLayers.map((layer, index) => (
