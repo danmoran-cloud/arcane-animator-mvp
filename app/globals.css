@@ -251,144 +251,181 @@
   background: oklch(0.50 0.08 60);
 }
 
-/* Mini Effect Preview Animations */
-@keyframes miniRainFall {
-  0% { transform: translateY(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(300%); opacity: 0; }
-}
+/* Mini Effect Preview Animations - TOP DOWN VIEWS */
 
-@keyframes miniSnowFall {
-  0% { transform: translateY(0) translateX(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(400%) translateX(10px); opacity: 0; }
-}
-
-@keyframes miniFogDrift {
-  0%, 100% { transform: translateX(-30%); opacity: 0.4; }
-  50% { transform: translateX(30%); opacity: 0.7; }
-}
-
-@keyframes miniFlicker {
-  0% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
-  100% { transform: scaleY(1.1) scaleX(0.95); opacity: 1; }
-}
-
-@keyframes miniSparkRise {
-  0% { transform: translateY(0); opacity: 1; }
-  100% { transform: translateY(-20px) translateX(5px); opacity: 0; }
-}
-
+/* Rain ripples on ground */
 @keyframes miniRipple {
-  0% { transform: scale(0.5); opacity: 0.8; }
-  100% { transform: scale(1.5); opacity: 0; }
+  0% { transform: scale(0.3); opacity: 0.8; }
+  100% { transform: scale(2); opacity: 0; }
 }
 
+/* Snow appearing on ground */
+@keyframes miniSnowAppear {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 0.9; transform: scale(1); }
+}
+
+/* Fog drifting from above */
+@keyframes miniFogDrift {
+  0%, 100% { transform: translate(-10%, -10%) scale(1); opacity: 0.3; }
+  50% { transform: translate(10%, 10%) scale(1.1); opacity: 0.6; }
+}
+
+/* Light source flicker (for torch, campfire) */
+@keyframes miniLightFlicker {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  25% { opacity: 1; transform: scale(1.05); }
+  50% { opacity: 0.7; transform: scale(0.98); }
+  75% { opacity: 0.95; transform: scale(1.02); }
+}
+
+/* Campfire glow radius pulse */
+@keyframes miniFireGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.08); }
+}
+
+/* Waterfall flow texture */
 @keyframes miniWaterfallFlow {
   0% { background-position: 0 0; }
-  100% { background-position: 0 10px; }
+  100% { background-position: 0 20px; }
 }
 
+/* Mist pulse */
+@keyframes miniMistPulse {
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.7; transform: translateX(-50%) scale(1.2); }
+}
+
+/* Lightning ground flash */
 @keyframes miniLightningFlash {
-  0%, 90%, 100% { background-color: transparent; }
-  92%, 94% { background-color: rgba(255, 255, 255, 0.3); }
-}
-
-@keyframes miniBoltFlash {
-  0%, 90%, 100% { opacity: 0; }
+  0%, 85%, 100% { opacity: 0; }
+  87%, 89% { opacity: 0.8; }
+  90% { opacity: 0; }
   92%, 94% { opacity: 1; }
 }
 
-@keyframes miniSmokeRise {
-  0% { transform: translateY(0) scale(1); opacity: 0.6; }
-  100% { transform: translateY(-20px) scale(1.5); opacity: 0; }
+@keyframes miniBoltFlash {
+  0%, 85%, 100% { opacity: 0; transform: scale(0.5); }
+  87%, 94% { opacity: 1; transform: scale(1); }
 }
 
+/* Smoke expanding outward from above */
+@keyframes miniSmokeExpand {
+  0% { transform: scale(0.5); opacity: 0.6; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+/* Wind streaks across surface */
 @keyframes miniWindBlow {
   0% { transform: translateX(0); opacity: 0; }
-  20% { opacity: 0.8; }
-  80% { opacity: 0.8; }
-  100% { transform: translateX(150%); opacity: 0; }
+  15% { opacity: 0.6; }
+  85% { opacity: 0.6; }
+  100% { transform: translateX(200%); opacity: 0; }
 }
 
+/* Arcane circle rotation */
 @keyframes miniRotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
+/* Portal/magic pulse */
 @keyframes miniPortalPulse {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.15); opacity: 1; }
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.1); opacity: 1; }
 }
 
+/* Crystal glow */
 @keyframes miniCrystalGlow {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.3); }
+  0%, 100% { filter: brightness(1); box-shadow: 0 0 4px #22d3ee; }
+  50% { filter: brightness(1.4); box-shadow: 0 0 8px #22d3ee; }
 }
 
-@keyframes miniRuneFloat {
-  0%, 100% { transform: translateY(0); opacity: 0.7; }
-  50% { transform: translateY(-5px); opacity: 1; }
+/* Rune glow pulse */
+@keyframes miniRuneGlow {
+  0%, 100% { opacity: 0.5; text-shadow: 0 0 2px #fbbf24; }
+  50% { opacity: 1; text-shadow: 0 0 6px #fbbf24; }
 }
 
-@keyframes miniWispFloat {
+/* Will-o-wisp drift */
+@keyframes miniWispDrift {
   0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(3px, -3px); }
-  50% { transform: translate(0, -5px); }
-  75% { transform: translate(-3px, -2px); }
+  25% { transform: translate(4px, -2px); }
+  50% { transform: translate(-2px, 3px); }
+  75% { transform: translate(3px, 1px); }
 }
 
+/* Divine light rays */
 @keyframes miniDivineRays {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.6; }
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
 }
 
 @keyframes miniRayShimmer {
-  0%, 100% { opacity: 0.3; transform: scaleY(0.8); }
-  50% { opacity: 0.7; transform: scaleY(1); }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.9; }
 }
 
+/* Necrotic corruption pulse */
 @keyframes miniNecroticPulse {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.1); }
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.15); }
 }
 
-@keyframes miniSpiritFade {
-  0%, 100% { opacity: 0.2; transform: translateY(0); }
-  50% { opacity: 0.6; transform: translateY(-5px); }
+/* Tendril pulse */
+@keyframes miniTendrilPulse {
+  0%, 100% { opacity: 0.4; transform: rotate(var(--rotate, 45deg)) translateY(-8px) scaleY(1); }
+  50% { opacity: 0.7; transform: rotate(var(--rotate, 45deg)) translateY(-10px) scaleY(1.2); }
 }
 
+/* Spirit drift */
+@keyframes miniSpiritDrift {
+  0%, 100% { opacity: 0.3; transform: translate(0, 0); }
+  50% { opacity: 0.6; transform: translate(5px, -3px); }
+}
+
+/* Hologram flicker */
 @keyframes miniHoloFlicker {
-  0%, 100% { opacity: 0.8; }
-  50% { opacity: 0.4; }
+  0%, 100% { opacity: 0.7; }
+  48% { opacity: 0.7; }
+  50% { opacity: 0.3; }
   52% { opacity: 0.9; }
+  54% { opacity: 0.7; }
 }
 
+/* Hologram scan line */
+@keyframes miniHoloScan {
+  0% { transform: translateY(-12px); }
+  100% { transform: translateY(12px); }
+}
+
+/* Neon buzz */
 @keyframes miniNeonBuzz {
   0% { filter: brightness(1); }
-  100% { filter: brightness(1.2); }
+  100% { filter: brightness(1.3); }
 }
 
+/* Energy shield pulse */
 @keyframes miniShieldPulse {
-  0%, 100% { transform: scale(1); opacity: 0.6; }
-  50% { transform: scale(1.05); opacity: 0.9; }
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.03); opacity: 0.8; }
 }
 
-@keyframes miniDataFall {
-  0% { transform: translateY(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(500%); opacity: 0; }
+/* Data stream pulse on ground */
+@keyframes miniDataPulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
 }
 
+/* Reactor core pulse */
 @keyframes miniReactorPulse {
-  0%, 100% { transform: scale(1); filter: brightness(1); }
-  50% { transform: scale(1.2); filter: brightness(1.3); }
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 1; }
 }
 
+/* Drone patrol movement */
 @keyframes miniDroneFly {
-  0% { left: -20%; }
-  100% { left: 120%; }
+  0% { left: -15%; }
+  100% { left: 115%; }
 }

@@ -21,38 +21,22 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'cpu': Cpu,
 }
 
-// Mini effect preview components
+// TOP-DOWN Mini effect preview components
+
+// Rain: shows ripples/splashes on ground from above
 function MiniRain() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {[...Array(8)].map((_, i) => (
+      {[...Array(5)].map((_, i) => (
         <div
           key={i}
-          className="absolute w-px bg-blue-400/60"
+          className="absolute rounded-full border border-blue-400/40"
           style={{
-            left: `${10 + i * 12}%`,
-            top: '-20%',
-            height: '30%',
-            animation: `miniRainFall 0.6s linear infinite`,
-            animationDelay: `${i * 0.08}s`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-function MiniSnow() {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      {[...Array(6)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-1 h-1 rounded-full bg-white/80"
-          style={{
-            left: `${15 + i * 15}%`,
-            top: '-10%',
-            animation: `miniSnowFall 1.2s linear infinite`,
+            left: `${15 + (i % 3) * 30}%`,
+            top: `${20 + Math.floor(i / 3) * 40}%`,
+            width: '6px',
+            height: '6px',
+            animation: 'miniRipple 1s ease-out infinite',
             animationDelay: `${i * 0.2}s`,
           }}
         />
@@ -61,64 +45,119 @@ function MiniSnow() {
   )
 }
 
+// Snow: accumulating dots viewed from above
+function MiniSnow() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1.5 h-1.5 rounded-full bg-white/70"
+          style={{
+            left: `${10 + (i % 4) * 22}%`,
+            top: `${15 + Math.floor(i / 4) * 45}%`,
+            animation: 'miniSnowAppear 2s ease-in-out infinite',
+            animationDelay: `${i * 0.25}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Fog: swirling patches from above
 function MiniFog() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <div 
-        className="absolute inset-0 opacity-60"
-        style={{
-          background: 'linear-gradient(90deg, transparent, #d4d4d4, transparent)',
-          animation: 'miniFogDrift 2s ease-in-out infinite',
-        }}
-      />
-    </div>
-  )
-}
-
-function MiniTorch() {
-  return (
-    <div className="absolute inset-0 flex items-end justify-center overflow-hidden">
-      <div
-        className="w-2 h-3 rounded-t-full"
-        style={{
-          background: 'linear-gradient(to top, #ff4d00, #ff9500, #ffcc00)',
-          animation: 'miniFlicker 0.15s ease-in-out infinite alternate',
-          boxShadow: '0 0 8px #ff6b00',
-        }}
-      />
-    </div>
-  )
-}
-
-function MiniCampfire() {
-  return (
-    <div className="absolute inset-0 flex items-end justify-center overflow-hidden">
-      <div className="relative">
-        <div
-          className="w-3 h-4 rounded-t-full"
+      {[...Array(2)].map((_, i) => (
+        <div 
+          key={i}
+          className="absolute rounded-full"
           style={{
-            background: 'linear-gradient(to top, #ff4d00, #ff9500, #ffcc00)',
-            animation: 'miniFlicker 0.2s ease-in-out infinite alternate',
-            boxShadow: '0 0 10px #ff6b00',
+            width: '80%',
+            height: '80%',
+            left: `${i * 30}%`,
+            top: `${i * 20}%`,
+            background: 'radial-gradient(circle, #d4d4d4 0%, transparent 70%)',
+            opacity: 0.5,
+            animation: 'miniFogDrift 3s ease-in-out infinite',
+            animationDelay: `${i * 1}s`,
           }}
         />
-        {[...Array(2)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-1 h-1 rounded-full bg-yellow-400"
-            style={{
-              bottom: '100%',
-              left: `${i * 8}px`,
-              animation: `miniSparkRise 0.8s ease-out infinite`,
-              animationDelay: `${i * 0.3}s`,
-            }}
-          />
-        ))}
-      </div>
+      ))}
     </div>
   )
 }
 
+// Torch: radial light halo from above (like a spotlight on the ground)
+function MiniTorch() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Outer glow */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: 'radial-gradient(circle, #ff9500 0%, #ff6b0040 40%, transparent 70%)',
+          animation: 'miniLightFlicker 0.3s ease-in-out infinite',
+        }}
+      />
+      {/* Inner bright core */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '20%',
+          height: '20%',
+          background: '#ffcc00',
+          boxShadow: '0 0 6px #ff9500',
+          animation: 'miniLightFlicker 0.2s ease-in-out infinite alternate',
+        }}
+      />
+    </div>
+  )
+}
+
+// Campfire: larger radial glow with flickering light radius
+function MiniCampfire() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Outer ambient glow */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'radial-gradient(circle, #ff4d0030 0%, transparent 70%)',
+          animation: 'miniFireGlow 0.5s ease-in-out infinite',
+        }}
+      />
+      {/* Main light radius */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '70%',
+          height: '70%',
+          background: 'radial-gradient(circle, #ff9500 0%, #ff4d0060 50%, transparent 80%)',
+          animation: 'miniLightFlicker 0.3s ease-in-out infinite',
+        }}
+      />
+      {/* Fire center */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '25%',
+          height: '25%',
+          background: 'radial-gradient(circle, #ffcc00, #ff6b00)',
+          boxShadow: '0 0 4px #ff9500',
+          animation: 'miniLightFlicker 0.15s ease-in-out infinite alternate',
+        }}
+      />
+    </div>
+  )
+}
+
+// Water ripples: concentric circles from above (already correct)
 function MiniWaterRipples() {
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
@@ -138,55 +177,69 @@ function MiniWaterRipples() {
   )
 }
 
+// Waterfall: flowing water band with spray from above
 function MiniWaterfall() {
   return (
     <div className="absolute inset-0 overflow-hidden">
+      {/* Water flow band */}
       <div 
-        className="absolute left-1/2 -translate-x-1/2 w-3 h-full"
+        className="absolute left-1/2 -translate-x-1/2 w-2 h-full"
         style={{
-          background: 'linear-gradient(to bottom, #87ceeb, #4da6ff)',
+          background: 'linear-gradient(180deg, #4da6ff, #87ceeb, #4da6ff)',
+          backgroundSize: '100% 20px',
           animation: 'miniWaterfallFlow 0.3s linear infinite',
         }}
       />
+      {/* Spray/mist at bottom */}
+      <div 
+        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-6 h-3 rounded-full"
+        style={{
+          background: 'radial-gradient(ellipse, #87ceeb60, transparent)',
+          animation: 'miniMistPulse 1s ease-in-out infinite',
+        }}
+      />
     </div>
   )
 }
 
+// Lightning: ground illumination flash from above
 function MiniLightning() {
   return (
     <div className="absolute inset-0 overflow-hidden">
+      {/* Ground flash illumination */}
       <div
-        className="absolute inset-0 bg-white/0"
+        className="absolute inset-0 rounded"
         style={{
+          background: 'radial-gradient(circle, #e8e8ff, #a0a0ff40, transparent)',
           animation: 'miniLightningFlash 2s ease-in-out infinite',
         }}
       />
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 32 32">
-        <path
-          d="M16 2 L12 14 L18 14 L14 30 L20 16 L14 16 Z"
-          fill="#e8e8ff"
-          style={{
-            opacity: 0,
-            animation: 'miniBoltFlash 2s ease-in-out infinite',
-          }}
-        />
-      </svg>
+      {/* Strike point */}
+      <div
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1 h-1 rounded-full bg-white"
+        style={{
+          boxShadow: '0 0 8px #fff, 0 0 16px #a0a0ff',
+          animation: 'miniBoltFlash 2s ease-in-out infinite',
+        }}
+      />
     </div>
   )
 }
 
+// Smoke: expanding circular plumes from above
 function MiniSmoke() {
   return (
-    <div className="absolute inset-0 flex items-end justify-center overflow-hidden">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="absolute w-2 h-2 rounded-full bg-gray-500/50"
+          className="absolute rounded-full"
           style={{
-            bottom: '10%',
-            left: `${40 + i * 10}%`,
-            animation: 'miniSmokeRise 1.5s ease-out infinite',
-            animationDelay: `${i * 0.3}s`,
+            width: '10px',
+            height: '10px',
+            background: 'radial-gradient(circle, #6b7280 0%, transparent 70%)',
+            animation: 'miniSmokeExpand 2s ease-out infinite',
+            animationDelay: `${i * 0.6}s`,
           }}
         />
       ))}
@@ -194,19 +247,21 @@ function MiniSmoke() {
   )
 }
 
+// Wind: streaks/particles moving across surface
 function MiniWind() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {[...Array(3)].map((_, i) => (
+      {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="absolute h-px bg-gray-300/60"
+          className="absolute rounded-full bg-gray-400/40"
           style={{
-            width: '40%',
+            width: '8px',
+            height: '2px',
             left: '-20%',
-            top: `${25 + i * 25}%`,
+            top: `${20 + i * 20}%`,
             animation: 'miniWindBlow 0.8s linear infinite',
-            animationDelay: `${i * 0.2}s`,
+            animationDelay: `${i * 0.15}s`,
           }}
         />
       ))}
@@ -214,44 +269,78 @@ function MiniWind() {
   )
 }
 
+// Arcane Circle: magical sigil on ground (already top-down)
 function MiniArcaneCircle() {
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Outer ring */}
       <div
-        className="w-6 h-6 rounded-full border border-purple-400"
+        className="absolute w-7 h-7 rounded-full border border-purple-400/70"
         style={{
-          boxShadow: '0 0 6px #8b5cf6, inset 0 0 4px #8b5cf6',
+          boxShadow: '0 0 6px #8b5cf6',
           animation: 'miniRotate 3s linear infinite',
         }}
       />
-    </div>
-  )
-}
-
-function MiniPortal() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Inner ring */}
       <div
-        className="w-5 h-5 rounded-full"
+        className="absolute w-4 h-4 rounded-full border border-purple-300/50"
         style={{
-          background: 'radial-gradient(circle, #06b6d4, #8b5cf6, transparent)',
-          animation: 'miniPortalPulse 1s ease-in-out infinite',
-          boxShadow: '0 0 8px #8b5cf6',
+          animation: 'miniRotate 2s linear infinite reverse',
+        }}
+      />
+      {/* Center glow */}
+      <div
+        className="absolute w-2 h-2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #a855f7, transparent)',
+          animation: 'miniPortalPulse 1.5s ease-in-out infinite',
         }}
       />
     </div>
   )
 }
 
+// Portal: swirling vortex from above
+function MiniPortal() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Swirl effect */}
+      <div
+        className="absolute w-6 h-6 rounded-full"
+        style={{
+          background: 'conic-gradient(from 0deg, #06b6d4, #8b5cf6, #06b6d4)',
+          animation: 'miniRotate 1.5s linear infinite',
+        }}
+      />
+      {/* Dark center (the hole) */}
+      <div
+        className="absolute w-2 h-2 rounded-full bg-slate-900"
+        style={{
+          boxShadow: '0 0 4px #8b5cf6',
+        }}
+      />
+    </div>
+  )
+}
+
+// Crystal: glowing point with light halo from above
 function MiniCrystal() {
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Light halo */}
       <div
-        className="w-2 h-4"
+        className="absolute w-6 h-6 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #22d3ee40, transparent 70%)',
+          animation: 'miniCrystalGlow 1.5s ease-in-out infinite',
+        }}
+      />
+      {/* Crystal shape from above (hexagonal) */}
+      <div
+        className="absolute w-3 h-3"
         style={{
           background: 'linear-gradient(135deg, #22d3ee, #f0abfc)',
-          clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-          animation: 'miniCrystalGlow 1.5s ease-in-out infinite',
+          clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
           boxShadow: '0 0 6px #22d3ee',
         }}
       />
@@ -259,41 +348,43 @@ function MiniCrystal() {
   )
 }
 
+// Floating Runes: symbols scattered on ground/floating above
 function MiniFloatingRunes() {
   return (
     <div className="absolute inset-0 overflow-hidden">
-      {[...Array(3)].map((_, i) => (
+      {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="absolute text-[8px] text-amber-400"
+          className="absolute text-[7px] text-amber-400"
           style={{
-            left: `${20 + i * 25}%`,
-            top: '50%',
-            animation: 'miniRuneFloat 2s ease-in-out infinite',
-            animationDelay: `${i * 0.3}s`,
+            left: `${15 + (i % 2) * 50}%`,
+            top: `${20 + Math.floor(i / 2) * 45}%`,
+            animation: 'miniRuneGlow 2s ease-in-out infinite',
+            animationDelay: `${i * 0.4}s`,
             textShadow: '0 0 4px #fbbf24',
           }}
         >
-          {['᚛', '᚜', '᚝'][i]}
+          {['᚛', '᚜', 'ᚱ', 'ᚢ'][i]}
         </div>
       ))}
     </div>
   )
 }
 
+// Will-o-Wisps: glowing orbs drifting across surface
 function MiniWillOWisps() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="absolute w-1.5 h-1.5 rounded-full"
+          className="absolute w-2 h-2 rounded-full"
           style={{
-            background: i % 2 === 0 ? '#34d399' : '#a78bfa',
+            background: `radial-gradient(circle, ${i % 2 === 0 ? '#34d399' : '#a78bfa'}, transparent)`,
             left: `${20 + i * 25}%`,
-            top: '40%',
-            animation: 'miniWispFloat 1.5s ease-in-out infinite',
-            animationDelay: `${i * 0.4}s`,
+            top: `${30 + (i % 2) * 25}%`,
+            animation: 'miniWispDrift 2s ease-in-out infinite',
+            animationDelay: `${i * 0.5}s`,
             boxShadow: `0 0 6px ${i % 2 === 0 ? '#34d399' : '#a78bfa'}`,
           }}
         />
@@ -302,24 +393,27 @@ function MiniWillOWisps() {
   )
 }
 
+// Divine Light: rays hitting ground in circular pattern
 function MiniDivineLight() {
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Light pool on ground */}
       <div
-        className="absolute inset-0"
+        className="absolute w-7 h-7 rounded-full"
         style={{
-          background: 'linear-gradient(to bottom, #fef08a40, transparent)',
+          background: 'radial-gradient(circle, #fef08a60 0%, #fef08a20 50%, transparent 70%)',
           animation: 'miniDivineRays 2s ease-in-out infinite',
         }}
       />
-      {[...Array(3)].map((_, i) => (
+      {/* Ray points around edge */}
+      {[...Array(6)].map((_, i) => (
         <div
           key={i}
-          className="absolute w-px h-full bg-yellow-200/40"
+          className="absolute w-1 h-1 rounded-full bg-yellow-200/60"
           style={{
-            left: `${25 + i * 25}%`,
+            transform: `rotate(${i * 60}deg) translateY(-10px)`,
             animation: 'miniRayShimmer 1.5s ease-in-out infinite',
-            animationDelay: `${i * 0.2}s`,
+            animationDelay: `${i * 0.1}s`,
           }}
         />
       ))}
@@ -327,32 +421,49 @@ function MiniDivineLight() {
   )
 }
 
+// Necrotic: spreading corruption on ground
 function MiniNecrotic() {
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Corruption spread */}
       <div
-        className="absolute inset-0"
+        className="absolute w-6 h-6 rounded-full"
         style={{
-          background: 'radial-gradient(circle at center, #4a044e60, transparent)',
+          background: 'radial-gradient(circle, #4a044e 0%, #4a044e60 40%, transparent 70%)',
           animation: 'miniNecroticPulse 1.5s ease-in-out infinite',
         }}
       />
+      {/* Dark tendrils */}
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-3 rounded-full"
+          style={{
+            background: '#4a044e80',
+            transform: `rotate(${i * 90 + 45}deg) translateY(-8px)`,
+            animation: 'miniTendrilPulse 2s ease-in-out infinite',
+            animationDelay: `${i * 0.3}s`,
+          }}
+        />
+      ))}
     </div>
   )
 }
 
+// Spirits: translucent shapes drifting across ground
 function MiniSpirits() {
   return (
     <div className="absolute inset-0 overflow-hidden">
       {[...Array(2)].map((_, i) => (
         <div
           key={i}
-          className="absolute w-2 h-3 rounded-full bg-sky-100/40"
+          className="absolute w-3 h-3 rounded-full"
           style={{
-            left: `${30 + i * 30}%`,
-            top: '30%',
-            animation: 'miniSpiritFade 2s ease-in-out infinite',
-            animationDelay: `${i * 0.5}s`,
+            background: 'radial-gradient(circle, #e0f2fe60, transparent 70%)',
+            left: `${25 + i * 35}%`,
+            top: `${30 + i * 20}%`,
+            animation: 'miniSpiritDrift 3s ease-in-out infinite',
+            animationDelay: `${i * 1}s`,
           }}
         />
       ))}
@@ -360,59 +471,146 @@ function MiniSpirits() {
   )
 }
 
+// Hologram: projected display on surface
 function MiniHologram() {
   return (
-    <div className="absolute inset-0 overflow-hidden">
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Projection area */}
       <div
-        className="absolute inset-2 border border-cyan-400/60"
+        className="absolute w-6 h-6 border border-cyan-400/60"
         style={{
           animation: 'miniHoloFlicker 0.3s ease-in-out infinite',
-          boxShadow: '0 0 4px #06b6d4',
+          boxShadow: '0 0 4px #06b6d4, inset 0 0 8px #06b6d410',
+        }}
+      />
+      {/* Scan line */}
+      <div
+        className="absolute w-6 h-px bg-cyan-400/40"
+        style={{
+          animation: 'miniHoloScan 1s linear infinite',
         }}
       />
     </div>
   )
 }
 
+// Neon Sign: glow on ground below
 function MiniNeonSign() {
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Glow pool on ground */}
       <div
-        className="w-4 h-2 rounded-sm"
+        className="absolute w-7 h-7 rounded-full"
         style={{
-          background: '#f472b6',
-          boxShadow: '0 0 8px #f472b6, 0 0 12px #06b6d4',
+          background: 'radial-gradient(circle, #f472b640 0%, #06b6d420 50%, transparent 70%)',
           animation: 'miniNeonBuzz 0.1s ease-in-out infinite alternate',
         }}
       />
-    </div>
-  )
-}
-
-function MiniEnergyShield() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Light source */}
       <div
-        className="w-6 h-6 rounded-full border-2 border-blue-400/60"
+        className="absolute w-3 h-1.5 rounded-sm"
         style={{
-          boxShadow: '0 0 6px #3b82f6',
-          animation: 'miniShieldPulse 1s ease-in-out infinite',
+          background: '#f472b6',
+          boxShadow: '0 0 6px #f472b6',
         }}
       />
     </div>
   )
 }
 
+// Energy Shield: dome viewed from above (circular)
+function MiniEnergyShield() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Shield dome edge */}
+      <div
+        className="absolute w-7 h-7 rounded-full border-2 border-blue-400/60"
+        style={{
+          boxShadow: '0 0 6px #3b82f6, inset 0 0 10px #3b82f620',
+          animation: 'miniShieldPulse 1s ease-in-out infinite',
+        }}
+      />
+      {/* Hex pattern hint */}
+      <div
+        className="absolute w-4 h-4 rounded-full border border-blue-300/30"
+      />
+    </div>
+  )
+}
+
+// Data Streams: falling onto surface pattern
 function MiniDataStream() {
   return (
-    <div className="absolute inset-0 overflow-hidden font-mono text-[6px] text-green-500/80">
-      {[...Array(3)].map((_, i) => (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Impact points on ground */}
+      {[...Array(4)].map((_, i) => (
         <div
           key={i}
-          className="absolute"
+          className="absolute w-1.5 h-1.5 rounded-full"
           style={{
-            left: `${20 + i * 25}%`,
-            top: '-10%',
+            background: '#22c55e',
+            left: `${15 + (i % 2) * 55}%`,
+            top: `${20 + Math.floor(i / 2) * 45}%`,
+            boxShadow: '0 0 4px #22c55e',
+            animation: 'miniDataPulse 0.5s ease-in-out infinite',
+            animationDelay: `${i * 0.12}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Reactor Core: pulsing glow from above
+function MiniReactorCore() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      {/* Radiation rings */}
+      <div
+        className="absolute w-7 h-7 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #facc1540 0%, #f9731530 50%, transparent 70%)',
+          animation: 'miniReactorPulse 0.5s ease-in-out infinite',
+        }}
+      />
+      {/* Core */}
+      <div
+        className="absolute w-3 h-3 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #facc15, #f97316)',
+          boxShadow: '0 0 8px #f97316',
+        }}
+      />
+    </div>
+  )
+}
+
+// Drone Patrols: shadows/shapes moving across
+function MiniDronePatrol() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Drone shadow on ground */}
+      <div
+        className="absolute w-3 h-2 rounded-sm"
+        style={{
+          background: 'radial-gradient(ellipse, #00000040, transparent)',
+          top: '40%',
+          animation: 'miniDroneFly 2s ease-in-out infinite',
+        }}
+      />
+      {/* Search light cone */}
+      <div
+        className="absolute w-2 h-2 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #ffffff30, transparent)',
+          top: '45%',
+          animation: 'miniDroneFly 2s ease-in-out infinite',
+          animationDelay: '0.05s',
+        }}
+      />
+    </div>
+  )
+}
             animation: 'miniDataFall 1s linear infinite',
             animationDelay: `${i * 0.3}s`,
           }}
