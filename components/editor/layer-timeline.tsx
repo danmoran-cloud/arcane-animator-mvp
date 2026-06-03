@@ -2,7 +2,7 @@
 
 import { useEditor } from '@/lib/editor-store'
 import type { Layer, ExpandedEffectLayer } from '@/lib/types'
-import { getEffectById, EFFECT_CATEGORIES } from '@/lib/effects-library'
+import { getEffectById, categoryMeta } from '@/lib/effects-library'
 import { Button } from '@/components/ui/button'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
@@ -50,12 +50,11 @@ function LayerRow({
   // Get category color
   const getCategoryColor = () => {
     if (!effectDef) return { bg: 'bg-muted', text: 'text-muted-foreground' }
-    const category = EFFECT_CATEGORIES.find(c => c.id === effectDef.category)
+    const category = categoryMeta[effectDef.category]
     if (!category) return { bg: 'bg-muted', text: 'text-muted-foreground' }
     return { 
-      bg: `bg-[${category.color}]/20`,
-      text: `text-[${category.color}]`,
-      style: { backgroundColor: `${category.color}20`, color: category.color }
+      bg: `bg-muted`,
+      text: `text-foreground`,
     }
   }
   

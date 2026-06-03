@@ -1873,6 +1873,11 @@ export function getEffectsByCategory(category: EffectCategory): ExpandedEffectDe
   return effectsLibrary.filter(e => e.category === category)
 }
 
+// Helper to get effect by ID
+export function getEffectById(effectId: string): ExpandedEffectDefinition | undefined {
+  return effectsLibrary.find(e => e.id === effectId)
+}
+
 // Helper to search effects
 export function searchEffects(query: string): ExpandedEffectDefinition[] {
   const lowerQuery = query.toLowerCase()
