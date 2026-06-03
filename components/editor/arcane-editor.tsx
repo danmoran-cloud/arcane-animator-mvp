@@ -1,42 +1,34 @@
 'use client'
 
 import { EditorProvider, useEditor } from '@/lib/editor-store'
-import { AuthProvider } from '@/lib/auth-store'
 import { TopNavBar } from './top-nav-bar'
-import { EffectsBrowser } from './effects-browser'
+import { EffectsDrawer } from './effects-drawer'
 import { MapCanvas } from './map-canvas'
-import { LayerInspector } from './layer-inspector'
-import { LayerTimeline } from './layer-timeline'
-import type { ExpandedEffectDefinition } from '@/lib/effects-library'
+import { LayerPanel } from './layer-panel'
+import type { EffectDefinition } from '@/lib/effects-library'
 
 function EditorContent() {
-  const { addExpandedEffectLayer } = useEditor()
+  const { addEffectLayer } = useEditor()
   
-  const handleAddEffect = (effect: ExpandedEffectDefinition) => {
-    addExpandedEffectLayer(effect)
+  const handleAddEffect = (effect: EffectDefinition) => {
+    addEffectLayer(effect)
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Top Navigation */}
       <TopNavBar />
       
-      {/* Main Content */}
+      {/* Main Content - Three column layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Effects Browser */}
-        <EffectsBrowser onAddEffect={handleAddEffect} />
+        {/* Left Sidebar - Effects Drawer (240px max) */}
+        <EffectsDrawer onAddEffect={handleAddEffect} />
         
-        {/* Center - Canvas and Timeline */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Map Canvas */}
-          <MapCanvas />
-          
-          {/* Bottom Panel - Layer Timeline */}
-          <LayerTimeline />
-        </div>
+        {/* Center - Map Canvas */}
+        <MapCanvas />
         
-        {/* Right Sidebar - Layer Inspector */}
-        <LayerInspector />
+        {/* Right Sidebar - Layer Stack + Inspector */}
+        <LayerPanel />
       </div>
     </div>
   )
@@ -44,10 +36,8 @@ function EditorContent() {
 
 export function ArcaneEditor() {
   return (
-    <AuthProvider>
-      <EditorProvider>
-        <EditorContent />
-      </EditorProvider>
-    </AuthProvider>
+    <EditorProvider>
+      <EditorContent />
+    </EditorProvider>
   )
 }

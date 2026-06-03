@@ -1,11 +1,4 @@
-import type { 
-  EffectCategory, 
-  UnifiedEffectSettings, 
-  BaseEffectComponent,
-  PerformanceLevel,
-  GenreTag,
-  EffectTypeTag 
-} from './effects-library'
+import type { EffectPack, EffectSettings, EffectId } from './effects-library'
 
 export interface Position {
   x: number
@@ -15,16 +8,6 @@ export interface Position {
 export interface Size {
   width: number
   height: number
-}
-
-// Re-export effect types from effects-library
-export type { 
-  EffectCategory, 
-  UnifiedEffectSettings, 
-  BaseEffectComponent,
-  PerformanceLevel,
-  GenreTag,
-  EffectTypeTag 
 }
 
 // Base layer properties
@@ -38,7 +21,6 @@ interface BaseLayer {
   visible: boolean
   locked: boolean
   zIndex: number
-  blendMode?: string
 }
 
 // Map layer (static image)
@@ -53,27 +35,15 @@ export interface AssetLayer extends BaseLayer {
   src: string
 }
 
-// Expanded Effect layer (animated) - new system
+// Effect layer (animated)
 export interface ExpandedEffectLayer extends BaseLayer {
   type: 'effect'
   effectId: string
-  category: EffectCategory
-  baseComponent: BaseEffectComponent
-  settings: Partial<UnifiedEffectSettings>
-  performance: PerformanceLevel
-  genreTags: GenreTag[]
-  effectTags: EffectTypeTag[]
+  category: EffectPack
+  settings: Partial<EffectSettings>
 }
 
 export type Layer = MapLayer | AssetLayer | ExpandedEffectLayer
-
-export interface Asset {
-  id: string
-  name: string
-  category: string
-  thumbnail: string
-  src: string
-}
 
 export interface Project {
   id: string
@@ -94,3 +64,12 @@ export interface EditorState {
   isDragging: boolean
   isResizing: boolean
 }
+
+// Re-exports for backwards compatibility
+export type { EffectPack, EffectSettings, EffectId }
+export type EffectCategory = EffectPack
+export type UnifiedEffectSettings = EffectSettings
+export type BaseEffectComponent = EffectId
+export type PerformanceLevel = 'low' | 'medium' | 'high'
+export type GenreTag = 'fantasy' | 'scifi' | 'natural'
+export type EffectTypeTag = 'weather' | 'light' | 'magic' | 'ambient'

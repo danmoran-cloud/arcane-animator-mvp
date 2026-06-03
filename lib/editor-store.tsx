@@ -8,9 +8,9 @@ import type {
   EditorState, 
   Position,
   ExpandedEffectLayer,
-  UnifiedEffectSettings
+  EffectSettings
 } from './types'
-import type { ExpandedEffectDefinition } from './effects-library'
+import type { EffectDefinition } from './effects-library'
 
 type EditorAction =
   | { type: 'CREATE_PROJECT'; name: string }
@@ -19,9 +19,7 @@ type EditorAction =
   | { type: 'ADD_LAYER'; layer: Layer }
   | { type: 'REMOVE_LAYER'; layerId: string }
   | { type: 'UPDATE_LAYER'; layerId: string; updates: Partial<Layer> }
-  | { type: 'UPDATE_EFFECT_SETTINGS'; layerId: string; settings: Partial<UnifiedEffectSettings> }
   | { type: 'SELECT_LAYER'; layerId: string | null }
-  | { type: 'REORDER_LAYERS'; layers: Layer[] }
   | { type: 'DUPLICATE_LAYER'; layerId: string }
   | { type: 'SET_ZOOM'; zoom: number }
   | { type: 'SET_PAN_OFFSET'; offset: Position }
@@ -120,40 +118,10 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         },
       }
     
-    case 'UPDATE_EFFECT_SETTINGS':
-      if (!state.project) return state
-      return {
-        ...state,
-        project: {
-          ...state.project,
-          layers: state.project.layers.map(l => {
-            if (l.id === action.layerId && l.type === 'effect') {
-              return {
-                ...l,
-                settings: { ...l.settings, ...action.settings },
-              }
-            }
-            return l
-          }),
-          updatedAt: new Date().toISOString(),
-        },
-      }
-    
     case 'SELECT_LAYER':
       return {
         ...state,
         selectedLayerId: action.layerId,
-      }
-    
-    case 'REORDER_LAYERS':
-      if (!state.project) return state
-      return {
-        ...state,
-        project: {
-          ...state.project,
-          layers: action.layers,
-          updatedAt: new Date().toISOString(),
-        },
       }
     
     case 'DUPLICATE_LAYER':
@@ -215,16 +183,10 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       }
     
     case 'SET_DRAGGING':
-      return {
-        ...state,
-        isDragging: action.isDragging,
-      }
+      return { ...state, isDragging: action.isDragging }
     
     case 'SET_RESIZING':
-      return {
-        ...state,
-        isResizing: action.isResizing,
-      }
+      return { ...state, isResizing: action.isResizing }
     
     default:
       return state
@@ -239,8 +201,11 @@ interface EditorContextType {
   loadProject: (projectId: string) => void
   getSavedProjects: () => { id: string; name: string; updatedAt: string }[]
   addMapLayer: (src: string, name: string) => void
-  addExpandedEffectLayer: (effect: ExpandedEffectDefinition) => void
-  updateEffectSettings: (layerId: string, settings: Partial<UnifiedEffectSettings>) => void
+  addEffectLayer: (effect: EffectDefinition) => void
+  selectLayer: (layerId: string | null) => void
+  updateLayer: (layerId: string, updates: Partial<Layer>) => void
+  removeLayer: (layerId: string) => void
+  duplicateLayer: (layerId: string) => void
 }
 
 const EditorContext = createContext<EditorContextType | null>(null)
@@ -256,7 +221,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
 
   const saveProject = () => {
     if (!state.project) return
-    
     const savedProjects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
     savedProjects[state.project.id] = state.project
     localStorage.setItem(STORAGE_KEY, JSON.stringify(savedProjects))
@@ -271,14 +235,11 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }
 
   const getSavedProjects = () => {
+    if (typeof window === 'undefined') return []
     const savedProjects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
     return Object.values(savedProjects).map((p: unknown) => {
       const project = p as Project
-      return {
-        id: project.id,
-        name: project.name,
-        updatedAt: project.updatedAt,
-      }
+      return { id: project.id, name: project.name, updatedAt: project.updatedAt }
     }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   }
 
@@ -299,32 +260,39 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'ADD_LAYER', layer })
   }
 
-  const addExpandedEffectLayer = (effect: ExpandedEffectDefinition) => {
+  const addEffectLayer = (effect: EffectDefinition) => {
     const layer: ExpandedEffectLayer = {
       id: uuidv4(),
       name: effect.name,
       type: 'effect',
       effectId: effect.id,
-      category: effect.category,
-      baseComponent: effect.baseComponent,
+      category: effect.pack,
       settings: { ...effect.defaultSettings },
-      performance: effect.performance,
-      genreTags: [...effect.genreTags],
-      effectTags: [...effect.effectTags],
       position: { x: 100, y: 100 },
-      size: { ...effect.defaultSize },
+      size: { width: 300, height: 300 },
       rotation: 0,
       opacity: 1,
       visible: true,
       locked: false,
       zIndex: state.project?.layers.length || 0,
-      blendMode: 'normal',
     }
     dispatch({ type: 'ADD_LAYER', layer })
   }
 
-  const updateEffectSettings = (layerId: string, settings: Partial<UnifiedEffectSettings>) => {
-    dispatch({ type: 'UPDATE_EFFECT_SETTINGS', layerId, settings })
+  const selectLayer = (layerId: string | null) => {
+    dispatch({ type: 'SELECT_LAYER', layerId })
+  }
+
+  const updateLayer = (layerId: string, updates: Partial<Layer>) => {
+    dispatch({ type: 'UPDATE_LAYER', layerId, updates })
+  }
+
+  const removeLayer = (layerId: string) => {
+    dispatch({ type: 'REMOVE_LAYER', layerId })
+  }
+
+  const duplicateLayer = (layerId: string) => {
+    dispatch({ type: 'DUPLICATE_LAYER', layerId })
   }
 
   return (
@@ -337,8 +305,11 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         loadProject,
         getSavedProjects,
         addMapLayer,
-        addExpandedEffectLayer,
-        updateEffectSettings,
+        addEffectLayer,
+        selectLayer,
+        updateLayer,
+        removeLayer,
+        duplicateLayer,
       }}
     >
       {children}

@@ -2,8 +2,6 @@
 
 import { useState } from 'react'
 import { useEditor } from '@/lib/editor-store'
-import { useAuth, TIER_INFO } from '@/lib/auth-store'
-import { TokenDisplay } from './upgrade-modal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -24,23 +22,18 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
-  FileText, 
   Save, 
   FolderOpen, 
   Download, 
   Settings, 
   Plus,
-  ChevronDown,
   Sparkles,
   User,
-  LogOut,
-  Crown
+  Coins,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
 
 export function TopNavBar() {
   const { state, createProject, saveProject, loadProject, getSavedProjects, dispatch } = useEditor()
-  const { state: authState, openAuthModal, openExportModal, logout } = useAuth()
   const [newProjectName, setNewProjectName] = useState('')
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false)
   const [isLoadProjectOpen, setIsLoadProjectOpen] = useState(false)
@@ -75,34 +68,30 @@ export function TopNavBar() {
     setEditingName(false)
   }
 
-  const handleExport = () => {
-    if (!authState.user) {
-      openAuthModal('login')
-      return
-    }
-    openExportModal()
-  }
-
-  const tierInfo = authState.user ? TIER_INFO[authState.user.tier] : null
-
   return (
-    <nav className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center px-4 gap-4">
+    <nav className="h-12 border-b-2 border-border bg-gradient-to-r from-card via-card/95 to-card flex items-center px-4 gap-3 relative overflow-hidden">
+      {/* Decorative border glow */}
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+      
       {/* Logo */}
-      <div className="flex items-center gap-2 min-w-[200px]">
+      <div className="flex items-center gap-2">
         <div className="relative">
-          <Sparkles className="w-7 h-7 text-primary" />
-          <div className="absolute inset-0 blur-md bg-primary/30 -z-10" />
+          <Sparkles className="w-6 h-6 text-primary" />
+          <div className="absolute inset-0 blur-sm bg-primary/40 -z-10 animate-pulse" />
         </div>
-        <span className="font-serif text-lg font-semibold text-primary tracking-wider">
+        <span className="font-serif text-base font-semibold text-primary tracking-wide">
           Arcane Animator
         </span>
       </div>
 
-      {/* Separator */}
-      <div className="h-6 w-px bg-border" />
+      {/* Ornate separator */}
+      <div className="flex items-center gap-1 px-2">
+        <div className="w-1 h-1 rounded-full bg-primary/40" />
+        <div className="w-6 h-px bg-gradient-to-r from-primary/40 to-transparent" />
+      </div>
 
       {/* Project Name */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         {state.project ? (
           editingName ? (
             <Input
@@ -110,42 +99,43 @@ export function TopNavBar() {
               onChange={(e) => setTempName(e.target.value)}
               onBlur={handleSaveName}
               onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
-              className="h-8 w-48 bg-muted/50 border-primary/30 font-medium"
+              className="h-7 w-40 bg-muted/50 border-primary/30 text-sm"
               autoFocus
             />
           ) : (
             <button
               onClick={handleStartEditName}
-              className="text-foreground/90 hover:text-foreground font-medium px-2 py-1 rounded hover:bg-muted/50 transition-colors"
+              className="text-foreground/90 hover:text-foreground text-sm font-medium px-2 py-1 rounded hover:bg-muted/50 transition-colors"
             >
               {state.project.name}
             </button>
           )
         ) : (
-          <span className="text-muted-foreground italic">No project open</span>
+          <span className="text-muted-foreground text-sm italic">No project</span>
         )}
       </div>
 
+      {/* Center spacer */}
+      <div className="flex-1" />
+
       {/* Actions */}
-      <div className="flex items-center gap-1 ml-auto">
+      <div className="flex items-center gap-1">
         {/* New Project */}
         <Dialog open={isNewProjectOpen} onOpenChange={setIsNewProjectOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 hover:bg-muted/50 hover:text-primary">
-              <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New Project</span>
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary">
+              <Plus className="w-3.5 h-3.5" />
+              New
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-card border-border">
+          <DialogContent className="bg-card border-border sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="font-serif text-primary">Create New Project</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Begin a new magical cartography session
-              </DialogDescription>
+              <DialogDescription>Begin a new map animation project</DialogDescription>
             </DialogHeader>
             <div className="py-4">
               <Input
-                placeholder="Enter project name..."
+                placeholder="Project name..."
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCreateProject()}
@@ -153,12 +143,8 @@ export function TopNavBar() {
               />
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsNewProjectOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateProject} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                Create Project
-              </Button>
+              <Button variant="outline" onClick={() => setIsNewProjectOpen(false)}>Cancel</Button>
+              <Button onClick={handleCreateProject} className="bg-primary text-primary-foreground">Create</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -169,32 +155,29 @@ export function TopNavBar() {
           size="sm" 
           onClick={handleSave}
           disabled={!state.project}
-          className="gap-2 hover:bg-muted/50 hover:text-primary disabled:opacity-50"
+          className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
         >
-          <Save className="w-4 h-4" />
-          <span className="hidden sm:inline">Save</span>
+          <Save className="w-3.5 h-3.5" />
+          Save
         </Button>
 
-        {/* Load Project */}
+        {/* Load */}
         <Dialog open={isLoadProjectOpen} onOpenChange={setIsLoadProjectOpen}>
           <DialogTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 hover:bg-muted/50 hover:text-primary">
-              <FolderOpen className="w-4 h-4" />
-              <span className="hidden sm:inline">Load</span>
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary">
+              <FolderOpen className="w-3.5 h-3.5" />
+              Load
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-card border-border">
+          <DialogContent className="bg-card border-border sm:max-w-md">
             <DialogHeader>
               <DialogTitle className="font-serif text-primary">Load Project</DialogTitle>
-              <DialogDescription className="text-muted-foreground">
-                Continue your magical cartography work
-              </DialogDescription>
+              <DialogDescription>Continue your previous work</DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[300px] py-4">
               {savedProjects.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
-                  <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>No saved projects found</p>
+                  <p className="text-sm">No saved projects</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -205,13 +188,11 @@ export function TopNavBar() {
                         loadProject(project.id)
                         setIsLoadProjectOpen(false)
                       }}
-                      className="w-full p-3 rounded-lg border border-border hover:border-primary/50 hover:bg-muted/30 transition-all text-left group"
+                      className="w-full p-3 rounded border border-border hover:border-primary/50 hover:bg-muted/30 transition-all text-left"
                     >
-                      <div className="font-medium group-hover:text-primary transition-colors">
-                        {project.name}
-                      </div>
+                      <div className="text-sm font-medium">{project.name}</div>
                       <div className="text-xs text-muted-foreground mt-1">
-                        Last edited: {new Date(project.updatedAt).toLocaleDateString()}
+                        {new Date(project.updatedAt).toLocaleDateString()}
                       </div>
                     </button>
                   ))}
@@ -225,97 +206,42 @@ export function TopNavBar() {
         <Button 
           variant="ghost" 
           size="sm" 
-          onClick={handleExport}
           disabled={!state.project}
-          className="gap-2 hover:bg-muted/50 hover:text-primary disabled:opacity-50"
+          className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
         >
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">Export</span>
+          <Download className="w-3.5 h-3.5" />
+          Export
         </Button>
 
-        {/* Separator */}
-        <div className="h-6 w-px bg-border mx-2" />
+        {/* Ornate separator */}
+        <div className="flex items-center gap-1 px-2">
+          <div className="w-6 h-px bg-gradient-to-l from-primary/40 to-transparent" />
+          <div className="w-1 h-1 rounded-full bg-primary/40" />
+        </div>
 
-        {/* Token Display (if logged in) */}
-        {authState.user && <TokenDisplay />}
+        {/* Token display (demo) */}
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 border border-primary/20">
+          <Coins className="w-3.5 h-3.5 text-primary" />
+          <span className="text-xs font-medium text-primary">100</span>
+        </div>
 
-        {/* Separator */}
-        {authState.user && <div className="h-6 w-px bg-border mx-2" />}
-
-        {/* User Menu / Auth */}
-        {authState.user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 hover:bg-muted/50 hover:text-primary">
-                <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center">
-                  <User className="w-4 h-4 text-primary" />
-                </div>
-                <span className="hidden sm:inline max-w-24 truncate">{authState.user.name}</span>
-                <ChevronDown className="w-3 h-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-card border-border">
-              <div className="px-2 py-2 border-b border-border">
-                <div className="font-medium text-foreground truncate">{authState.user.name}</div>
-                <div className="text-xs text-muted-foreground truncate">{authState.user.email}</div>
-                <div className={cn(
-                  'flex items-center gap-1 mt-1.5 text-xs',
-                  authState.user.tier === 'master' ? 'text-amber-500' : 
-                  authState.user.tier === 'apprentice' ? 'text-primary' : 'text-muted-foreground'
-                )}>
-                  <Crown className="w-3 h-3" />
-                  {tierInfo?.name}
-                </div>
-              </div>
-              <DropdownMenuItem className="gap-2 cursor-pointer">
-                <Settings className="w-4 h-4" />
-                Preferences
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="gap-2 cursor-pointer text-destructive focus:text-destructive"
-                onClick={logout}
-              >
-                <LogOut className="w-4 h-4" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => openAuthModal('login')}
-              className="hover:bg-muted/50 hover:text-primary"
-            >
-              Sign In
-            </Button>
-            <Button 
-              size="sm" 
-              onClick={() => openAuthModal('signup')}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Sign Up
-            </Button>
-          </div>
-        )}
-
-        {/* Settings */}
+        {/* User */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="gap-2 hover:bg-muted/50 hover:text-primary">
-              <Settings className="w-4 h-4" />
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10">
+              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                <User className="w-3.5 h-3.5 text-primary" />
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 bg-card border-border">
-            <DropdownMenuItem className="gap-2 cursor-pointer">
-              <Settings className="w-4 h-4" />
-              Preferences
+            <DropdownMenuItem className="gap-2 text-xs">
+              <Settings className="w-3.5 h-3.5" />
+              Settings
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 cursor-pointer text-muted-foreground">
-              Version 1.0.0
+            <DropdownMenuItem className="gap-2 text-xs text-muted-foreground">
+              v1.0.0
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

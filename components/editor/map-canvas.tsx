@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { useEditor } from '@/lib/editor-store'
 import type { Layer, Position, ExpandedEffectLayer, MapLayer, AssetLayer } from '@/lib/types'
-import { UnifiedEffectRenderer } from './base-effects'
+import { PremiumEffectRenderer } from './premium-effects'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
@@ -16,7 +16,7 @@ import {
   Upload,
   Compass,
   Sparkles,
-  Move
+  RotateCw
 } from 'lucide-react'
 
 // Floating particles component for the empty state
@@ -45,24 +45,19 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
     <div className="absolute inset-0 flex flex-col items-center justify-center">
       <FloatingParticles />
       
-      {/* Decorative compass rose */}
       <div className="relative mb-8">
         <div className="w-32 h-32 rounded-full border-2 border-primary/20 flex items-center justify-center magical-pulse">
           <div className="w-24 h-24 rounded-full border border-primary/30 flex items-center justify-center">
             <Compass className="w-12 h-12 text-primary/50" />
           </div>
         </div>
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-1 h-4 bg-primary/30" />
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-1 h-4 bg-primary/30" />
-        <div className="absolute top-1/2 -left-2 -translate-y-1/2 w-4 h-1 bg-primary/30" />
-        <div className="absolute top-1/2 -right-2 -translate-y-1/2 w-4 h-1 bg-primary/30" />
       </div>
 
       <h3 className="font-serif text-xl text-primary mb-2">
-        Upload a map to begin weaving magic
+        Upload a map to begin
       </h3>
       <p className="text-muted-foreground text-sm mb-6 max-w-md text-center">
-        Start by uploading your battle map, then add animated effects to bring it to life
+        Start by uploading your battle map, then add animated effects
       </p>
 
       <Button 
@@ -76,25 +71,92 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
   )
 }
 
-// Effect layer rendering component - updated for expanded effects
+// Transform handles component
+function TransformHandles({ 
+  layer,
+  onResizeStart,
+  onRotateStart 
+}: { 
+  layer: Layer
+  onResizeStart: (e: React.MouseEvent, corner: string) => void
+  onRotateStart: (e: React.MouseEvent) => void
+}) {
+  return (
+    <>
+      {/* Corner resize handles */}
+      <div 
+        className="absolute -top-2 -left-2 w-4 h-4 bg-accent rounded-sm border-2 border-background cursor-nwse-resize shadow-[0_0_12px_rgba(100,150,255,0.6)]"
+        onMouseDown={(e) => onResizeStart(e, 'nw')}
+      />
+      <div 
+        className="absolute -top-2 -right-2 w-4 h-4 bg-accent rounded-sm border-2 border-background cursor-nesw-resize shadow-[0_0_12px_rgba(100,150,255,0.6)]"
+        onMouseDown={(e) => onResizeStart(e, 'ne')}
+      />
+      <div 
+        className="absolute -bottom-2 -left-2 w-4 h-4 bg-accent rounded-sm border-2 border-background cursor-nesw-resize shadow-[0_0_12px_rgba(100,150,255,0.6)]"
+        onMouseDown={(e) => onResizeStart(e, 'sw')}
+      />
+      <div 
+        className="absolute -bottom-2 -right-2 w-4 h-4 bg-accent rounded-sm border-2 border-background cursor-nwse-resize shadow-[0_0_12px_rgba(100,150,255,0.6)]"
+        onMouseDown={(e) => onResizeStart(e, 'se')}
+      />
+      
+      {/* Edge resize handles */}
+      <div 
+        className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-6 h-3 bg-accent/80 rounded-sm border border-background cursor-ns-resize"
+        onMouseDown={(e) => onResizeStart(e, 'n')}
+      />
+      <div 
+        className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-6 h-3 bg-accent/80 rounded-sm border border-background cursor-ns-resize"
+        onMouseDown={(e) => onResizeStart(e, 's')}
+      />
+      <div 
+        className="absolute top-1/2 -left-1.5 -translate-y-1/2 w-3 h-6 bg-accent/80 rounded-sm border border-background cursor-ew-resize"
+        onMouseDown={(e) => onResizeStart(e, 'w')}
+      />
+      <div 
+        className="absolute top-1/2 -right-1.5 -translate-y-1/2 w-3 h-6 bg-accent/80 rounded-sm border border-background cursor-ew-resize"
+        onMouseDown={(e) => onResizeStart(e, 'e')}
+      />
+      
+      {/* Rotation handle */}
+      <div 
+        className="absolute -top-8 left-1/2 -translate-x-1/2 flex flex-col items-center cursor-grab"
+        onMouseDown={onRotateStart}
+      >
+        <div className="w-5 h-5 bg-primary rounded-full border-2 border-background flex items-center justify-center shadow-[0_0_12px_rgba(100,150,255,0.6)]">
+          <RotateCw className="w-3 h-3 text-primary-foreground" />
+        </div>
+        <div className="w-px h-4 bg-accent/50" />
+      </div>
+    </>
+  )
+}
+
+// Effect layer rendering component
 function EffectLayerRenderer({ 
   layer, 
   isSelected,
   onSelect,
   onDragStart,
+  onResizeStart,
+  onRotateStart,
 }: { 
   layer: ExpandedEffectLayer
   isSelected: boolean
   onSelect: () => void
   onDragStart: (e: React.MouseEvent) => void
+  onResizeStart: (e: React.MouseEvent, corner: string) => void
+  onRotateStart: (e: React.MouseEvent) => void
 }) {
   if (!layer.visible) return null
 
   return (
     <div
       className={cn(
-        "absolute cursor-move overflow-hidden rounded-lg",
-        isSelected && "ring-2 ring-primary shadow-[0_0_20px_rgba(100,150,255,0.4)]"
+        "absolute overflow-hidden rounded-lg transition-shadow",
+        isSelected && "ring-2 ring-accent shadow-[0_0_24px_rgba(100,150,255,0.5)]",
+        !layer.locked && "cursor-move"
       )}
       style={{
         left: layer.position.x,
@@ -105,67 +167,61 @@ function EffectLayerRenderer({
         opacity: layer.opacity,
         zIndex: layer.zIndex,
         pointerEvents: layer.locked ? 'none' : 'auto',
-        mixBlendMode: layer.blendMode as React.CSSProperties['mixBlendMode'] || 'normal',
       }}
       onClick={(e) => {
         e.stopPropagation()
         onSelect()
       }}
       onMouseDown={(e) => {
-        if (!layer.locked) {
+        if (!layer.locked && e.button === 0) {
           e.stopPropagation()
           onSelect()
           onDragStart(e)
         }
       }}
     >
-      {/* Effect content using the unified renderer */}
-      <UnifiedEffectRenderer
-        baseComponent={layer.baseComponent}
-        settings={layer.settings}
+      <PremiumEffectRenderer
+        effectId={layer.effectId}
+        settings={layer.settings as Record<string, unknown>}
         width={layer.size.width}
         height={layer.size.height}
       />
 
-      {/* Selection handles */}
       {isSelected && !layer.locked && (
-        <>
-          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-nw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
-          <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-ne-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
-          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-sw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
-          <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-se-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
-        </>
-      )}
-
-      {/* Lock indicator */}
-      {layer.locked && (
-        <div className="absolute top-1 right-1 w-5 h-5 rounded bg-background/80 flex items-center justify-center">
-          <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-        </div>
+        <TransformHandles 
+          layer={layer}
+          onResizeStart={onResizeStart}
+          onRotateStart={onRotateStart}
+        />
       )}
     </div>
   )
 }
 
-// Image layer rendering component (map or asset)
+// Image layer rendering component
 function ImageLayerRenderer({ 
   layer, 
   isSelected,
   onSelect,
   onDragStart,
+  onResizeStart,
+  onRotateStart,
 }: { 
   layer: MapLayer | AssetLayer
   isSelected: boolean
   onSelect: () => void
   onDragStart: (e: React.MouseEvent) => void
+  onResizeStart: (e: React.MouseEvent, corner: string) => void
+  onRotateStart: (e: React.MouseEvent) => void
 }) {
   if (!layer.visible) return null
 
   return (
     <div
       className={cn(
-        "absolute cursor-move",
-        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+        "absolute",
+        isSelected && "ring-2 ring-accent shadow-[0_0_24px_rgba(100,150,255,0.5)]",
+        !layer.locked && "cursor-move"
       )}
       style={{
         left: layer.position.x,
@@ -182,14 +238,13 @@ function ImageLayerRenderer({
         onSelect()
       }}
       onMouseDown={(e) => {
-        if (!layer.locked) {
+        if (!layer.locked && e.button === 0) {
           e.stopPropagation()
           onSelect()
           onDragStart(e)
         }
       }}
     >
-      {/* Layer content - image or placeholder */}
       {layer.src.startsWith('data:') || layer.src.startsWith('/') || layer.src.startsWith('http') ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img 
@@ -204,60 +259,18 @@ function ImageLayerRenderer({
         </div>
       )}
 
-      {/* Selection handles */}
       {isSelected && !layer.locked && (
-        <>
-          <div className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-nw-resize" />
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-ne-resize" />
-          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-sw-resize" />
-          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-se-resize" />
-        </>
-      )}
-
-      {/* Lock indicator */}
-      {layer.locked && (
-        <div className="absolute top-1 right-1 w-5 h-5 rounded bg-background/80 flex items-center justify-center">
-          <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-        </div>
+        <TransformHandles 
+          layer={layer}
+          onResizeStart={onResizeStart}
+          onRotateStart={onRotateStart}
+        />
       )}
     </div>
   )
 }
 
-// Unified layer renderer
-function CanvasLayer({ 
-  layer, 
-  isSelected,
-  onSelect,
-  onDragStart,
-}: { 
-  layer: Layer
-  isSelected: boolean
-  onSelect: () => void
-  onDragStart: (e: React.MouseEvent) => void
-}) {
-  if (layer.type === 'effect') {
-    return (
-      <EffectLayerRenderer
-        layer={layer}
-        isSelected={isSelected}
-        onSelect={onSelect}
-        onDragStart={onDragStart}
-      />
-    )
-  }
-  
-  return (
-    <ImageLayerRenderer
-      layer={layer}
-      isSelected={isSelected}
-      onSelect={onSelect}
-      onDragStart={onDragStart}
-    />
-  )
-}
-
-// Grid overlay component
+// Grid overlay
 function GridOverlay({ gridSize, canvasSize }: { gridSize: number; canvasSize: { width: number; height: number } }) {
   return (
     <svg 
@@ -287,69 +300,97 @@ function GridOverlay({ gridSize, canvasSize }: { gridSize: number; canvasSize: {
 }
 
 export function MapCanvas() {
-  const { state, dispatch, addMapLayer } = useEditor()
+  const { state, dispatch, addMapLayer, selectLayer, updateLayer } = useEditor()
   const containerRef = useRef<HTMLDivElement>(null)
-  const canvasRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
   const [isPanning, setIsPanning] = useState(false)
+  const [isSpaceDown, setIsSpaceDown] = useState(false)
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 })
+  
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null)
   const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 })
   const [layerStartPos, setLayerStartPos] = useState<Position>({ x: 0, y: 0 })
+  
+  const [resizing, setResizing] = useState<{ layerId: string; corner: string } | null>(null)
+  const [resizeStart, setResizeStart] = useState<Position>({ x: 0, y: 0 })
+  const [layerStartSize, setLayerStartSize] = useState({ width: 0, height: 0 })
+  
+  const [rotating, setRotating] = useState<string | null>(null)
+  const [rotateCenter, setRotateCenter] = useState<Position>({ x: 0, y: 0 })
 
-  const handleZoomIn = () => {
-    dispatch({ type: 'SET_ZOOM', zoom: state.zoom + 0.1 })
-  }
-
-  const handleZoomOut = () => {
-    dispatch({ type: 'SET_ZOOM', zoom: state.zoom - 0.1 })
-  }
-
-  const handleFitToScreen = () => {
-    dispatch({ type: 'SET_ZOOM', zoom: 1 })
-    dispatch({ type: 'SET_PAN_OFFSET', offset: { x: 0, y: 0 } })
-  }
-
-  const handleToggleGrid = () => {
-    dispatch({ type: 'TOGGLE_GRID' })
-  }
-
-  const handleGridSizeChange = (value: number[]) => {
-    dispatch({ type: 'SET_GRID_SIZE', size: value[0] })
-  }
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click()
-  }
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const src = event.target?.result as string
-      if (file.type.startsWith('image/')) {
-        addMapLayer(src, file.name.replace(/\.[^/.]+$/, ''))
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' && !isSpaceDown) {
+        setIsSpaceDown(true)
+      }
+      if (e.code === 'Delete' || e.code === 'Backspace') {
+        if (state.selectedLayerId && !e.target?.toString().includes('Input')) {
+          dispatch({ type: 'REMOVE_LAYER', layerId: state.selectedLayerId })
+        }
+      }
+      if (e.code === 'KeyD' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        if (state.selectedLayerId) {
+          dispatch({ type: 'DUPLICATE_LAYER', layerId: state.selectedLayerId })
+        }
+      }
+      if (e.code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        // Undo would go here
       }
     }
-    reader.readAsDataURL(file)
-    e.target.value = ''
-  }
+    
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpaceDown(false)
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('keyup', handleKeyUp)
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('keyup', handleKeyUp)
+    }
+  }, [state.selectedLayerId, isSpaceDown, dispatch])
 
-  // Canvas panning
+  // Mouse wheel zoom centered on cursor
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault()
+    
+    const container = containerRef.current
+    if (!container) return
+    
+    const rect = container.getBoundingClientRect()
+    const mouseX = e.clientX - rect.left
+    const mouseY = e.clientY - rect.top
+    
+    const delta = e.deltaY > 0 ? -0.1 : 0.1
+    const newZoom = Math.max(0.1, Math.min(3, state.zoom + delta))
+    const zoomRatio = newZoom / state.zoom
+    
+    // Zoom centered on cursor position
+    const newPanX = mouseX - (mouseX - state.panOffset.x) * zoomRatio
+    const newPanY = mouseY - (mouseY - state.panOffset.y) * zoomRatio
+    
+    dispatch({ type: 'SET_ZOOM', zoom: newZoom })
+    dispatch({ type: 'SET_PAN_OFFSET', offset: { x: newPanX, y: newPanY } })
+  }, [state.zoom, state.panOffset, dispatch])
+
+  // Canvas mouse down - pan with middle click or space+drag
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) {
-      // Middle click or Alt+click to pan
+    if (e.button === 1 || (e.button === 0 && isSpaceDown)) {
+      e.preventDefault()
       setIsPanning(true)
       setPanStart({ x: e.clientX - state.panOffset.x, y: e.clientY - state.panOffset.y })
     } else if (e.button === 0) {
-      // Deselect on canvas click
-      dispatch({ type: 'SELECT_LAYER', layerId: null })
+      selectLayer(null)
     }
   }
 
+  // Layer drag start
   const handleLayerDragStart = (e: React.MouseEvent, layerId: string) => {
     const layer = state.project?.layers.find(l => l.id === layerId)
     if (!layer || layer.locked) return
@@ -360,6 +401,33 @@ export function MapCanvas() {
     dispatch({ type: 'SET_DRAGGING', isDragging: true })
   }
 
+  // Resize start
+  const handleResizeStart = (e: React.MouseEvent, layerId: string, corner: string) => {
+    e.stopPropagation()
+    const layer = state.project?.layers.find(l => l.id === layerId)
+    if (!layer) return
+    
+    setResizing({ layerId, corner })
+    setResizeStart({ x: e.clientX, y: e.clientY })
+    setLayerStartPos({ ...layer.position })
+    setLayerStartSize({ ...layer.size })
+    dispatch({ type: 'SET_RESIZING', isResizing: true })
+  }
+
+  // Rotate start
+  const handleRotateStart = (e: React.MouseEvent, layerId: string) => {
+    e.stopPropagation()
+    const layer = state.project?.layers.find(l => l.id === layerId)
+    if (!layer) return
+    
+    setRotating(layerId)
+    setRotateCenter({
+      x: layer.position.x + layer.size.width / 2,
+      y: layer.position.y + layer.size.height / 2
+    })
+  }
+
+  // Global mouse move
   const handleMouseMove = useCallback((e: MouseEvent) => {
     if (isPanning) {
       dispatch({ 
@@ -373,23 +441,70 @@ export function MapCanvas() {
       const deltaX = (e.clientX - dragStart.x) / state.zoom
       const deltaY = (e.clientY - dragStart.y) / state.zoom
       
-      dispatch({
-        type: 'UPDATE_LAYER',
-        layerId: draggedLayerId,
-        updates: {
-          position: {
-            x: layerStartPos.x + deltaX,
-            y: layerStartPos.y + deltaY,
-          }
+      updateLayer(draggedLayerId, {
+        position: {
+          x: layerStartPos.x + deltaX,
+          y: layerStartPos.y + deltaY,
         }
       })
+    } else if (resizing) {
+      const deltaX = (e.clientX - resizeStart.x) / state.zoom
+      const deltaY = (e.clientY - resizeStart.y) / state.zoom
+      const { corner, layerId } = resizing
+      
+      let newWidth = layerStartSize.width
+      let newHeight = layerStartSize.height
+      let newX = layerStartPos.x
+      let newY = layerStartPos.y
+      
+      // Handle proportional scaling with Shift
+      const proportional = e.shiftKey
+      const aspectRatio = layerStartSize.width / layerStartSize.height
+      
+      if (corner.includes('e')) newWidth = Math.max(50, layerStartSize.width + deltaX)
+      if (corner.includes('w')) {
+        newWidth = Math.max(50, layerStartSize.width - deltaX)
+        newX = layerStartPos.x + deltaX
+      }
+      if (corner.includes('s')) newHeight = Math.max(50, layerStartSize.height + deltaY)
+      if (corner.includes('n')) {
+        newHeight = Math.max(50, layerStartSize.height - deltaY)
+        newY = layerStartPos.y + deltaY
+      }
+      
+      if (proportional && (corner === 'nw' || corner === 'ne' || corner === 'sw' || corner === 'se')) {
+        if (Math.abs(deltaX) > Math.abs(deltaY)) {
+          newHeight = newWidth / aspectRatio
+        } else {
+          newWidth = newHeight * aspectRatio
+        }
+      }
+      
+      updateLayer(layerId, {
+        position: { x: newX, y: newY },
+        size: { width: newWidth, height: newHeight }
+      })
+    } else if (rotating) {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) return
+      
+      const mouseX = (e.clientX - rect.left - state.panOffset.x) / state.zoom
+      const mouseY = (e.clientY - rect.top - state.panOffset.y) / state.zoom
+      
+      const angle = Math.atan2(mouseY - rotateCenter.y, mouseX - rotateCenter.x)
+      const degrees = (angle * 180 / Math.PI) + 90
+      
+      updateLayer(rotating, { rotation: (degrees + 360) % 360 })
     }
-  }, [isPanning, panStart, draggedLayerId, dragStart, layerStartPos, state.zoom, dispatch])
+  }, [isPanning, panStart, draggedLayerId, dragStart, layerStartPos, resizing, resizeStart, layerStartSize, rotating, rotateCenter, state.zoom, state.panOffset, dispatch, updateLayer])
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false)
     setDraggedLayerId(null)
+    setResizing(null)
+    setRotating(null)
     dispatch({ type: 'SET_DRAGGING', isDragging: false })
+    dispatch({ type: 'SET_RESIZING', isResizing: false })
   }, [dispatch])
 
   useEffect(() => {
@@ -401,12 +516,46 @@ export function MapCanvas() {
     }
   }, [handleMouseMove, handleMouseUp])
 
-  // Mouse wheel zoom
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault()
-      const delta = e.deltaY > 0 ? -0.1 : 0.1
-      dispatch({ type: 'SET_ZOOM', zoom: state.zoom + delta })
+  const handleZoomIn = () => dispatch({ type: 'SET_ZOOM', zoom: Math.min(3, state.zoom + 0.1) })
+  const handleZoomOut = () => dispatch({ type: 'SET_ZOOM', zoom: Math.max(0.1, state.zoom - 0.1) })
+  const handleFitToScreen = () => {
+    dispatch({ type: 'SET_ZOOM', zoom: 1 })
+    dispatch({ type: 'SET_PAN_OFFSET', offset: { x: 0, y: 0 } })
+  }
+  const handleToggleGrid = () => dispatch({ type: 'TOGGLE_GRID' })
+
+  const handleUploadClick = () => fileInputRef.current?.click()
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const src = event.target?.result as string
+      if (file.type.startsWith('image/')) {
+        addMapLayer(src, file.name.replace(/\.[^/.]+$/, ''))
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  // Double-click to focus layer
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (state.selectedLayerId) {
+      const layer = state.project?.layers.find(l => l.id === state.selectedLayerId)
+      if (layer) {
+        const container = containerRef.current
+        if (!container) return
+        const rect = container.getBoundingClientRect()
+        
+        dispatch({ 
+          type: 'SET_PAN_OFFSET', 
+          offset: { 
+            x: rect.width / 2 - (layer.position.x + layer.size.width / 2) * state.zoom,
+            y: rect.height / 2 - (layer.position.y + layer.size.height / 2) * state.zoom
+          } 
+        })
+      }
     }
   }
 
@@ -414,95 +563,61 @@ export function MapCanvas() {
   const hasLayers = (state.project?.layers.length || 0) > 0
   const canvasSize = state.project?.canvasSize || { width: 1920, height: 1080 }
 
+  const getCursor = () => {
+    if (isPanning || isSpaceDown) return 'grab'
+    if (resizing) return 'grabbing'
+    if (rotating) return 'grabbing'
+    return 'default'
+  }
+
   return (
     <div className="flex-1 flex flex-col bg-background overflow-hidden">
-      {/* Canvas toolbar */}
+      {/* Toolbar */}
       <div className="h-10 border-b border-border bg-card/50 flex items-center px-3 gap-2">
         <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-7 w-7"
-            onClick={handleZoomOut}
-            disabled={!hasProject}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomOut} disabled={!hasProject}>
             <ZoomOut className="w-4 h-4" />
           </Button>
-          <span className="text-xs text-muted-foreground w-12 text-center">
-            {Math.round(state.zoom * 100)}%
-          </span>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-7 w-7"
-            onClick={handleZoomIn}
-            disabled={!hasProject}
-          >
+          <span className="text-xs text-muted-foreground w-12 text-center">{Math.round(state.zoom * 100)}%</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomIn} disabled={!hasProject}>
             <ZoomIn className="w-4 h-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-7 w-7"
-            onClick={handleFitToScreen}
-            disabled={!hasProject}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleFitToScreen} disabled={!hasProject}>
             <Maximize2 className="w-4 h-4" />
           </Button>
         </div>
 
         <div className="h-4 w-px bg-border mx-2" />
 
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={cn(
-              "h-7 w-7",
-              state.project?.gridEnabled && "bg-muted text-primary"
-            )}
-            onClick={handleToggleGrid}
-            disabled={!hasProject}
-          >
-            <Grid3X3 className="w-4 h-4" />
-          </Button>
-          
-          {state.project?.gridEnabled && (
-            <div className="flex items-center gap-2">
-              <Label className="text-xs text-muted-foreground">Grid:</Label>
-              <Slider
-                value={[state.project?.gridSize || 50]}
-                onValueChange={handleGridSizeChange}
-                min={20}
-                max={100}
-                step={10}
-                className="w-20"
-              />
-              <span className="text-xs text-muted-foreground w-8">
-                {state.project?.gridSize}px
-              </span>
-            </div>
-          )}
-        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={cn("h-7 w-7", state.project?.gridEnabled && "bg-muted text-primary")}
+          onClick={handleToggleGrid}
+          disabled={!hasProject}
+        >
+          <Grid3X3 className="w-4 h-4" />
+        </Button>
 
-        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
-          <Move className="w-3 h-3" />
-          <span>Alt+Drag to pan</span>
+        <div className="ml-auto flex items-center gap-4 text-[10px] text-muted-foreground">
+          <span>Scroll to zoom</span>
+          <span>Space+Drag to pan</span>
+          <span>Shift+Drag for proportional</span>
         </div>
       </div>
 
-      {/* Canvas area */}
+      {/* Canvas */}
       <div 
         ref={containerRef}
         className="flex-1 overflow-hidden relative parchment-bg"
         onMouseDown={handleCanvasMouseDown}
+        onDoubleClick={handleDoubleClick}
         onWheel={handleWheel}
-        style={{ cursor: isPanning ? 'grabbing' : 'default' }}
+        style={{ cursor: getCursor() }}
       >
         {hasProject ? (
           hasLayers ? (
             <div
-              ref={canvasRef}
               className="absolute"
               style={{
                 transform: `translate(${state.panOffset.x}px, ${state.panOffset.y}px) scale(${state.zoom})`,
@@ -511,26 +626,37 @@ export function MapCanvas() {
                 height: canvasSize.height,
               }}
             >
-              {/* Canvas background */}
               <div className="absolute inset-0 bg-muted/20 rounded-lg border border-border/50" />
               
-              {/* Grid overlay */}
               {state.project?.gridEnabled && (
                 <GridOverlay gridSize={state.project.gridSize} canvasSize={canvasSize} />
               )}
 
-              {/* Layers */}
               {state.project?.layers
                 .slice()
                 .sort((a, b) => a.zIndex - b.zIndex)
                 .map((layer) => (
-                  <CanvasLayer
-                    key={layer.id}
-                    layer={layer}
-                    isSelected={state.selectedLayerId === layer.id}
-                    onSelect={() => dispatch({ type: 'SELECT_LAYER', layerId: layer.id })}
-                    onDragStart={(e) => handleLayerDragStart(e, layer.id)}
-                  />
+                  layer.type === 'effect' ? (
+                    <EffectLayerRenderer
+                      key={layer.id}
+                      layer={layer as ExpandedEffectLayer}
+                      isSelected={state.selectedLayerId === layer.id}
+                      onSelect={() => selectLayer(layer.id)}
+                      onDragStart={(e) => handleLayerDragStart(e, layer.id)}
+                      onResizeStart={(e, corner) => handleResizeStart(e, layer.id, corner)}
+                      onRotateStart={(e) => handleRotateStart(e, layer.id)}
+                    />
+                  ) : (
+                    <ImageLayerRenderer
+                      key={layer.id}
+                      layer={layer as MapLayer | AssetLayer}
+                      isSelected={state.selectedLayerId === layer.id}
+                      onSelect={() => selectLayer(layer.id)}
+                      onDragStart={(e) => handleLayerDragStart(e, layer.id)}
+                      onResizeStart={(e, corner) => handleResizeStart(e, layer.id, corner)}
+                      onRotateStart={(e) => handleRotateStart(e, layer.id)}
+                    />
+                  )
                 ))}
             </div>
           ) : (
@@ -539,26 +665,12 @@ export function MapCanvas() {
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <FloatingParticles />
-            <div className="relative mb-6">
-              <Sparkles className="w-16 h-16 text-primary/30 magical-pulse" />
-            </div>
-            <h3 className="font-serif text-lg text-muted-foreground mb-2">
-              Create or load a project to begin
-            </h3>
-            <p className="text-sm text-muted-foreground/70">
-              Use the toolbar above to start a new project
-            </p>
+            <Sparkles className="w-16 h-16 text-primary/30 magical-pulse mb-6" />
+            <h3 className="font-serif text-lg text-muted-foreground mb-2">Create or load a project</h3>
           </div>
         )}
 
-        {/* Hidden file input */}
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/jpeg,image/png"
-          className="hidden"
-          onChange={handleFileChange}
-        />
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
       </div>
     </div>
   )
