@@ -1,18 +1,20 @@
-// Curated Effects Library - 24 Premium Effects
-// Organized into Core Pack, Fantasy Pack, and Sci-Fi Pack
+// Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'fantasy' | 'scifi'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'scifi'
 
 export type EffectId = 
-  // Core Pack (10)
-  | 'rain' | 'snow' | 'fog' | 'torch' | 'campfire' 
-  | 'water-ripples' | 'waterfall' | 'lightning' | 'smoke' | 'wind'
-  // Fantasy Pack (8)
-  | 'arcane-circles' | 'portals' | 'magical-crystals' | 'floating-runes'
-  | 'will-o-wisps' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
-  // Sci-Fi Pack (6)
-  | 'holograms' | 'neon-signs' | 'energy-shields' | 'data-streams'
-  | 'reactor-core' | 'drone-patrols'
+  // Core Pack (6) - Localized light sources
+  | 'torch' | 'campfire' | 'lantern' | 'candles' | 'brazier' | 'magical-light'
+  // Atmospheric Pack (8) - Full-area weather/environment overlays
+  | 'rain' | 'snow' | 'fog' | 'mist' | 'wind' | 'lightning-storm' | 'dust-storm' | 'blizzard'
+  // Terrain Pack (6) - Ground/surface effects
+  | 'water-ripples' | 'waterfall' | 'lava-flow' | 'swamp-bubbles' | 'ice-crystals' | 'smoke-vents'
+  // Fantasy Pack (6)
+  | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
+  // Sci-Fi Pack (4)
+  | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
+
+export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
 
 export interface EffectSettings {
   speed: number        // 0-100
@@ -30,68 +32,54 @@ export interface EffectDefinition {
   id: EffectId
   name: string
   pack: EffectPack
+  renderMode: RenderMode  // How the effect should be rendered
   icon: string
   defaultSettings: EffectSettings
   description: string
 }
 
-export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; color: string }> = {
-  core: { name: 'Core Pack', icon: 'cloud', color: '#64748b' },
-  fantasy: { name: 'Fantasy Pack', icon: 'sparkles', color: '#8b5cf6' },
-  scifi: { name: 'Sci-Fi Pack', icon: 'cpu', color: '#06b6d4' },
+export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; color: string; description: string }> = {
+  core: { 
+    name: 'Core', 
+    icon: 'flame', 
+    color: '#f59e0b',
+    description: 'Light sources and illumination'
+  },
+  atmospheric: { 
+    name: 'Atmospheric', 
+    icon: 'cloud', 
+    color: '#64748b',
+    description: 'Weather and environmental overlays'
+  },
+  terrain: { 
+    name: 'Terrain', 
+    icon: 'mountain', 
+    color: '#22c55e',
+    description: 'Ground and surface effects'
+  },
+  fantasy: { 
+    name: 'Fantasy', 
+    icon: 'sparkles', 
+    color: '#8b5cf6',
+    description: 'Magical and mystical effects'
+  },
+  scifi: { 
+    name: 'Sci-Fi', 
+    icon: 'cpu', 
+    color: '#06b6d4',
+    description: 'Futuristic technology effects'
+  },
 }
 
 export const effectsLibrary: EffectDefinition[] = [
-  // ===== CORE PACK =====
-  {
-    id: 'rain',
-    name: 'Rain',
-    pack: 'core',
-    icon: 'cloud-rain',
-    description: 'Variable drops with splash effects',
-    defaultSettings: {
-      speed: 70,
-      intensity: 60,
-      density: 50,
-      color: '#a8c8e8',
-      direction: 180,
-      scale: 1,
-    },
-  },
-  {
-    id: 'snow',
-    name: 'Snow',
-    pack: 'core',
-    icon: 'snowflake',
-    description: 'Gentle snowfall with varying flakes',
-    defaultSettings: {
-      speed: 30,
-      intensity: 50,
-      density: 40,
-      color: '#ffffff',
-      scale: 1,
-    },
-  },
-  {
-    id: 'fog',
-    name: 'Fog',
-    pack: 'core',
-    icon: 'cloud',
-    description: 'Layered movement with soft edges',
-    defaultSettings: {
-      speed: 20,
-      intensity: 60,
-      density: 70,
-      color: '#d4d4d4',
-      scale: 1.5,
-    },
-  },
+  // ===== CORE PACK - Light Sources =====
   {
     id: 'torch',
-    name: 'Torch',
+    name: 'Torch Light',
     pack: 'core',
+    renderMode: 'localized',
     icon: 'flame',
-    description: 'Realistic flicker with warm glow',
+    description: 'Warm flickering light radius',
     defaultSettings: {
       speed: 50,
       intensity: 80,
@@ -107,8 +95,9 @@ export const effectsLibrary: EffectDefinition[] = [
     id: 'campfire',
     name: 'Campfire',
     pack: 'core',
+    renderMode: 'localized',
     icon: 'flame',
-    description: 'Crackling fire with rising sparks',
+    description: 'Large warm glow with spark embers',
     defaultSettings: {
       speed: 45,
       intensity: 85,
@@ -121,25 +110,232 @@ export const effectsLibrary: EffectDefinition[] = [
     },
   },
   {
-    id: 'water-ripples',
-    name: 'Water Ripples',
+    id: 'lantern',
+    name: 'Lantern',
     pack: 'core',
+    renderMode: 'localized',
+    icon: 'lightbulb',
+    description: 'Steady warm glow with subtle flicker',
+    defaultSettings: {
+      speed: 30,
+      intensity: 70,
+      density: 25,
+      color: '#fbbf24',
+      secondaryColor: '#f59e0b',
+      flickerRate: 20,
+      glowIntensity: 55,
+      scale: 0.8,
+    },
+  },
+  {
+    id: 'candles',
+    name: 'Candles',
+    pack: 'core',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Small dancing flames with soft glow',
+    defaultSettings: {
+      speed: 40,
+      intensity: 50,
+      density: 20,
+      color: '#fcd34d',
+      secondaryColor: '#fbbf24',
+      flickerRate: 80,
+      glowIntensity: 40,
+      scale: 0.5,
+    },
+  },
+  {
+    id: 'brazier',
+    name: 'Brazier',
+    pack: 'core',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Intense fire with large light radius',
+    defaultSettings: {
+      speed: 55,
+      intensity: 95,
+      density: 60,
+      color: '#ef4444',
+      secondaryColor: '#f97316',
+      flickerRate: 50,
+      glowIntensity: 85,
+      scale: 1.5,
+    },
+  },
+  {
+    id: 'magical-light',
+    name: 'Magical Light',
+    pack: 'core',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Cool ethereal glow with sparkles',
+    defaultSettings: {
+      speed: 25,
+      intensity: 75,
+      density: 35,
+      color: '#60a5fa',
+      secondaryColor: '#c084fc',
+      flickerRate: 30,
+      glowIntensity: 70,
+      scale: 1,
+    },
+  },
+
+  // ===== ATMOSPHERIC PACK - Weather & Environment =====
+  {
+    id: 'rain',
+    name: 'Rain',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Falling rain with ground ripples',
+    defaultSettings: {
+      speed: 70,
+      intensity: 60,
+      density: 50,
+      color: '#a8c8e8',
+      direction: 180,
+      scale: 1,
+    },
+  },
+  {
+    id: 'snow',
+    name: 'Snowfall',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Gentle drifting snowflakes',
+    defaultSettings: {
+      speed: 30,
+      intensity: 50,
+      density: 40,
+      color: '#ffffff',
+      scale: 1,
+    },
+  },
+  {
+    id: 'fog',
+    name: 'Fog',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Thick rolling fog banks',
+    defaultSettings: {
+      speed: 15,
+      intensity: 70,
+      density: 80,
+      color: '#d4d4d4',
+      scale: 2,
+    },
+  },
+  {
+    id: 'mist',
+    name: 'Mist',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Light ethereal haze',
+    defaultSettings: {
+      speed: 10,
+      intensity: 40,
+      density: 50,
+      color: '#e5e7eb',
+      scale: 1.5,
+    },
+  },
+  {
+    id: 'wind',
+    name: 'Wind',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'wind',
+    description: 'Visible gusts with debris',
+    defaultSettings: {
+      speed: 60,
+      intensity: 40,
+      density: 25,
+      color: '#e8e8e8',
+      direction: 90,
+      scale: 1,
+    },
+  },
+  {
+    id: 'lightning-storm',
+    name: 'Lightning Storm',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'zap',
+    description: 'Dramatic sky flashes with rain',
+    defaultSettings: {
+      speed: 90,
+      intensity: 100,
+      density: 15,
+      color: '#e8e8ff',
+      secondaryColor: '#a8a8ff',
+      flickerRate: 95,
+      scale: 1,
+    },
+  },
+  {
+    id: 'dust-storm',
+    name: 'Dust Storm',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'wind',
+    description: 'Swirling sand and dust particles',
+    defaultSettings: {
+      speed: 75,
+      intensity: 65,
+      density: 70,
+      color: '#d4a574',
+      secondaryColor: '#a8845c',
+      direction: 45,
+      scale: 1.2,
+    },
+  },
+  {
+    id: 'blizzard',
+    name: 'Blizzard',
+    pack: 'atmospheric',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Intense snow with howling wind',
+    defaultSettings: {
+      speed: 85,
+      intensity: 80,
+      density: 75,
+      color: '#ffffff',
+      secondaryColor: '#e0f2fe',
+      direction: 60,
+      scale: 1,
+    },
+  },
+
+  // ===== TERRAIN PACK - Ground & Surface =====
+  {
+    id: 'water-ripples',
+    name: 'Water Surface',
+    pack: 'terrain',
+    renderMode: 'terrain',
     icon: 'droplets',
-    description: 'Concentric ripples expanding outward',
+    description: 'Gentle rippling water surface',
     defaultSettings: {
       speed: 40,
       intensity: 50,
       density: 30,
       color: '#4da6ff',
+      secondaryColor: '#87ceeb',
       scale: 1,
     },
   },
   {
     id: 'waterfall',
     name: 'Waterfall',
-    pack: 'core',
+    pack: 'terrain',
+    renderMode: 'terrain',
     icon: 'waves',
-    description: 'Cascading water with mist',
+    description: 'Cascading water with spray mist',
     defaultSettings: {
       speed: 80,
       intensity: 70,
@@ -150,47 +346,68 @@ export const effectsLibrary: EffectDefinition[] = [
     },
   },
   {
-    id: 'lightning',
-    name: 'Lightning',
-    pack: 'core',
-    icon: 'zap',
-    description: 'Dramatic flashes with branching bolts',
+    id: 'lava-flow',
+    name: 'Lava Flow',
+    pack: 'terrain',
+    renderMode: 'terrain',
+    icon: 'flame',
+    description: 'Molten rock with glowing cracks',
     defaultSettings: {
-      speed: 90,
-      intensity: 100,
-      density: 10,
-      color: '#e8e8ff',
-      secondaryColor: '#a8a8ff',
-      flickerRate: 95,
+      speed: 20,
+      intensity: 90,
+      density: 70,
+      color: '#ff4500',
+      secondaryColor: '#ff8c00',
+      glowIntensity: 85,
       scale: 1,
     },
   },
   {
-    id: 'smoke',
-    name: 'Smoke',
-    pack: 'core',
-    icon: 'cloud',
-    description: 'Billowing smoke rising and dispersing',
+    id: 'swamp-bubbles',
+    name: 'Swamp Bubbles',
+    pack: 'terrain',
+    renderMode: 'terrain',
+    icon: 'droplets',
+    description: 'Murky water with rising bubbles',
     defaultSettings: {
       speed: 25,
-      intensity: 50,
-      density: 60,
-      color: '#4a4a4a',
+      intensity: 45,
+      density: 35,
+      color: '#4a5c4a',
+      secondaryColor: '#6b8e6b',
       scale: 1,
     },
   },
   {
-    id: 'wind',
-    name: 'Wind',
-    pack: 'core',
-    icon: 'wind',
-    description: 'Visible gusts with debris particles',
+    id: 'ice-crystals',
+    name: 'Ice Crystals',
+    pack: 'terrain',
+    renderMode: 'terrain',
+    icon: 'gem',
+    description: 'Frozen surface with shimmer',
     defaultSettings: {
-      speed: 60,
-      intensity: 40,
-      density: 20,
-      color: '#e8e8e8',
-      direction: 90,
+      speed: 15,
+      intensity: 60,
+      density: 40,
+      color: '#b3e0ff',
+      secondaryColor: '#ffffff',
+      glowIntensity: 40,
+      scale: 1,
+    },
+  },
+  {
+    id: 'smoke-vents',
+    name: 'Smoke Vents',
+    pack: 'terrain',
+    renderMode: 'terrain',
+    icon: 'cloud',
+    description: 'Rising smoke from ground cracks',
+    defaultSettings: {
+      speed: 30,
+      intensity: 55,
+      density: 45,
+      color: '#4a4a4a',
+      secondaryColor: '#6b6b6b',
       scale: 1,
     },
   },
@@ -198,10 +415,11 @@ export const effectsLibrary: EffectDefinition[] = [
   // ===== FANTASY PACK =====
   {
     id: 'arcane-circles',
-    name: 'Arcane Circles',
+    name: 'Arcane Circle',
     pack: 'fantasy',
+    renderMode: 'localized',
     icon: 'circle',
-    description: 'Rotating sigils with glowing runes',
+    description: 'Rotating magical sigil',
     defaultSettings: {
       speed: 30,
       intensity: 70,
@@ -214,10 +432,11 @@ export const effectsLibrary: EffectDefinition[] = [
   },
   {
     id: 'portals',
-    name: 'Portals',
+    name: 'Portal',
     pack: 'fantasy',
+    renderMode: 'localized',
     icon: 'circle-dot',
-    description: 'Swirling energy with layered glow',
+    description: 'Swirling dimensional gateway',
     defaultSettings: {
       speed: 50,
       intensity: 90,
@@ -229,27 +448,12 @@ export const effectsLibrary: EffectDefinition[] = [
     },
   },
   {
-    id: 'magical-crystals',
-    name: 'Magical Crystals',
-    pack: 'fantasy',
-    icon: 'gem',
-    description: 'Pulsing crystals with inner light',
-    defaultSettings: {
-      speed: 40,
-      intensity: 75,
-      density: 30,
-      color: '#22d3ee',
-      secondaryColor: '#f0abfc',
-      glowIntensity: 70,
-      scale: 1,
-    },
-  },
-  {
     id: 'floating-runes',
     name: 'Floating Runes',
     pack: 'fantasy',
+    renderMode: 'localized',
     icon: 'sparkles',
-    description: 'Ancient symbols with magical trails',
+    description: 'Ancient glowing symbols',
     defaultSettings: {
       speed: 25,
       intensity: 60,
@@ -260,27 +464,12 @@ export const effectsLibrary: EffectDefinition[] = [
     },
   },
   {
-    id: 'will-o-wisps',
-    name: 'Will-o-Wisps',
-    pack: 'fantasy',
-    icon: 'sparkle',
-    description: 'Ethereal floating lights',
-    defaultSettings: {
-      speed: 35,
-      intensity: 65,
-      density: 25,
-      color: '#34d399',
-      secondaryColor: '#a78bfa',
-      glowIntensity: 85,
-      scale: 1,
-    },
-  },
-  {
     id: 'divine-light',
     name: 'Divine Light',
     pack: 'fantasy',
+    renderMode: 'localized',
     icon: 'sun',
-    description: 'Heavenly rays with golden particles',
+    description: 'Heavenly rays from above',
     defaultSettings: {
       speed: 20,
       intensity: 80,
@@ -295,8 +484,9 @@ export const effectsLibrary: EffectDefinition[] = [
     id: 'necrotic-corruption',
     name: 'Necrotic Corruption',
     pack: 'fantasy',
+    renderMode: 'terrain',
     icon: 'skull',
-    description: 'Dark tendrils with sickly glow',
+    description: 'Dark spreading corruption',
     defaultSettings: {
       speed: 30,
       intensity: 70,
@@ -311,8 +501,9 @@ export const effectsLibrary: EffectDefinition[] = [
     id: 'spirit-apparitions',
     name: 'Spirit Apparitions',
     pack: 'fantasy',
+    renderMode: 'atmospheric',
     icon: 'ghost',
-    description: 'Translucent spirits fading in and out',
+    description: 'Ghostly shapes drifting by',
     defaultSettings: {
       speed: 20,
       intensity: 50,
@@ -326,10 +517,11 @@ export const effectsLibrary: EffectDefinition[] = [
   // ===== SCI-FI PACK =====
   {
     id: 'holograms',
-    name: 'Holograms',
+    name: 'Hologram',
     pack: 'scifi',
+    renderMode: 'localized',
     icon: 'monitor',
-    description: 'Flickering projections with scanlines',
+    description: 'Flickering digital projection',
     defaultSettings: {
       speed: 60,
       intensity: 70,
@@ -341,28 +533,12 @@ export const effectsLibrary: EffectDefinition[] = [
     },
   },
   {
-    id: 'neon-signs',
-    name: 'Neon Signs',
-    pack: 'scifi',
-    icon: 'lightbulb',
-    description: 'Buzzing neon with occasional flicker',
-    defaultSettings: {
-      speed: 50,
-      intensity: 85,
-      density: 30,
-      color: '#f472b6',
-      secondaryColor: '#06b6d4',
-      flickerRate: 20,
-      glowIntensity: 90,
-      scale: 1,
-    },
-  },
-  {
     id: 'energy-shields',
-    name: 'Energy Shields',
+    name: 'Energy Shield',
     pack: 'scifi',
+    renderMode: 'localized',
     icon: 'shield',
-    description: 'Hexagonal force fields with ripples',
+    description: 'Hexagonal force field',
     defaultSettings: {
       speed: 55,
       intensity: 75,
@@ -375,10 +551,11 @@ export const effectsLibrary: EffectDefinition[] = [
   },
   {
     id: 'data-streams',
-    name: 'Data Streams',
+    name: 'Data Stream',
     pack: 'scifi',
+    renderMode: 'localized',
     icon: 'binary',
-    description: 'Cascading digital characters',
+    description: 'Cascading digital code',
     defaultSettings: {
       speed: 70,
       intensity: 65,
@@ -391,8 +568,9 @@ export const effectsLibrary: EffectDefinition[] = [
     id: 'reactor-core',
     name: 'Reactor Core',
     pack: 'scifi',
+    renderMode: 'localized',
     icon: 'atom',
-    description: 'Pulsing energy with orbiting particles',
+    description: 'Pulsing energy source',
     defaultSettings: {
       speed: 45,
       intensity: 90,
@@ -400,22 +578,6 @@ export const effectsLibrary: EffectDefinition[] = [
       color: '#f97316',
       secondaryColor: '#facc15',
       glowIntensity: 95,
-      scale: 1,
-    },
-  },
-  {
-    id: 'drone-patrols',
-    name: 'Drone Patrols',
-    pack: 'scifi',
-    icon: 'plane',
-    description: 'Small drones with search lights',
-    defaultSettings: {
-      speed: 40,
-      intensity: 55,
-      density: 15,
-      color: '#94a3b8',
-      secondaryColor: '#fef08a',
-      glowIntensity: 50,
       scale: 1,
     },
   },
@@ -428,6 +590,10 @@ export function getEffectsByPack(pack: EffectPack): EffectDefinition[] {
 
 export function getEffectById(id: string): EffectDefinition | undefined {
   return effectsLibrary.find(e => e.id === id)
+}
+
+export function getEffectsByRenderMode(mode: RenderMode): EffectDefinition[] {
+  return effectsLibrary.filter(e => e.renderMode === mode)
 }
 
 export function getAllEffects(): EffectDefinition[] {

@@ -615,6 +615,377 @@ function GenericEffect({ settings, effectId }: { settings: EffectSettings; effec
   )
 }
 
+// Lantern effect - steady warm glow
+function LanternEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes lantern-glow {
+          0%, 100% { opacity: 0.85; transform: scale(1); }
+          50% { opacity: 0.95; transform: scale(1.02); }
+        }
+      `}</style>
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: `radial-gradient(circle, ${settings.color} 0%, ${settings.color}40 40%, transparent 70%)`,
+          animation: `lantern-glow ${3 * (100 / settings.speed)}s ease-in-out infinite`,
+        }}
+      />
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '15%',
+          height: '15%',
+          background: settings.color,
+          boxShadow: `0 0 15px ${settings.color}`,
+        }}
+      />
+    </div>
+  )
+}
+
+// Mist effect - lighter than fog
+function MistEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes mist-drift {
+          0%, 100% { transform: translate(-5%, -5%) scale(1); opacity: 0.25; }
+          50% { transform: translate(5%, 5%) scale(1.1); opacity: 0.4; }
+        }
+      `}</style>
+      <div 
+        className="absolute rounded-full"
+        style={{
+          width: '150%',
+          height: '150%',
+          left: '-25%',
+          top: '-25%',
+          background: `radial-gradient(ellipse, ${settings.color}50 0%, transparent 60%)`,
+          animation: `mist-drift ${8 * (100 / settings.speed)}s ease-in-out infinite`,
+        }}
+      />
+    </div>
+  )
+}
+
+// Lightning Storm - dramatic flashes covering area
+function LightningStormEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes storm-flash {
+          0%, 85%, 100% { opacity: 0; }
+          87%, 89% { opacity: 0.5; }
+          90% { opacity: 0; }
+          92%, 94% { opacity: 0.8; }
+        }
+        @keyframes storm-ripple {
+          0% { transform: scale(0); opacity: 0.5; }
+          100% { transform: scale(2); opacity: 0; }
+        }
+      `}</style>
+      {/* Area flash */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(circle, ${settings.color}, transparent)`,
+          animation: `storm-flash ${4 * (100 / settings.speed)}s ease-in-out infinite`,
+        }}
+      />
+      {/* Rain ripples */}
+      {Array.from({ length: 15 }, (_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full border"
+          style={{
+            left: `${Math.random() * 90}%`,
+            top: `${Math.random() * 90}%`,
+            width: 10,
+            height: 10,
+            borderColor: '#60a5fa40',
+            animation: `storm-ripple 1s ease-out infinite`,
+            animationDelay: `${Math.random() * 2}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Dust Storm - swirling particles
+function DustStormEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  const particles = useMemo(() => 
+    Array.from({ length: 40 }, (_, i) => ({
+      id: i,
+      y: Math.random() * 100,
+      size: 2 + Math.random() * 4,
+      delay: Math.random() * 2,
+      duration: 0.8 + Math.random() * 0.5,
+    })), [])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes dust-blow {
+          0% { transform: translateX(-10%); opacity: 0; }
+          20% { opacity: 0.6; }
+          80% { opacity: 0.6; }
+          100% { transform: translateX(110%); opacity: 0; }
+        }
+        @keyframes dust-haze {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.35; }
+        }
+      `}</style>
+      {/* Haze overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(${settings.direction || 45}deg, transparent, ${settings.color}30, transparent)`,
+          animation: `dust-haze ${3}s ease-in-out infinite`,
+        }}
+      />
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute rounded-full"
+          style={{
+            left: '-5%',
+            top: `${p.y}%`,
+            width: p.size,
+            height: p.size,
+            background: settings.color,
+            animation: `dust-blow ${p.duration * (100 / settings.speed)}s linear infinite`,
+            animationDelay: `${p.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Blizzard - intense snow with wind
+function BlizzardEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  const flakes = useMemo(() => 
+    Array.from({ length: 60 }, (_, i) => ({
+      id: i,
+      y: Math.random() * 100,
+      size: 2 + Math.random() * 4,
+      delay: Math.random() * 1,
+      duration: 0.5 + Math.random() * 0.3,
+    })), [])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes blizzard-blow {
+          0% { transform: translate(-10%, 0); opacity: 0; }
+          20% { opacity: 0.8; }
+          80% { opacity: 0.8; }
+          100% { transform: translate(110%, 10%); opacity: 0; }
+        }
+        @keyframes blizzard-whiteout {
+          0%, 100% { opacity: 0.15; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
+      {/* Whiteout overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(${settings.direction || 60}deg, transparent, ${settings.color}40, transparent)`,
+          animation: `blizzard-whiteout 2s ease-in-out infinite`,
+        }}
+      />
+      {flakes.map((f) => (
+        <div
+          key={f.id}
+          className="absolute rounded-full"
+          style={{
+            left: '-5%',
+            top: `${f.y}%`,
+            width: f.size,
+            height: f.size,
+            background: settings.color,
+            animation: `blizzard-blow ${f.duration * (100 / settings.speed)}s linear infinite`,
+            animationDelay: `${f.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Lava Flow - molten rock with glowing cracks
+function LavaFlowEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes lava-glow {
+          0%, 100% { opacity: 0.7; }
+          50% { opacity: 1; }
+        }
+        @keyframes lava-crack {
+          0%, 100% { opacity: 0.6; filter: brightness(1); }
+          50% { opacity: 1; filter: brightness(1.3); }
+        }
+      `}</style>
+      {/* Base glow */}
+      <div
+        className="absolute inset-0 rounded-lg"
+        style={{
+          background: `radial-gradient(circle, ${settings.color} 0%, ${settings.secondaryColor || '#ff8c00'}60 50%, transparent 80%)`,
+          animation: `lava-glow ${2 * (100 / settings.speed)}s ease-in-out infinite`,
+        }}
+      />
+      {/* Glowing cracks */}
+      {Array.from({ length: 6 }, (_, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: `${15 + (i % 3) * 30}%`,
+            top: `${20 + Math.floor(i / 3) * 40}%`,
+            width: 3,
+            height: 15,
+            background: settings.secondaryColor || '#ff8c00',
+            transform: `rotate(${i * 30}deg)`,
+            boxShadow: `0 0 10px ${settings.color}`,
+            animation: `lava-crack ${1.5}s ease-in-out infinite`,
+            animationDelay: `${i * 0.2}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Swamp Bubbles - murky rising bubbles
+function SwampBubblesEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  const bubbles = useMemo(() => 
+    Array.from({ length: 8 }, (_, i) => ({
+      id: i,
+      x: 15 + Math.random() * 70,
+      size: 6 + Math.random() * 10,
+      delay: Math.random() * 3,
+      duration: 2 + Math.random() * 1,
+    })), [])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes bubble-rise {
+          0% { transform: scale(0.5); opacity: 0.6; }
+          100% { transform: scale(1.5); opacity: 0; }
+        }
+      `}</style>
+      {/* Murky base */}
+      <div
+        className="absolute inset-2 rounded-lg"
+        style={{
+          background: `${settings.color}30`,
+        }}
+      />
+      {bubbles.map((b) => (
+        <div
+          key={b.id}
+          className="absolute rounded-full border"
+          style={{
+            left: `${b.x}%`,
+            bottom: '20%',
+            width: b.size,
+            height: b.size,
+            borderColor: settings.secondaryColor || '#6b8e6b',
+            animation: `bubble-rise ${b.duration * (100 / settings.speed)}s ease-out infinite`,
+            animationDelay: `${b.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Ice Crystals - frozen shimmer
+function IceCrystalsEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes ice-shimmer {
+          0%, 100% { opacity: 0.4; filter: brightness(1); }
+          50% { opacity: 0.7; filter: brightness(1.2); }
+        }
+      `}</style>
+      {/* Frozen surface */}
+      <div
+        className="absolute inset-2 rounded-lg"
+        style={{
+          background: `linear-gradient(135deg, ${settings.color}30, ${settings.secondaryColor || '#ffffff'}50, ${settings.color}30)`,
+        }}
+      />
+      {/* Crystal points */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: `${15 + (i % 4) * 22}%`,
+            top: `${20 + Math.floor(i / 4) * 45}%`,
+            width: 8,
+            height: 8,
+            background: settings.secondaryColor || '#ffffff',
+            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+            boxShadow: `0 0 8px ${settings.color}`,
+            animation: `ice-shimmer ${2}s ease-in-out infinite`,
+            animationDelay: `${i * 0.2}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Smoke Vents - rising from ground cracks
+function SmokeVentsEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
+  const vents = useMemo(() => [
+    { x: 25, delay: 0 },
+    { x: 50, delay: 0.5 },
+    { x: 75, delay: 1 },
+  ], [])
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes vent-smoke {
+          0% { transform: scale(0.5) translateY(0); opacity: 0.5; }
+          100% { transform: scale(2) translateY(-30px); opacity: 0; }
+        }
+      `}</style>
+      {vents.map((v, i) => (
+        <div key={i} className="absolute" style={{ left: `${v.x}%`, bottom: '30%' }}>
+          {[0, 0.3, 0.6].map((d, j) => (
+            <div
+              key={j}
+              className="absolute rounded-full"
+              style={{
+                width: 20,
+                height: 20,
+                marginLeft: -10,
+                background: `radial-gradient(circle, ${settings.color}, transparent)`,
+                animation: `vent-smoke ${2 * (100 / settings.speed)}s ease-out infinite`,
+                animationDelay: `${v.delay + d}s`,
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Main renderer component
 export function PremiumEffectRenderer({ effectId, settings, width, height }: PremiumEffectRendererProps) {
   const effectDef = getEffectById(effectId)
@@ -624,18 +995,41 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
   } as EffectSettings
 
   const effectComponents: Record<string, React.FC<{ settings: EffectSettings; width: number; height: number }>> = {
+    // Core Pack
+    'torch': TorchEffect,
+    'campfire': CampfireEffect,
+    'lantern': LanternEffect,
+    'candles': TorchEffect, // Similar to torch
+    'brazier': CampfireEffect, // Similar to campfire
+    'magical-light': TorchEffect,
+    // Atmospheric Pack
     'rain': RainEffect,
     'snow': SnowEffect,
     'fog': FogEffect,
-    'torch': TorchEffect,
-    'campfire': CampfireEffect,
+    'mist': MistEffect,
+    'wind': WindEffect,
+    'lightning-storm': LightningStormEffect,
+    'dust-storm': DustStormEffect,
+    'blizzard': BlizzardEffect,
+    // Terrain Pack
     'water-ripples': WaterRipplesEffect,
     'waterfall': WaterfallEffect,
-    'lightning': LightningEffect,
-    'smoke': SmokeEffect,
-    'wind': WindEffect,
+    'lava-flow': LavaFlowEffect,
+    'swamp-bubbles': SwampBubblesEffect,
+    'ice-crystals': IceCrystalsEffect,
+    'smoke-vents': SmokeVentsEffect,
+    // Fantasy Pack
     'arcane-circles': ArcaneCirclesEffect,
     'portals': PortalsEffect,
+    'floating-runes': ArcaneCirclesEffect,
+    'divine-light': TorchEffect,
+    'necrotic-corruption': SmokeEffect,
+    'spirit-apparitions': FogEffect,
+    // Sci-Fi Pack
+    'holograms': PortalsEffect,
+    'energy-shields': ArcaneCirclesEffect,
+    'data-streams': RainEffect,
+    'reactor-core': CampfireEffect,
   }
 
   const EffectComponent = effectComponents[effectId]

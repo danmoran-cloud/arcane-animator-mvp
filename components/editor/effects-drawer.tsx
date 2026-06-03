@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -16,7 +16,9 @@ import {
 
 // Simple icon map for pack headers
 const packIconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  'flame': Flame,
   'cloud': Cloud,
+  'mountain': Mountain,
   'sparkles': Sparkles,
   'cpu': Cpu,
 }
@@ -612,32 +614,374 @@ function MiniDronePatrol() {
   )
 }
 
+// ===== NEW EFFECTS FOR REORGANIZED PACKS =====
+
+// Lantern: steady warm glow
+function MiniLantern() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '80%',
+          height: '80%',
+          background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b40 50%, transparent 70%)',
+          animation: 'miniLightFlicker 0.5s ease-in-out infinite',
+        }}
+      />
+      <div
+        className="absolute w-2 h-2 rounded-full"
+        style={{
+          background: '#fcd34d',
+          boxShadow: '0 0 4px #fbbf24',
+        }}
+      />
+    </div>
+  )
+}
+
+// Candles: small multiple flames
+function MiniCandles() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden gap-1">
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: '15%',
+            height: '15%',
+            left: `${25 + i * 25}%`,
+            top: '40%',
+            background: 'radial-gradient(circle, #fcd34d, #fbbf24)',
+            boxShadow: '0 0 6px #fbbf24',
+            animation: 'miniLightFlicker 0.2s ease-in-out infinite',
+            animationDelay: `${i * 0.1}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Brazier: intense large fire glow
+function MiniBrazier() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'radial-gradient(circle, #ef4444 0%, #f9731650 40%, transparent 70%)',
+          animation: 'miniFireGlow 0.3s ease-in-out infinite',
+        }}
+      />
+      <div
+        className="absolute w-3 h-3 rounded-full"
+        style={{
+          background: 'radial-gradient(circle, #fbbf24, #ef4444)',
+          boxShadow: '0 0 8px #f97316',
+          animation: 'miniLightFlicker 0.15s ease-in-out infinite',
+        }}
+      />
+    </div>
+  )
+}
+
+// Magical Light: cool ethereal glow
+function MiniMagicalLight() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '85%',
+          height: '85%',
+          background: 'radial-gradient(circle, #60a5fa40 0%, #c084fc30 50%, transparent 70%)',
+          animation: 'miniPortalPulse 2s ease-in-out infinite',
+        }}
+      />
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-blue-300"
+          style={{
+            left: `${30 + i * 20}%`,
+            top: `${30 + (i % 2) * 30}%`,
+            animation: 'miniWispDrift 2s ease-in-out infinite',
+            animationDelay: `${i * 0.3}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Mist: lighter than fog
+function MiniMist() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div 
+        className="absolute rounded-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          background: 'radial-gradient(circle, #e5e7eb40 0%, transparent 60%)',
+          animation: 'miniFogDrift 4s ease-in-out infinite',
+        }}
+      />
+    </div>
+  )
+}
+
+// Lightning Storm: dramatic flashes with rain
+function MiniLightningStorm() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0 rounded"
+        style={{
+          background: 'radial-gradient(circle, #e8e8ff, #a0a0ff40, transparent)',
+          animation: 'miniLightningFlash 2s ease-in-out infinite',
+        }}
+      />
+      {/* Rain ripples */}
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full border border-blue-400/30"
+          style={{
+            left: `${20 + i * 30}%`,
+            top: `${30 + (i % 2) * 30}%`,
+            width: '4px',
+            height: '4px',
+            animation: 'miniRipple 1s ease-out infinite',
+            animationDelay: `${i * 0.3}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Dust Storm: swirling sand
+function MiniDustStorm() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {[...Array(6)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full"
+          style={{
+            width: '3px',
+            height: '3px',
+            background: '#d4a574',
+            left: '-10%',
+            top: `${15 + i * 15}%`,
+            animation: 'miniWindBlow 0.6s linear infinite',
+            animationDelay: `${i * 0.1}s`,
+          }}
+        />
+      ))}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(90deg, transparent, #d4a57420, transparent)',
+          animation: 'miniFogDrift 2s ease-in-out infinite',
+        }}
+      />
+    </div>
+  )
+}
+
+// Blizzard: intense snow with wind
+function MiniBlizzard() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {[...Array(8)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 rounded-full bg-white/80"
+          style={{
+            left: '-10%',
+            top: `${10 + i * 12}%`,
+            animation: 'miniWindBlow 0.4s linear infinite',
+            animationDelay: `${i * 0.05}s`,
+          }}
+        />
+      ))}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'linear-gradient(60deg, transparent, #ffffff20, transparent)',
+          animation: 'miniFogDrift 1.5s ease-in-out infinite',
+        }}
+      />
+    </div>
+  )
+}
+
+// Lava Flow: molten rock
+function MiniLavaFlow() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: 'radial-gradient(circle, #ff4500 0%, #ff8c0060 50%, transparent 70%)',
+          animation: 'miniFireGlow 1s ease-in-out infinite',
+        }}
+      />
+      {/* Glowing cracks */}
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute bg-orange-400"
+          style={{
+            width: '2px',
+            height: '8px',
+            left: `${25 + i * 25}%`,
+            top: '35%',
+            transform: `rotate(${i * 45}deg)`,
+            boxShadow: '0 0 4px #ff4500',
+            animation: 'miniLightFlicker 0.5s ease-in-out infinite',
+            animationDelay: `${i * 0.2}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Swamp Bubbles: murky rising bubbles
+function MiniSwampBubbles() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-1 rounded"
+        style={{
+          background: '#4a5c4a40',
+        }}
+      />
+      {[...Array(3)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full border border-green-700/50"
+          style={{
+            width: '4px',
+            height: '4px',
+            left: `${25 + i * 25}%`,
+            bottom: '20%',
+            animation: 'miniSmokeExpand 2s ease-out infinite',
+            animationDelay: `${i * 0.5}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Ice Crystals: frozen shimmer
+function MiniIceCrystals() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute inset-1 rounded"
+        style={{
+          background: 'linear-gradient(135deg, #b3e0ff20, #ffffff40, #b3e0ff20)',
+        }}
+      />
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            width: '3px',
+            height: '3px',
+            left: `${20 + (i % 2) * 50}%`,
+            top: `${25 + Math.floor(i / 2) * 40}%`,
+            background: '#ffffff',
+            boxShadow: '0 0 4px #b3e0ff',
+            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
+            animation: 'miniCrystalGlow 2s ease-in-out infinite',
+            animationDelay: `${i * 0.3}s`,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+// Smoke Vents: rising from ground
+function MiniSmokeVents() {
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {[...Array(2)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute"
+          style={{
+            left: `${30 + i * 30}%`,
+            bottom: '20%',
+          }}
+        >
+          {[...Array(2)].map((_, j) => (
+            <div
+              key={j}
+              className="absolute w-2 h-2 rounded-full"
+              style={{
+                background: 'radial-gradient(circle, #4a4a4a60, transparent)',
+                animation: 'miniSmokeExpand 1.5s ease-out infinite',
+                animationDelay: `${i * 0.3 + j * 0.5}s`,
+              }}
+            />
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Map effect IDs to their preview components
-const effectPreviews: Record<EffectId, React.FC> = {
+const effectPreviews: Partial<Record<EffectId, React.FC>> = {
+  // Core Pack
+  'torch': MiniTorch,
+  'campfire': MiniCampfire,
+  'lantern': MiniLantern,
+  'candles': MiniCandles,
+  'brazier': MiniBrazier,
+  'magical-light': MiniMagicalLight,
+  // Atmospheric Pack
   'rain': MiniRain,
   'snow': MiniSnow,
   'fog': MiniFog,
-  'torch': MiniTorch,
-  'campfire': MiniCampfire,
+  'mist': MiniMist,
+  'wind': MiniWind,
+  'lightning-storm': MiniLightningStorm,
+  'dust-storm': MiniDustStorm,
+  'blizzard': MiniBlizzard,
+  // Terrain Pack
   'water-ripples': MiniWaterRipples,
   'waterfall': MiniWaterfall,
-  'lightning': MiniLightning,
-  'smoke': MiniSmoke,
-  'wind': MiniWind,
+  'lava-flow': MiniLavaFlow,
+  'swamp-bubbles': MiniSwampBubbles,
+  'ice-crystals': MiniIceCrystals,
+  'smoke-vents': MiniSmokeVents,
+  // Fantasy Pack
   'arcane-circles': MiniArcaneCircle,
   'portals': MiniPortal,
-  'magical-crystals': MiniCrystal,
   'floating-runes': MiniFloatingRunes,
-  'will-o-wisps': MiniWillOWisps,
   'divine-light': MiniDivineLight,
   'necrotic-corruption': MiniNecrotic,
   'spirit-apparitions': MiniSpirits,
+  // Sci-Fi Pack
   'holograms': MiniHologram,
-  'neon-signs': MiniNeonSign,
   'energy-shields': MiniEnergyShield,
   'data-streams': MiniDataStream,
   'reactor-core': MiniReactorCore,
-  'drone-patrols': MiniDronePatrol,
 }
 
 interface EffectsDrawerProps {
