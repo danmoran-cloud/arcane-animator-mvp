@@ -250,3 +250,145 @@
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.50 0.08 60);
 }
+
+/* Mini Effect Preview Animations */
+@keyframes miniRainFall {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(300%); opacity: 0; }
+}
+
+@keyframes miniSnowFall {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(400%) translateX(10px); opacity: 0; }
+}
+
+@keyframes miniFogDrift {
+  0%, 100% { transform: translateX(-30%); opacity: 0.4; }
+  50% { transform: translateX(30%); opacity: 0.7; }
+}
+
+@keyframes miniFlicker {
+  0% { transform: scaleY(1) scaleX(1); opacity: 0.9; }
+  100% { transform: scaleY(1.1) scaleX(0.95); opacity: 1; }
+}
+
+@keyframes miniSparkRise {
+  0% { transform: translateY(0); opacity: 1; }
+  100% { transform: translateY(-20px) translateX(5px); opacity: 0; }
+}
+
+@keyframes miniRipple {
+  0% { transform: scale(0.5); opacity: 0.8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+@keyframes miniWaterfallFlow {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 10px; }
+}
+
+@keyframes miniLightningFlash {
+  0%, 90%, 100% { background-color: transparent; }
+  92%, 94% { background-color: rgba(255, 255, 255, 0.3); }
+}
+
+@keyframes miniBoltFlash {
+  0%, 90%, 100% { opacity: 0; }
+  92%, 94% { opacity: 1; }
+}
+
+@keyframes miniSmokeRise {
+  0% { transform: translateY(0) scale(1); opacity: 0.6; }
+  100% { transform: translateY(-20px) scale(1.5); opacity: 0; }
+}
+
+@keyframes miniWindBlow {
+  0% { transform: translateX(0); opacity: 0; }
+  20% { opacity: 0.8; }
+  80% { opacity: 0.8; }
+  100% { transform: translateX(150%); opacity: 0; }
+}
+
+@keyframes miniRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes miniPortalPulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+
+@keyframes miniCrystalGlow {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+
+@keyframes miniRuneFloat {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(-5px); opacity: 1; }
+}
+
+@keyframes miniWispFloat {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(3px, -3px); }
+  50% { transform: translate(0, -5px); }
+  75% { transform: translate(-3px, -2px); }
+}
+
+@keyframes miniDivineRays {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes miniRayShimmer {
+  0%, 100% { opacity: 0.3; transform: scaleY(0.8); }
+  50% { opacity: 0.7; transform: scaleY(1); }
+}
+
+@keyframes miniNecroticPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.1); }
+}
+
+@keyframes miniSpiritFade {
+  0%, 100% { opacity: 0.2; transform: translateY(0); }
+  50% { opacity: 0.6; transform: translateY(-5px); }
+}
+
+@keyframes miniHoloFlicker {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 0.4; }
+  52% { opacity: 0.9; }
+}
+
+@keyframes miniNeonBuzz {
+  0% { filter: brightness(1); }
+  100% { filter: brightness(1.2); }
+}
+
+@keyframes miniShieldPulse {
+  0%, 100% { transform: scale(1); opacity: 0.6; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+@keyframes miniDataFall {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(500%); opacity: 0; }
+}
+
+@keyframes miniReactorPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.2); filter: brightness(1.3); }
+}
+
+@keyframes miniDroneFly {
+  0% { left: -20%; }
+  100% { left: 120%; }
+}
