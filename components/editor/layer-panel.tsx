@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { 
-  Eye, EyeOff, Lock, Unlock, GripVertical, Trash2, Copy,
+  Eye, EyeOff, Lock, Unlock, Link, Unlink, GripVertical, Trash2, Copy,
   Flame, Cloud, Snowflake, Droplets, Waves, Zap, Wind,
   Sparkles, CircleDot, Gem, Sun, Skull, Ghost,
   Monitor, Lightbulb, Shield, Binary, Atom, Plane, Image, Map
@@ -107,15 +107,16 @@ function LayerRow({
         )}
       </button>
       
-      {/* Lock */}
+      {/* Link - linked layers move together */}
       <button
         onClick={(e) => { e.stopPropagation(); onToggleLock() }}
         className="p-0.5 hover:bg-muted rounded"
+        title={layer.locked ? "Linked (moves with other linked layers)" : "Not linked"}
       >
         {layer.locked ? (
-          <Lock className="w-3 h-3 text-primary" />
+          <Link className="w-3 h-3 text-primary" />
         ) : (
-          <Unlock className="w-3 h-3 text-muted-foreground/50" />
+          <Unlink className="w-3 h-3 text-muted-foreground/50" />
         )}
       </button>
       

@@ -19,6 +19,7 @@ type EditorAction =
   | { type: 'ADD_LAYER'; layer: Layer }
   | { type: 'REMOVE_LAYER'; layerId: string }
   | { type: 'UPDATE_LAYER'; layerId: string; updates: Partial<Layer> }
+  | { type: 'MOVE_LAYER'; layerId: string; deltaX: number; deltaY: number }
   | { type: 'SELECT_LAYER'; layerId: string | null }
   | { type: 'DUPLICATE_LAYER'; layerId: string }
   | { type: 'SET_ZOOM'; zoom: number }
@@ -118,6 +119,44 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         },
       }
     
+    case 'MOVE_LAYER':
+      if (!state.project) return state
+      const movedLayer = state.project.layers.find(l => l.id === action.layerId)
+      if (!movedLayer) return state
+      
+      // If the moved layer is locked, move ALL locked layers together
+      // If not locked, just move this layer
+      return {
+        ...state,
+        project: {
+          ...state.project,
+          layers: state.project.layers.map(l => {
+            // If moving a locked layer, move all other locked layers too
+            if (movedLayer.locked && l.locked) {
+              return {
+                ...l,
+                position: {
+                  x: l.position.x + action.deltaX,
+                  y: l.position.y + action.deltaY,
+                }
+              }
+            }
+            // If moving an unlocked layer, only move that one
+            if (l.id === action.layerId && !movedLayer.locked) {
+              return {
+                ...l,
+                position: {
+                  x: l.position.x + action.deltaX,
+                  y: l.position.y + action.deltaY,
+                }
+              }
+            }
+            return l
+          }),
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    
     case 'SELECT_LAYER':
       return {
         ...state,
@@ -204,6 +243,7 @@ interface EditorContextType {
   addEffectLayer: (effect: EffectDefinition) => void
   selectLayer: (layerId: string | null) => void
   updateLayer: (layerId: string, updates: Partial<Layer>) => void
+  moveLayer: (layerId: string, deltaX: number, deltaY: number) => void
   removeLayer: (layerId: string) => void
   duplicateLayer: (layerId: string) => void
 }
@@ -287,6 +327,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'UPDATE_LAYER', layerId, updates })
   }
 
+  const moveLayer = (layerId: string, deltaX: number, deltaY: number) => {
+    dispatch({ type: 'MOVE_LAYER', layerId, deltaX, deltaY })
+  }
+
   const removeLayer = (layerId: string) => {
     dispatch({ type: 'REMOVE_LAYER', layerId })
   }
@@ -308,6 +352,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         addEffectLayer,
         selectLayer,
         updateLayer,
+        moveLayer,
         removeLayer,
         duplicateLayer,
       }}

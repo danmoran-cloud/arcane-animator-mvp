@@ -19,7 +19,7 @@ interface BaseLayer {
   rotation: number
   opacity: number
   visible: boolean
-  locked: boolean
+  locked: boolean      // When true, this layer moves with all other locked layers
   zIndex: number
 }
 

@@ -154,9 +154,9 @@ function EffectLayerRenderer({
   return (
     <div
       className={cn(
-        "absolute overflow-hidden rounded-lg transition-shadow",
+        "absolute overflow-hidden rounded-lg transition-shadow cursor-move",
         isSelected && "ring-2 ring-accent shadow-[0_0_24px_rgba(100,150,255,0.5)]",
-        !layer.locked && "cursor-move"
+        layer.locked && "ring-1 ring-primary/30" // Show subtle indicator for linked layers
       )}
       style={{
         left: layer.position.x,
@@ -166,14 +166,13 @@ function EffectLayerRenderer({
         transform: `rotate(${layer.rotation}deg)`,
         opacity: layer.opacity,
         zIndex: layer.zIndex,
-        pointerEvents: layer.locked ? 'none' : 'auto',
       }}
       onClick={(e) => {
         e.stopPropagation()
         onSelect()
       }}
       onMouseDown={(e) => {
-        if (!layer.locked && e.button === 0) {
+        if (e.button === 0) {
           e.stopPropagation()
           onSelect()
           onDragStart(e)
@@ -219,9 +218,9 @@ function ImageLayerRenderer({
   return (
     <div
       className={cn(
-        "absolute",
+        "absolute cursor-move",
         isSelected && "ring-2 ring-accent shadow-[0_0_24px_rgba(100,150,255,0.5)]",
-        !layer.locked && "cursor-move"
+        layer.locked && "ring-1 ring-primary/30" // Show subtle indicator for linked layers
       )}
       style={{
         left: layer.position.x,
@@ -231,14 +230,13 @@ function ImageLayerRenderer({
         transform: `rotate(${layer.rotation}deg)`,
         opacity: layer.opacity,
         zIndex: layer.zIndex,
-        pointerEvents: layer.locked ? 'none' : 'auto',
       }}
       onClick={(e) => {
         e.stopPropagation()
         onSelect()
       }}
       onMouseDown={(e) => {
-        if (!layer.locked && e.button === 0) {
+        if (e.button === 0) {
           e.stopPropagation()
           onSelect()
           onDragStart(e)
@@ -300,7 +298,7 @@ function GridOverlay({ gridSize, canvasSize }: { gridSize: number; canvasSize: {
 }
 
 export function MapCanvas() {
-  const { state, dispatch, addMapLayer, selectLayer, updateLayer } = useEditor()
+  const { state, dispatch, addMapLayer, selectLayer, updateLayer, moveLayer } = useEditor()
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -309,11 +307,11 @@ export function MapCanvas() {
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 })
   
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null)
-  const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 })
-  const [layerStartPos, setLayerStartPos] = useState<Position>({ x: 0, y: 0 })
+  const [lastDragPos, setLastDragPos] = useState<Position>({ x: 0, y: 0 })
   
   const [resizing, setResizing] = useState<{ layerId: string; corner: string } | null>(null)
   const [resizeStart, setResizeStart] = useState<Position>({ x: 0, y: 0 })
+  const [layerStartPos, setLayerStartPos] = useState<Position>({ x: 0, y: 0 })
   const [layerStartSize, setLayerStartSize] = useState({ width: 0, height: 0 })
   
   const [rotating, setRotating] = useState<string | null>(null)
@@ -393,11 +391,10 @@ export function MapCanvas() {
   // Layer drag start
   const handleLayerDragStart = (e: React.MouseEvent, layerId: string) => {
     const layer = state.project?.layers.find(l => l.id === layerId)
-    if (!layer || layer.locked) return
+    if (!layer) return
 
     setDraggedLayerId(layerId)
-    setDragStart({ x: e.clientX, y: e.clientY })
-    setLayerStartPos({ ...layer.position })
+    setLastDragPos({ x: e.clientX, y: e.clientY })
     dispatch({ type: 'SET_DRAGGING', isDragging: true })
   }
 
@@ -438,15 +435,12 @@ export function MapCanvas() {
         } 
       })
     } else if (draggedLayerId) {
-      const deltaX = (e.clientX - dragStart.x) / state.zoom
-      const deltaY = (e.clientY - dragStart.y) / state.zoom
+      const deltaX = (e.clientX - lastDragPos.x) / state.zoom
+      const deltaY = (e.clientY - lastDragPos.y) / state.zoom
       
-      updateLayer(draggedLayerId, {
-        position: {
-          x: layerStartPos.x + deltaX,
-          y: layerStartPos.y + deltaY,
-        }
-      })
+      // moveLayer handles linked layers automatically
+      moveLayer(draggedLayerId, deltaX, deltaY)
+      setLastDragPos({ x: e.clientX, y: e.clientY })
     } else if (resizing) {
       const deltaX = (e.clientX - resizeStart.x) / state.zoom
       const deltaY = (e.clientY - resizeStart.y) / state.zoom
@@ -496,7 +490,7 @@ export function MapCanvas() {
       
       updateLayer(rotating, { rotation: (degrees + 360) % 360 })
     }
-  }, [isPanning, panStart, draggedLayerId, dragStart, layerStartPos, resizing, resizeStart, layerStartSize, rotating, rotateCenter, state.zoom, state.panOffset, dispatch, updateLayer])
+  }, [isPanning, panStart, draggedLayerId, lastDragPos, resizing, resizeStart, layerStartPos, layerStartSize, rotating, rotateCenter, state.zoom, state.panOffset, dispatch, updateLayer, moveLayer])
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false)
