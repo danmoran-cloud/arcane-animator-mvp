@@ -2,8 +2,8 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { useEditor } from '@/lib/editor-store'
-import type { Layer, Position, EffectLayer, MapLayer, AssetLayer } from '@/lib/types'
-import { EffectRenderer } from './effect-renderer'
+import type { Layer, Position, ExpandedEffectLayer, MapLayer, AssetLayer } from '@/lib/types'
+import { UnifiedEffectRenderer } from './base-effects'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
@@ -26,7 +26,7 @@ function FloatingParticles() {
       {[...Array(12)].map((_, i) => (
         <div
           key={i}
-          className="particle absolute w-1 h-1 rounded-full bg-arcane-blue/40"
+          className="particle absolute w-1 h-1 rounded-full bg-primary/40"
           style={{
             left: `${10 + (i * 7) % 80}%`,
             top: `${15 + (i * 11) % 70}%`,
@@ -76,14 +76,14 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
   )
 }
 
-// Effect layer rendering component
+// Effect layer rendering component - updated for expanded effects
 function EffectLayerRenderer({ 
   layer, 
   isSelected,
   onSelect,
   onDragStart,
 }: { 
-  layer: EffectLayer
+  layer: ExpandedEffectLayer
   isSelected: boolean
   onSelect: () => void
   onDragStart: (e: React.MouseEvent) => void
@@ -94,7 +94,7 @@ function EffectLayerRenderer({
     <div
       className={cn(
         "absolute cursor-move overflow-hidden rounded-lg",
-        isSelected && "ring-2 ring-arcane-blue shadow-[0_0_20px_rgba(100,150,255,0.4)]"
+        isSelected && "ring-2 ring-primary shadow-[0_0_20px_rgba(100,150,255,0.4)]"
       )}
       style={{
         left: layer.position.x,
@@ -105,6 +105,7 @@ function EffectLayerRenderer({
         opacity: layer.opacity,
         zIndex: layer.zIndex,
         pointerEvents: layer.locked ? 'none' : 'auto',
+        mixBlendMode: layer.blendMode as React.CSSProperties['mixBlendMode'] || 'normal',
       }}
       onClick={(e) => {
         e.stopPropagation()
@@ -118,9 +119,9 @@ function EffectLayerRenderer({
         }
       }}
     >
-      {/* Effect content */}
-      <EffectRenderer
-        effectType={layer.effectType}
+      {/* Effect content using the unified renderer */}
+      <UnifiedEffectRenderer
+        baseComponent={layer.baseComponent}
         settings={layer.settings}
         width={layer.size.width}
         height={layer.size.height}
@@ -129,10 +130,10 @@ function EffectLayerRenderer({
       {/* Selection handles */}
       {isSelected && !layer.locked && (
         <>
-          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-nw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
-          <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-ne-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
-          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-sw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
-          <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-se-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+          <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-nw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+          <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-ne-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+          <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-sw-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
+          <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-se-resize shadow-[0_0_8px_rgba(100,150,255,0.6)]" />
         </>
       )}
 
@@ -164,7 +165,7 @@ function ImageLayerRenderer({
     <div
       className={cn(
         "absolute cursor-move",
-        isSelected && "ring-2 ring-arcane-blue ring-offset-2 ring-offset-background"
+        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background"
       )}
       style={{
         left: layer.position.x,
@@ -206,10 +207,10 @@ function ImageLayerRenderer({
       {/* Selection handles */}
       {isSelected && !layer.locked && (
         <>
-          <div className="absolute -top-1 -left-1 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-nw-resize" />
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-ne-resize" />
-          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-sw-resize" />
-          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-arcane-blue rounded-full border-2 border-background cursor-se-resize" />
+          <div className="absolute -top-1 -left-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-nw-resize" />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-ne-resize" />
+          <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-sw-resize" />
+          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-primary rounded-full border-2 border-background cursor-se-resize" />
         </>
       )}
 

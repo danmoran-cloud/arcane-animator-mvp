@@ -6,116 +6,11 @@ import type {
   Project, 
   Layer, 
   EditorState, 
-  Position, 
-  Asset, 
-  EffectDefinition,
-  EffectType,
-  EffectSettings,
-  EffectLayer,
-  Size
+  Position,
+  ExpandedEffectLayer,
+  UnifiedEffectSettings
 } from './types'
-
-// Effect definitions with default settings
-export const effectDefinitions: EffectDefinition[] = [
-  // Weather
-  {
-    id: 'fog',
-    name: 'Rolling Fog',
-    description: 'Semi-transparent drifting fog layer',
-    effectType: 'fog',
-    category: 'weather',
-    defaultSettings: { speed: 0.4, density: 0.7, tint: '#a8b5c4' },
-    defaultSize: { width: 600, height: 300 },
-  },
-  {
-    id: 'rain',
-    name: 'Rainfall',
-    description: 'Animated diagonal rain streaks',
-    effectType: 'rain',
-    category: 'weather',
-    defaultSettings: { speed: 0.6, intensity: 0.5, angle: 15 },
-    defaultSize: { width: 400, height: 400 },
-  },
-  {
-    id: 'snow',
-    name: 'Snowfall',
-    description: 'Slow drifting snow particles',
-    effectType: 'snow',
-    category: 'weather',
-    defaultSettings: { speed: 0.3, flakeSize: 0.5, density: 0.6 },
-    defaultSize: { width: 400, height: 400 },
-  },
-  // Fire
-  {
-    id: 'torchlight',
-    name: 'Torchlight',
-    description: 'Warm pulsing radial glow',
-    effectType: 'torchlight',
-    category: 'fire',
-    defaultSettings: { flickerSpeed: 0.5, radius: 0.8, color: '#ff9933' },
-    defaultSize: { width: 200, height: 200 },
-  },
-  {
-    id: 'campfire',
-    name: 'Campfire Glow',
-    description: 'Flickering light with ember particles',
-    effectType: 'campfire',
-    category: 'fire',
-    defaultSettings: { flickerSpeed: 0.6, emberCount: 12, radius: 0.7 },
-    defaultSize: { width: 250, height: 250 },
-  },
-  {
-    id: 'lavaShimmer',
-    name: 'Lava Shimmer',
-    description: 'Orange/red animated shimmer with heat waves',
-    effectType: 'lavaShimmer',
-    category: 'fire',
-    defaultSettings: { shimmerSpeed: 0.4, glowIntensity: 0.7 },
-    defaultSize: { width: 300, height: 200 },
-  },
-  // Water
-  {
-    id: 'waterRipple',
-    name: 'Water Ripple',
-    description: 'Subtle transparent ripple distortion',
-    effectType: 'waterRipple',
-    category: 'water',
-    defaultSettings: { waveSpeed: 0.5, rippleScale: 0.6, tint: '#4a90d9' },
-    defaultSize: { width: 300, height: 300 },
-  },
-  // Magic
-  {
-    id: 'runes',
-    name: 'Magical Runes',
-    description: 'Glowing rotating rune circle',
-    effectType: 'runes',
-    category: 'magic',
-    defaultSettings: { rotationSpeed: 0.3, glowIntensity: 0.8, color: '#7c3aed' },
-    defaultSize: { width: 200, height: 200 },
-  },
-  {
-    id: 'portal',
-    name: 'Portal',
-    description: 'Circular swirling magical portal',
-    effectType: 'portal',
-    category: 'magic',
-    defaultSettings: { swirlSpeed: 0.5, glowIntensity: 0.9, color: '#06b6d4' },
-    defaultSize: { width: 200, height: 200 },
-  },
-  // Atmosphere
-  {
-    id: 'dustMotes',
-    name: 'Dust Motes',
-    description: 'Small floating atmospheric particles',
-    effectType: 'dustMotes',
-    category: 'atmosphere',
-    defaultSettings: { speed: 0.2, density: 0.5 },
-    defaultSize: { width: 400, height: 400 },
-  },
-]
-
-// Mock assets for the asset library (legacy)
-export const mockAssets: Asset[] = []
+import type { ExpandedEffectDefinition } from './effects-library'
 
 type EditorAction =
   | { type: 'CREATE_PROJECT'; name: string }
@@ -124,7 +19,7 @@ type EditorAction =
   | { type: 'ADD_LAYER'; layer: Layer }
   | { type: 'REMOVE_LAYER'; layerId: string }
   | { type: 'UPDATE_LAYER'; layerId: string; updates: Partial<Layer> }
-  | { type: 'UPDATE_EFFECT_SETTINGS'; layerId: string; settings: Partial<EffectSettings> }
+  | { type: 'UPDATE_EFFECT_SETTINGS'; layerId: string; settings: Partial<UnifiedEffectSettings> }
   | { type: 'SELECT_LAYER'; layerId: string | null }
   | { type: 'REORDER_LAYERS'; layers: Layer[] }
   | { type: 'DUPLICATE_LAYER'; layerId: string }
@@ -344,9 +239,8 @@ interface EditorContextType {
   loadProject: (projectId: string) => void
   getSavedProjects: () => { id: string; name: string; updatedAt: string }[]
   addMapLayer: (src: string, name: string) => void
-  addAssetLayer: (asset: Asset) => void
-  addEffectLayer: (effect: EffectDefinition) => void
-  updateEffectSettings: (layerId: string, settings: Partial<EffectSettings>) => void
+  addExpandedEffectLayer: (effect: ExpandedEffectDefinition) => void
+  updateEffectSettings: (layerId: string, settings: Partial<UnifiedEffectSettings>) => void
 }
 
 const EditorContext = createContext<EditorContextType | null>(null)
@@ -405,30 +299,18 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'ADD_LAYER', layer })
   }
 
-  const addAssetLayer = (asset: Asset) => {
-    const layer: Layer = {
-      id: uuidv4(),
-      name: asset.name,
-      type: 'asset',
-      src: asset.src,
-      position: { x: 100, y: 100 },
-      size: { width: 200, height: 200 },
-      rotation: 0,
-      opacity: 1,
-      visible: true,
-      locked: false,
-      zIndex: state.project?.layers.length || 0,
-    }
-    dispatch({ type: 'ADD_LAYER', layer })
-  }
-
-  const addEffectLayer = (effect: EffectDefinition) => {
-    const layer: EffectLayer = {
+  const addExpandedEffectLayer = (effect: ExpandedEffectDefinition) => {
+    const layer: ExpandedEffectLayer = {
       id: uuidv4(),
       name: effect.name,
       type: 'effect',
-      effectType: effect.effectType,
+      effectId: effect.id,
+      category: effect.category,
+      baseComponent: effect.baseComponent,
       settings: { ...effect.defaultSettings },
+      performance: effect.performance,
+      genreTags: [...effect.genreTags],
+      effectTags: [...effect.effectTags],
       position: { x: 100, y: 100 },
       size: { ...effect.defaultSize },
       rotation: 0,
@@ -436,11 +318,12 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       visible: true,
       locked: false,
       zIndex: state.project?.layers.length || 0,
+      blendMode: 'normal',
     }
     dispatch({ type: 'ADD_LAYER', layer })
   }
 
-  const updateEffectSettings = (layerId: string, settings: Partial<EffectSettings>) => {
+  const updateEffectSettings = (layerId: string, settings: Partial<UnifiedEffectSettings>) => {
     dispatch({ type: 'UPDATE_EFFECT_SETTINGS', layerId, settings })
   }
 
@@ -454,8 +337,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         loadProject,
         getSavedProjects,
         addMapLayer,
-        addAssetLayer,
-        addEffectLayer,
+        addExpandedEffectLayer,
         updateEffectSettings,
       }}
     >

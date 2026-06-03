@@ -1,3 +1,12 @@
+import type { 
+  EffectCategory, 
+  UnifiedEffectSettings, 
+  BaseEffectComponent,
+  PerformanceLevel,
+  GenreTag,
+  EffectTypeTag 
+} from './effects-library'
+
 export interface Position {
   x: number
   y: number
@@ -8,89 +17,15 @@ export interface Size {
   height: number
 }
 
-// Effect types
-export type EffectType = 
-  | 'fog'
-  | 'rain'
-  | 'snow'
-  | 'torchlight'
-  | 'campfire'
-  | 'runes'
-  | 'portal'
-  | 'waterRipple'
-  | 'lavaShimmer'
-  | 'dustMotes'
-
-// Effect-specific settings
-export interface FogSettings {
-  speed: number
-  density: number
-  tint: string
+// Re-export effect types from effects-library
+export type { 
+  EffectCategory, 
+  UnifiedEffectSettings, 
+  BaseEffectComponent,
+  PerformanceLevel,
+  GenreTag,
+  EffectTypeTag 
 }
-
-export interface RainSettings {
-  speed: number
-  intensity: number
-  angle: number
-}
-
-export interface SnowSettings {
-  speed: number
-  flakeSize: number
-  density: number
-}
-
-export interface TorchlightSettings {
-  flickerSpeed: number
-  radius: number
-  color: string
-}
-
-export interface CampfireSettings {
-  flickerSpeed: number
-  emberCount: number
-  radius: number
-}
-
-export interface RunesSettings {
-  rotationSpeed: number
-  glowIntensity: number
-  color: string
-}
-
-export interface PortalSettings {
-  swirlSpeed: number
-  glowIntensity: number
-  color: string
-}
-
-export interface WaterRippleSettings {
-  waveSpeed: number
-  rippleScale: number
-  tint: string
-}
-
-export interface LavaShimmerSettings {
-  shimmerSpeed: number
-  glowIntensity: number
-}
-
-export interface DustMotesSettings {
-  speed: number
-  density: number
-}
-
-export type EffectSettings = 
-  | FogSettings
-  | RainSettings
-  | SnowSettings
-  | TorchlightSettings
-  | CampfireSettings
-  | RunesSettings
-  | PortalSettings
-  | WaterRippleSettings
-  | LavaShimmerSettings
-  | DustMotesSettings
 
 // Base layer properties
 interface BaseLayer {
@@ -103,6 +38,7 @@ interface BaseLayer {
   visible: boolean
   locked: boolean
   zIndex: number
+  blendMode?: string
 }
 
 // Map layer (static image)
@@ -117,37 +53,27 @@ export interface AssetLayer extends BaseLayer {
   src: string
 }
 
-// Effect layer (animated)
-export interface EffectLayer extends BaseLayer {
+// Expanded Effect layer (animated) - new system
+export interface ExpandedEffectLayer extends BaseLayer {
   type: 'effect'
-  effectType: EffectType
-  settings: EffectSettings
+  effectId: string
+  category: EffectCategory
+  baseComponent: BaseEffectComponent
+  settings: Partial<UnifiedEffectSettings>
+  performance: PerformanceLevel
+  genreTags: GenreTag[]
+  effectTags: EffectTypeTag[]
 }
 
-export type Layer = MapLayer | AssetLayer | EffectLayer
+export type Layer = MapLayer | AssetLayer | ExpandedEffectLayer
 
 export interface Asset {
   id: string
   name: string
-  category: AssetCategory
+  category: string
   thumbnail: string
   src: string
 }
-
-export type AssetCategory = 'weather' | 'fire' | 'water' | 'magic' | 'atmosphere' | 'light' | 'user'
-
-// Effect definition for the library
-export interface EffectDefinition {
-  id: string
-  name: string
-  description: string
-  effectType: EffectType
-  category: EffectCategory
-  defaultSettings: EffectSettings
-  defaultSize: Size
-}
-
-export type EffectCategory = 'weather' | 'fire' | 'water' | 'magic' | 'atmosphere' | 'light'
 
 export interface Project {
   id: string
