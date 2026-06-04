@@ -13,10 +13,13 @@ import {
   ZoomOut, 
   Maximize2, 
   Grid3X3, 
+  Hexagon,
   Upload,
   Compass,
   Sparkles,
-  RotateCw
+  RotateCw,
+  Minus,
+  Plus
 } from 'lucide-react'
 
 // Floating particles component for the empty state
@@ -269,30 +272,88 @@ function ImageLayerRenderer({
 }
 
 // Grid overlay
-function GridOverlay({ gridSize, canvasSize }: { gridSize: number; canvasSize: { width: number; height: number } }) {
+function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gridType: 'square' | 'hex'; canvasSize: { width: number; height: number } }) {
+  if (gridType === 'hex') {
+    // Hex grid calculations
+    // For pointy-top hexagons:
+    // width = sqrt(3) * size, height = 2 * size
+    // horizontal spacing = width, vertical spacing = height * 3/4
+    const hexSize = gridSize / 2
+    const hexWidth = Math.sqrt(3) * hexSize
+    const hexHeight = 2 * hexSize
+    const vertSpacing = hexHeight * 0.75
+    
+    // Calculate how many hexes we need
+    const cols = Math.ceil(canvasSize.width / hexWidth) + 2
+    const rows = Math.ceil(canvasSize.height / vertSpacing) + 2
+    
+    // Generate hex path (pointy-top)
+    const hexPath = (cx: number, cy: number) => {
+      const points = []
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i - Math.PI / 2
+        const x = cx + hexSize * Math.cos(angle)
+        const y = cy + hexSize * Math.sin(angle)
+        points.push(`${x},${y}`)
+      }
+      return `M ${points.join(' L ')} Z`
+    }
+    
+    const hexPaths: string[] = []
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const isOddRow = row % 2 === 1
+        const cx = col * hexWidth + (isOddRow ? hexWidth / 2 : 0)
+        const cy = row * vertSpacing
+        hexPaths.push(hexPath(cx, cy))
+      }
+    }
+    
+    return (
+      <svg
+        className="absolute inset-0 pointer-events-none"
+        width={canvasSize.width}
+        height={canvasSize.height}
+      >
+        <g className="text-primary/25">
+          {hexPaths.map((d, i) => (
+            <path
+              key={i}
+              d={d}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.5"
+            />
+          ))}
+        </g>
+      </svg>
+    )
+  }
+  
+  // Square grid (default)
   return (
-    <svg 
-      className="absolute inset-0 pointer-events-none" 
-      width={canvasSize.width} 
+    <svg
+      className="absolute inset-0 pointer-events-none"
+      width={canvasSize.width}
       height={canvasSize.height}
     >
       <defs>
-        <pattern 
-          id="grid" 
-          width={gridSize} 
-          height={gridSize} 
+        <pattern
+          id="grid-square"
+          width={gridSize}
+          height={gridSize}
           patternUnits="userSpaceOnUse"
         >
-          <path 
-            d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`} 
-            fill="none" 
-            stroke="currentColor" 
+          <path
+            d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
+            fill="none"
+            stroke="currentColor"
             strokeWidth="0.5"
-            className="text-primary/20"
+            className="text-primary/25"
           />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#grid)" />
+      <rect width="100%" height="100%" fill="url(#grid-square)" />
     </svg>
   )
 }
@@ -613,15 +674,76 @@ export function MapCanvas() {
 
         <div className="h-4 w-px bg-border mx-2" />
 
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={cn("h-7 w-7", state.project?.gridEnabled && "bg-muted text-primary")}
-          onClick={handleToggleGrid}
-          disabled={!hasProject}
-        >
-          <Grid3X3 className="w-4 h-4" />
-        </Button>
+        {/* Grid Controls */}
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={cn("h-7 w-7", state.project?.gridEnabled && state.project?.gridType === 'square' && "bg-muted text-primary")}
+            onClick={() => {
+              if (!state.project?.gridEnabled) {
+                handleToggleGrid()
+                dispatch({ type: 'SET_GRID_TYPE', gridType: 'square' })
+              } else if (state.project?.gridType !== 'square') {
+                dispatch({ type: 'SET_GRID_TYPE', gridType: 'square' })
+              } else {
+                handleToggleGrid()
+              }
+            }}
+            disabled={!hasProject}
+            title="Square Grid"
+          >
+            <Grid3X3 className="w-4 h-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className={cn("h-7 w-7", state.project?.gridEnabled && state.project?.gridType === 'hex' && "bg-muted text-primary")}
+            onClick={() => {
+              if (!state.project?.gridEnabled) {
+                handleToggleGrid()
+                dispatch({ type: 'SET_GRID_TYPE', gridType: 'hex' })
+              } else if (state.project?.gridType !== 'hex') {
+                dispatch({ type: 'SET_GRID_TYPE', gridType: 'hex' })
+              } else {
+                handleToggleGrid()
+              }
+            }}
+            disabled={!hasProject}
+            title="Hex Grid"
+          >
+            <Hexagon className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Grid Size Controls */}
+        {state.project?.gridEnabled && (
+          <div className="flex items-center gap-1 ml-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={() => dispatch({ type: 'SET_GRID_SIZE', size: Math.max(20, (state.project?.gridSize || 50) - 10) })}
+              disabled={!hasProject}
+              title="Decrease grid size"
+            >
+              <Minus className="w-3 h-3" />
+            </Button>
+            <span className="text-[10px] text-muted-foreground w-8 text-center">
+              {state.project?.gridSize || 50}px
+            </span>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-6 w-6"
+              onClick={() => dispatch({ type: 'SET_GRID_SIZE', size: Math.min(200, (state.project?.gridSize || 50) + 10) })}
+              disabled={!hasProject}
+              title="Increase grid size"
+            >
+              <Plus className="w-3 h-3" />
+            </Button>
+          </div>
+        )}
 
         <div className="ml-auto flex items-center gap-4 text-[10px] text-muted-foreground">
           <span>Scroll to zoom</span>
@@ -653,7 +775,11 @@ export function MapCanvas() {
               <div className="absolute inset-0 bg-muted/20 rounded-lg border border-border/50" />
               
               {state.project?.gridEnabled && (
-                <GridOverlay gridSize={state.project.gridSize} canvasSize={canvasSize} />
+                <GridOverlay 
+                  gridSize={state.project.gridSize} 
+                  gridType={state.project.gridType || 'square'} 
+                  canvasSize={canvasSize} 
+                />
               )}
 
               {state.project?.layers

@@ -45,6 +45,8 @@ export interface ExpandedEffectLayer extends BaseLayer {
 
 export type Layer = MapLayer | AssetLayer | ExpandedEffectLayer
 
+export type GridType = 'square' | 'hex'
+
 export interface Project {
   id: string
   name: string
@@ -52,6 +54,7 @@ export interface Project {
   updatedAt: string
   layers: Layer[]
   gridEnabled: boolean
+  gridType: GridType
   gridSize: number
   canvasSize: Size
 }

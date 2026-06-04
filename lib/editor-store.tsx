@@ -8,7 +8,8 @@ import type {
   EditorState, 
   Position,
   ExpandedEffectLayer,
-  EffectSettings
+  EffectSettings,
+  GridType
 } from './types'
 import type { EffectDefinition } from './effects-library'
 
@@ -25,6 +26,7 @@ type EditorAction =
   | { type: 'SET_ZOOM'; zoom: number }
   | { type: 'SET_PAN_OFFSET'; offset: Position }
   | { type: 'TOGGLE_GRID' }
+  | { type: 'SET_GRID_TYPE'; gridType: GridType }
   | { type: 'SET_GRID_SIZE'; size: number }
   | { type: 'SET_DRAGGING'; isDragging: boolean }
   | { type: 'SET_RESIZING'; isResizing: boolean }
@@ -46,6 +48,7 @@ function createNewProject(name: string): Project {
     updatedAt: new Date().toISOString(),
     layers: [],
     gridEnabled: false,
+    gridType: 'square',
     gridSize: 50,
     canvasSize: { width: 1920, height: 1080 },
   }
@@ -206,6 +209,17 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         project: {
           ...state.project,
           gridEnabled: !state.project.gridEnabled,
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    
+    case 'SET_GRID_TYPE':
+      if (!state.project) return state
+      return {
+        ...state,
+        project: {
+          ...state.project,
+          gridType: action.gridType,
           updatedAt: new Date().toISOString(),
         },
       }
