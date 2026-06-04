@@ -283,21 +283,30 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
   }
 
-  const addMapLayer = (src: string, name: string) => {
-    const layer: Layer = {
-      id: uuidv4(),
-      name,
-      type: 'map',
-      src,
-      position: { x: 0, y: 0 },
-      size: { width: 800, height: 600 },
-      rotation: 0,
-      opacity: 1,
-      visible: true,
-      locked: false,
-      zIndex: state.project?.layers.length || 0,
+  const addMapLayer = (src: string, name: string, width?: number, height?: number) => {
+    // Create an image to get dimensions if not provided
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const imgWidth = width || img.naturalWidth || 800
+      const imgHeight = height || img.naturalHeight || 600
+      
+      const layer: Layer = {
+        id: uuidv4(),
+        name,
+        type: 'map',
+        src,
+        position: { x: 0, y: 0 },
+        size: { width: imgWidth, height: imgHeight },
+        rotation: 0,
+        opacity: 1,
+        visible: true,
+        locked: false,
+        zIndex: state.project?.layers.length || 0,
+      }
+      dispatch({ type: 'ADD_LAYER', layer })
     }
-    dispatch({ type: 'ADD_LAYER', layer })
+    img.src = src
   }
 
   const addEffectLayer = (effect: EffectDefinition) => {

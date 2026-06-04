@@ -526,7 +526,37 @@ export function MapCanvas() {
     reader.onload = (event) => {
       const src = event.target?.result as string
       if (file.type.startsWith('image/')) {
-        addMapLayer(src, file.name.replace(/\.[^/.]+$/, ''))
+        // Create an image to get its natural dimensions
+        const img = new window.Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          const imgWidth = img.naturalWidth
+          const imgHeight = img.naturalHeight
+          
+          // Add the layer with actual image dimensions
+          addMapLayer(src, file.name.replace(/\.[^/.]+$/, ''))
+          
+          // Get container dimensions and auto-fit
+          const container = containerRef.current
+          if (container) {
+            const rect = container.getBoundingClientRect()
+            const padding = 40 // padding around the image
+            const availableWidth = rect.width - padding * 2
+            const availableHeight = rect.height - padding * 2
+            
+            const scaleX = availableWidth / imgWidth
+            const scaleY = availableHeight / imgHeight
+            const fitZoom = Math.min(scaleX, scaleY, 1) // Don't zoom in past 100%
+            
+            // Center the image
+            const panX = (rect.width - imgWidth * fitZoom) / 2
+            const panY = (rect.height - imgHeight * fitZoom) / 2
+            
+            dispatch({ type: 'SET_ZOOM', zoom: fitZoom })
+            dispatch({ type: 'SET_PAN_OFFSET', offset: { x: panX, y: panY } })
+          }
+        }
+        img.src = src
       }
     }
     reader.readAsDataURL(file)

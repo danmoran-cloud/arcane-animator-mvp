@@ -192,7 +192,7 @@ function Inspector({ layer }: { layer: Layer | null }) {
   }
   
   return (
-    <ScrollArea className="flex-1">
+    <ScrollArea className="flex-1 h-full [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
       <div className="p-3 space-y-4">
         {/* Layer name */}
         <div className="space-y-1.5">
@@ -397,17 +397,17 @@ export function LayerPanel() {
   const sortedLayers = [...layers].sort((a, b) => b.zIndex - a.zIndex)
   
   return (
-    <aside className="w-64 flex-shrink-0 bg-sidebar border-l border-sidebar-border flex flex-col">
+    <aside className="w-64 flex-shrink-0 bg-sidebar border-l border-sidebar-border flex flex-col overflow-hidden">
       {/* Layers header */}
-      <div className="px-3 py-3 border-b border-sidebar-border">
+      <div className="px-3 py-3 border-b border-sidebar-border flex-shrink-0">
         <h2 className="font-serif text-sm font-semibold text-sidebar-foreground tracking-wide">
           Layers
         </h2>
       </div>
       
-      {/* Layer stack */}
-      <div className="border-b border-sidebar-border">
-        <ScrollArea className="h-48">
+      {/* Layer stack - scrollable with visible scrollbar */}
+      <div className="border-b border-sidebar-border flex-shrink-0 max-h-[40%]">
+        <ScrollArea className="h-full max-h-48 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
           {sortedLayers.length === 0 ? (
             <div className="p-4 text-center">
               <p className="text-xs text-muted-foreground">
@@ -434,14 +434,16 @@ export function LayerPanel() {
       </div>
       
       {/* Inspector header */}
-      <div className="px-3 py-2 border-b border-sidebar-border bg-muted/30">
+      <div className="px-3 py-2 border-b border-sidebar-border bg-muted/30 flex-shrink-0">
         <h3 className="font-serif text-xs font-semibold text-sidebar-foreground tracking-wide">
           {selectedLayer ? selectedLayer.name : 'Properties'}
         </h3>
       </div>
       
-      {/* Inspector */}
-      <Inspector layer={selectedLayer} />
+      {/* Inspector - scrollable */}
+      <div className="flex-1 overflow-hidden min-h-0">
+        <Inspector layer={selectedLayer} />
+      </div>
     </aside>
   )
 }
