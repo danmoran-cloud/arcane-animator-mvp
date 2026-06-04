@@ -945,10 +945,43 @@ function MiniSmokeVents() {
   )
 }
 
+// Mini Torch 2: sprite-based flame preview
+function MiniTorch2() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '80%',
+          height: '80%',
+          background: 'radial-gradient(circle, #ff950040 0%, transparent 70%)',
+          animation: 'miniFireGlow 0.5s ease-in-out infinite',
+        }}
+      />
+      <div
+        className="w-4 h-5"
+        style={{
+          backgroundImage: 'url(https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png)',
+          backgroundSize: '640px 384px',
+          backgroundPosition: '0 0',
+          animation: 'miniTorch2Sprite 1s steps(60) infinite',
+          mixBlendMode: 'screen',
+        }}
+      />
+      <style>{`
+        @keyframes miniTorch2Sprite {
+          to { background-position: -640px 0; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 // Map effect IDs to their preview components
 const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   // Core Pack
   'torch': MiniTorch,
+  'torch-2': MiniTorch2,
   'campfire': MiniCampfire,
   'lantern': MiniLantern,
   'candles': MiniCandles,

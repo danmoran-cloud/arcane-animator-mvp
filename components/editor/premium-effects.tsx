@@ -183,6 +183,75 @@ function TorchEffect({ settings, width, height }: { settings: EffectSettings; wi
   )
 }
 
+// Torch 2 effect - Animated sprite sheet flame
+// Sprite: 60 frames, 64x64 each, 10 columns x 6 rows
+function Torch2Effect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
+  const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png'
+  const frameWidth = 64
+  const frameHeight = 64
+  const columns = 10
+  const rows = 6
+  const totalFrames = 60
+  const animationDuration = (100 / (settings.speed || 50)) * 2 // seconds
+  
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes torch2-sprite {
+          0% { background-position: 0 0; }
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const percent = ((i + 1) / totalFrames) * 100
+            return `${percent.toFixed(2)}% { background-position: -${col * frameWidth}px -${row * frameHeight}px; }`
+          }).join('\n          ')}
+        }
+        @keyframes torch2-glow {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 0.8; transform: scale(1.05); }
+        }
+      `}</style>
+      
+      {/* Ambient glow beneath */}
+      <div 
+        className="absolute rounded-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          background: `radial-gradient(circle, ${settings.color}40 0%, transparent 70%)`,
+          animation: `torch2-glow ${animationDuration / 2}s ease-in-out infinite`,
+        }}
+      />
+      
+      {/* Animated flame sprite */}
+      <div 
+        className="absolute"
+        style={{
+          width: frameWidth * (settings.scale || 1),
+          height: frameHeight * (settings.scale || 1),
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: `${columns * frameWidth}px ${rows * frameHeight}px`,
+          backgroundRepeat: 'no-repeat',
+          animation: `torch2-sprite ${animationDuration}s steps(1) infinite`,
+          mixBlendMode: 'screen', // Makes black background transparent
+          imageRendering: 'pixelated',
+        }}
+      />
+      
+      {/* Additional glow around flame */}
+      <div 
+        className="absolute rounded-full"
+        style={{
+          width: '50%',
+          height: '50%',
+          background: `radial-gradient(circle, ${settings.color}50 0%, transparent 70%)`,
+          animation: `torch2-glow ${animationDuration / 3}s ease-in-out infinite`,
+        }}
+      />
+    </div>
+  )
+}
+
 // Campfire effect - TOP DOWN: larger radial glow with flickering light radius
 function CampfireEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
   return (
@@ -997,6 +1066,7 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
   const effectComponents: Record<string, React.FC<{ settings: EffectSettings; width: number; height: number }>> = {
     // Core Pack
     'torch': TorchEffect,
+    'torch-2': Torch2Effect,
     'campfire': CampfireEffect,
     'lantern': LanternEffect,
     'candles': TorchEffect, // Similar to torch

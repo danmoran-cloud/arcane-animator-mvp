@@ -3,8 +3,8 @@
 export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'scifi'
 
 export type EffectId = 
-  // Core Pack (6) - Localized light sources
-  | 'torch' | 'campfire' | 'lantern' | 'candles' | 'brazier' | 'magical-light'
+  // Core Pack (7) - Localized light sources
+  | 'torch' | 'torch-2' | 'campfire' | 'lantern' | 'candles' | 'brazier' | 'magical-light'
   // Atmospheric Pack (8) - Full-area weather/environment overlays
   | 'rain' | 'snow' | 'fog' | 'mist' | 'wind' | 'lightning-storm' | 'dust-storm' | 'blizzard'
   // Terrain Pack (6) - Ground/surface effects
@@ -80,6 +80,24 @@ export const effectsLibrary: EffectDefinition[] = [
     renderMode: 'localized',
     icon: 'flame',
     description: 'Warm flickering light radius',
+    defaultSettings: {
+      speed: 50,
+      intensity: 80,
+      density: 30,
+      color: '#ff9500',
+      secondaryColor: '#ff4d00',
+      flickerRate: 70,
+      glowIntensity: 60,
+      scale: 1,
+    },
+  },
+  {
+    id: 'torch-2',
+    name: 'Torch Flame',
+    pack: 'core',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Animated sprite flame effect',
     defaultSettings: {
       speed: 50,
       intensity: 80,
