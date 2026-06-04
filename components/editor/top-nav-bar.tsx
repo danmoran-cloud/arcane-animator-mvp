@@ -31,12 +31,14 @@ import {
   User,
   Coins,
 } from 'lucide-react'
+import { ExportModal } from './export-modal'
 
 export function TopNavBar() {
   const { state, createProject, saveProject, loadProject, getSavedProjects, dispatch } = useEditor()
   const [newProjectName, setNewProjectName] = useState('')
   const [isNewProjectOpen, setIsNewProjectOpen] = useState(false)
   const [isLoadProjectOpen, setIsLoadProjectOpen] = useState(false)
+  const [isExportOpen, setIsExportOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [tempName, setTempName] = useState('')
 
@@ -207,11 +209,19 @@ export function TopNavBar() {
           variant="ghost" 
           size="sm" 
           disabled={!state.project}
+          onClick={() => setIsExportOpen(true)}
           className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
         >
           <Download className="w-3.5 h-3.5" />
           Export
         </Button>
+
+        {/* Export Modal */}
+        <ExportModal 
+          open={isExportOpen} 
+          onOpenChange={setIsExportOpen}
+          project={state.project}
+        />
 
         {/* Ornate separator */}
         <div className="flex items-center gap-1 px-2">
