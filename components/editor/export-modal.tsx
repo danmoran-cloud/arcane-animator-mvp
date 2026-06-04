@@ -88,6 +88,20 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
         imageCache.current.set(layer.src, img)
       }
     }
+    
+    // Preload torch-2 sprite sheet if any torch-2 effects exist
+    const torch2SpriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png'
+    const hasTorch2 = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === 'torch-2')
+    if (hasTorch2 && !imageCache.current.has(torch2SpriteUrl)) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => resolve()
+        img.src = torch2SpriteUrl
+      })
+      imageCache.current.set(torch2SpriteUrl, img)
+    }
   }
 
   const handleExport = async () => {
@@ -458,7 +472,7 @@ async function renderFrame(
       }
     } else if (layer.type === 'effect') {
       // Draw effect layer with animation
-      renderEffect(ctx, layer as ExpandedEffectLayer, time)
+      renderEffect(ctx, layer as ExpandedEffectLayer, time, imageCache)
     }
 
     ctx.restore()
@@ -471,7 +485,8 @@ async function renderFrame(
 function renderEffect(
   ctx: CanvasRenderingContext2D,
   layer: ExpandedEffectLayer,
-  time: number
+  time: number,
+  imageCache: Map<string, HTMLImageElement>
 ): void {
   const { position, size, effectId, settings } = layer
   const color = (settings?.color as string) || '#ff6b00'
@@ -490,8 +505,63 @@ function renderEffect(
   ctx.save()
 
   switch (effectId) {
+    case 'torch-2': {
+      // Sprite sheet animation - 60 frames, 64x64 each, 10 columns x 6 rows
+      const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png'
+      const spriteImg = imageCache.get(spriteUrl)
+      
+      if (spriteImg) {
+        const frameWidth = 64
+        const frameHeight = 64
+        const columns = 10
+        const totalFrames = 60
+        
+        // Calculate current frame based on time
+        const frameIndex = Math.floor((normalizedTime * 30) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        
+        // Source coordinates in sprite sheet
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+        
+        // Draw the sprite frame centered in the effect area
+        const scale = Math.min(size.width, size.height) / frameWidth
+        const drawWidth = frameWidth * scale
+        const drawHeight = frameHeight * scale
+        const drawX = centerX - drawWidth / 2
+        const drawY = centerY - drawHeight / 2
+        
+        // Draw ambient glow first
+        const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        glowGradient.addColorStop(0, color + '50')
+        glowGradient.addColorStop(0.5, color + '25')
+        glowGradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = glowGradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+        
+        // Draw sprite frame with additive blending to simulate screen blend mode
+        ctx.globalCompositeOperation = 'lighter'
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          drawX, drawY, drawWidth, drawHeight
+        )
+        ctx.globalCompositeOperation = 'source-over'
+      } else {
+        // Fallback to basic glow if sprite not loaded
+        const flickerIntensity = 0.7 + 0.3 * Math.sin(normalizedTime * Math.PI * 8)
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * flickerIntensity)
+        gradient.addColorStop(0, secondaryColor + 'cc')
+        gradient.addColorStop(0.5, color + '66')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
     case 'torch':
-    case 'torch-2':
     case 'campfire':
     case 'brazier':
     case 'lantern':
