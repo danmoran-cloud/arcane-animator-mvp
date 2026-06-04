@@ -132,7 +132,7 @@ function FogEffect({ settings, width, height }: { settings: EffectSettings; widt
   )
 }
 
-// Torch effect - TOP DOWN: radial light halo on ground
+// Torch effect - Uses animated GIF with screen blend mode to make black transparent
 function TorchEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
@@ -146,7 +146,7 @@ function TorchEffect({ settings, width, height }: { settings: EffectSettings; wi
         }
       `}</style>
       
-      {/* Outer ambient glow */}
+      {/* Outer ambient glow on ground */}
       <div 
         className="absolute rounded-full"
         style={{
@@ -157,26 +157,33 @@ function TorchEffect({ settings, width, height }: { settings: EffectSettings; wi
         }}
       />
       
-      {/* Main light radius */}
+      {/* Animated flame GIF with screen blend mode to remove black background */}
       <div 
-        className="absolute rounded-full"
+        className="absolute"
         style={{
-          width: '70%',
-          height: '70%',
-          background: `radial-gradient(circle, ${settings.color}60 0%, ${settings.color}30 40%, transparent 70%)`,
-          animation: `torch-light-flicker ${0.3 * (100 / (settings.flickerRate || 70))}s ease-in-out infinite`,
+          width: '50%',
+          height: '80%',
+          mixBlendMode: 'screen',
         }}
-      />
+      >
+        <img 
+          src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/22_torchdrippingred_-rl5yLx544GZVzPNuYzcjWj3rcIrCwA.gif"
+          alt=""
+          className="w-full h-full object-contain"
+          style={{
+            filter: `hue-rotate(${settings.color === '#ff6b00' ? '0deg' : '10deg'})`,
+          }}
+        />
+      </div>
       
-      {/* Bright center (torch position) */}
+      {/* Additional glow beneath the flame */}
       <div 
         className="absolute rounded-full"
         style={{
-          width: '15%',
-          height: '15%',
-          background: `radial-gradient(circle, ${settings.secondaryColor || '#ffcc00'}, ${settings.color})`,
-          boxShadow: `0 0 ${settings.glowIntensity ? settings.glowIntensity / 3 : 20}px ${settings.color}`,
-          animation: `torch-light-flicker ${0.2 * (100 / (settings.flickerRate || 70))}s ease-in-out infinite alternate`,
+          width: '40%',
+          height: '40%',
+          background: `radial-gradient(circle, ${settings.color}50 0%, transparent 70%)`,
+          animation: `torch-light-flicker ${0.3 * (100 / (settings.flickerRate || 70))}s ease-in-out infinite`,
         }}
       />
     </div>
