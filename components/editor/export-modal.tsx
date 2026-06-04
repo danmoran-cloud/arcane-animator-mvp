@@ -593,6 +593,371 @@ function renderEffect(
       break
     }
 
+    case 'wind': {
+      // Wind streaks
+      ctx.strokeStyle = color + '30'
+      ctx.lineWidth = 2
+      const direction = ((settings?.direction as number) || 90) * Math.PI / 180
+      for (let i = 0; i < 15; i++) {
+        const startX = position.x + ((i * 67 + normalizedTime * 200) % size.width)
+        const startY = position.y + (i * size.height / 15)
+        const length = 30 + (i % 3) * 20
+        ctx.beginPath()
+        ctx.moveTo(startX, startY)
+        ctx.lineTo(startX + Math.cos(direction) * length, startY + Math.sin(direction) * length)
+        ctx.stroke()
+      }
+      break
+    }
+
+    case 'dust-storm': {
+      // Swirling dust particles
+      ctx.fillStyle = color + '60'
+      const particleCount = 40
+      for (let i = 0; i < particleCount; i++) {
+        const angle = normalizedTime * 2 + (i * 0.5)
+        const dist = (i * 13 + normalizedTime * 100) % (radius * 0.8)
+        const x = centerX + Math.cos(angle) * dist + Math.sin(normalizedTime + i) * 20
+        const y = centerY + Math.sin(angle * 0.7) * dist * 0.5
+        const pSize = 2 + (i % 4)
+        ctx.beginPath()
+        ctx.arc(x, y, pSize, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      // Overlay haze
+      const hazeGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+      hazeGradient.addColorStop(0, color + '20')
+      hazeGradient.addColorStop(1, color + '40')
+      ctx.fillStyle = hazeGradient
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      break
+    }
+
+    case 'blizzard': {
+      // Intense snow with wind
+      ctx.fillStyle = color + 'dd'
+      const blizzardCount = 50
+      const windDir = ((settings?.direction as number) || 60) * Math.PI / 180
+      for (let i = 0; i < blizzardCount; i++) {
+        const drift = normalizedTime * 150
+        const x = position.x + ((i * 41 + drift * Math.cos(windDir)) % size.width + size.width) % size.width
+        const y = position.y + ((i * 29 + drift * Math.sin(windDir) + normalizedTime * 80) % size.height)
+        const flakeSize = 1 + (i % 4)
+        ctx.beginPath()
+        ctx.arc(x, y, flakeSize, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      // White overlay for visibility reduction
+      ctx.fillStyle = color + '15'
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      break
+    }
+
+    case 'waterfall': {
+      // Cascading water lines
+      ctx.strokeStyle = color + '70'
+      ctx.lineWidth = 3
+      for (let i = 0; i < 8; i++) {
+        const x = position.x + size.width * 0.2 + (i * size.width * 0.6 / 8)
+        const waveOffset = Math.sin(normalizedTime * 4 + i) * 3
+        ctx.beginPath()
+        ctx.moveTo(x + waveOffset, position.y)
+        ctx.lineTo(x - waveOffset, position.y + size.height)
+        ctx.stroke()
+      }
+      // Mist at bottom
+      const mistGradient = ctx.createLinearGradient(position.x, position.y + size.height * 0.7, position.x, position.y + size.height)
+      mistGradient.addColorStop(0, 'transparent')
+      mistGradient.addColorStop(1, (secondaryColor || '#ffffff') + '60')
+      ctx.fillStyle = mistGradient
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      break
+    }
+
+    case 'lava-flow': {
+      // Glowing lava with cracks
+      const lavaGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+      lavaGradient.addColorStop(0, secondaryColor + 'cc')
+      lavaGradient.addColorStop(0.5, color + '99')
+      lavaGradient.addColorStop(1, color + '44')
+      ctx.fillStyle = lavaGradient
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      // Glowing cracks
+      ctx.strokeStyle = secondaryColor + 'ff'
+      ctx.lineWidth = 2
+      for (let i = 0; i < 5; i++) {
+        const crackX = position.x + (i * size.width / 5) + Math.sin(normalizedTime + i) * 10
+        ctx.beginPath()
+        ctx.moveTo(crackX, position.y + size.height * 0.3)
+        ctx.lineTo(crackX + 10, position.y + size.height * 0.5)
+        ctx.lineTo(crackX - 5, position.y + size.height * 0.7)
+        ctx.stroke()
+      }
+      break
+    }
+
+    case 'swamp-bubbles': {
+      // Murky water with bubbles
+      ctx.fillStyle = color + '50'
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      // Rising bubbles
+      ctx.strokeStyle = secondaryColor + '60'
+      ctx.lineWidth = 1
+      for (let i = 0; i < 12; i++) {
+        const bubbleX = position.x + (i * size.width / 12) + Math.sin(i) * 10
+        const bubbleY = position.y + size.height - ((normalizedTime * 40 + i * 30) % size.height)
+        const bubbleSize = 3 + (i % 4)
+        ctx.beginPath()
+        ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+      break
+    }
+
+    case 'ice-crystals': {
+      // Frozen shimmer
+      const iceGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+      iceGradient.addColorStop(0, color + '60')
+      iceGradient.addColorStop(0.7, color + '30')
+      iceGradient.addColorStop(1, 'transparent')
+      ctx.fillStyle = iceGradient
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      // Sparkle points
+      ctx.fillStyle = (secondaryColor || '#ffffff') + 'cc'
+      for (let i = 0; i < 8; i++) {
+        const sparklePhase = (normalizedTime * 3 + i * 0.5) % 1
+        if (sparklePhase < 0.3) {
+          const sx = position.x + ((i * 97) % size.width)
+          const sy = position.y + ((i * 61) % size.height)
+          ctx.beginPath()
+          ctx.arc(sx, sy, 2 * sparklePhase * 3, 0, Math.PI * 2)
+          ctx.fill()
+        }
+      }
+      break
+    }
+
+    case 'smoke-vents': {
+      // Rising smoke columns
+      for (let i = 0; i < 5; i++) {
+        const ventX = position.x + size.width * 0.2 + (i * size.width * 0.6 / 5)
+        const smokeGradient = ctx.createRadialGradient(
+          ventX, position.y + size.height, 0,
+          ventX + Math.sin(normalizedTime + i) * 20, position.y, radius * 0.5
+        )
+        smokeGradient.addColorStop(0, color + '60')
+        smokeGradient.addColorStop(0.5, color + '30')
+        smokeGradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = smokeGradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'floating-runes': {
+      // Floating magical symbols
+      ctx.fillStyle = color + 'cc'
+      ctx.font = `${radius * 0.3}px serif`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      const runes = ['\u16A0', '\u16A2', '\u16A6', '\u16A8', '\u16B1', '\u16B9'] // Elder Futhark runes
+      for (let i = 0; i < 6; i++) {
+        const angle = (i / 6) * Math.PI * 2 + normalizedTime
+        const dist = radius * 0.5
+        const x = centerX + Math.cos(angle) * dist
+        const y = centerY + Math.sin(angle) * dist + Math.sin(normalizedTime * 2 + i) * 5
+        ctx.globalAlpha = layer.opacity * (0.5 + 0.5 * Math.sin(normalizedTime * 3 + i))
+        ctx.fillText(runes[i % runes.length], x, y)
+      }
+      ctx.globalAlpha = layer.opacity
+      // Center glow
+      const runeGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 0.3)
+      runeGlow.addColorStop(0, color + '40')
+      runeGlow.addColorStop(1, 'transparent')
+      ctx.fillStyle = runeGlow
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      break
+    }
+
+    case 'divine-light': {
+      // Heavenly rays from above
+      const rayCount = 8
+      ctx.strokeStyle = color + '40'
+      ctx.lineWidth = radius * 0.1
+      for (let i = 0; i < rayCount; i++) {
+        const angle = (i / rayCount) * Math.PI * 2 + normalizedTime * 0.2
+        const rayLength = radius * (0.8 + 0.2 * Math.sin(normalizedTime * 2 + i))
+        ctx.beginPath()
+        ctx.moveTo(centerX, centerY)
+        ctx.lineTo(centerX + Math.cos(angle) * rayLength, centerY + Math.sin(angle) * rayLength)
+        ctx.stroke()
+      }
+      // Bright center
+      const divineGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 0.4)
+      divineGlow.addColorStop(0, (secondaryColor || '#ffffff') + 'ee')
+      divineGlow.addColorStop(0.5, color + '88')
+      divineGlow.addColorStop(1, 'transparent')
+      ctx.fillStyle = divineGlow
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      break
+    }
+
+    case 'necrotic-corruption': {
+      // Dark spreading tendrils
+      ctx.strokeStyle = color + '80'
+      ctx.lineWidth = 3
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2
+        const length = radius * (0.6 + 0.3 * Math.sin(normalizedTime + i))
+        const wobble = Math.sin(normalizedTime * 2 + i * 2) * 10
+        ctx.beginPath()
+        ctx.moveTo(centerX, centerY)
+        ctx.quadraticCurveTo(
+          centerX + Math.cos(angle) * length * 0.5 + wobble,
+          centerY + Math.sin(angle) * length * 0.5,
+          centerX + Math.cos(angle) * length,
+          centerY + Math.sin(angle) * length
+        )
+        ctx.stroke()
+      }
+      // Sickly glow
+      const necroGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 0.5)
+      necroGlow.addColorStop(0, (secondaryColor || '#84cc16') + '60')
+      necroGlow.addColorStop(1, color + '30')
+      ctx.fillStyle = necroGlow
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      break
+    }
+
+    case 'spirit-apparitions': {
+      // Ghostly floating shapes
+      ctx.fillStyle = color + '40'
+      for (let i = 0; i < 4; i++) {
+        const ghostX = position.x + ((i * size.width / 4) + normalizedTime * 30) % size.width
+        const ghostY = position.y + size.height * 0.3 + Math.sin(normalizedTime + i * 2) * 20
+        const ghostSize = radius * 0.2
+        
+        ctx.globalAlpha = layer.opacity * (0.3 + 0.3 * Math.sin(normalizedTime * 2 + i))
+        ctx.beginPath()
+        ctx.ellipse(ghostX, ghostY, ghostSize * 0.6, ghostSize, 0, 0, Math.PI * 2)
+        ctx.fill()
+      }
+      ctx.globalAlpha = layer.opacity
+      break
+    }
+
+    case 'holograms': {
+      // Flickering scan lines
+      const scanLineCount = 20
+      ctx.strokeStyle = color + '60'
+      ctx.lineWidth = 1
+      for (let i = 0; i < scanLineCount; i++) {
+        const y = position.y + (i * size.height / scanLineCount) + ((normalizedTime * 50) % (size.height / scanLineCount))
+        const flicker = Math.random() > 0.9 ? 0 : 1
+        ctx.globalAlpha = layer.opacity * flicker
+        ctx.beginPath()
+        ctx.moveTo(position.x, y)
+        ctx.lineTo(position.x + size.width, y)
+        ctx.stroke()
+      }
+      ctx.globalAlpha = layer.opacity
+      // Holographic glow
+      const holoGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+      holoGlow.addColorStop(0, color + '30')
+      holoGlow.addColorStop(1, 'transparent')
+      ctx.fillStyle = holoGlow
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      break
+    }
+
+    case 'energy-shields': {
+      // Hexagonal force field
+      ctx.strokeStyle = color + '80'
+      ctx.lineWidth = 2
+      const hexSize = radius * 0.15
+      const hexH = hexSize * Math.sqrt(3)
+      for (let row = 0; row < 6; row++) {
+        for (let col = 0; col < 6; col++) {
+          const hx = position.x + col * hexSize * 1.5 + (row % 2) * hexSize * 0.75
+          const hy = position.y + row * hexH * 0.5
+          const pulseAlpha = 0.3 + 0.7 * Math.sin(normalizedTime * 3 + row + col)
+          ctx.globalAlpha = layer.opacity * pulseAlpha
+          ctx.beginPath()
+          for (let i = 0; i < 6; i++) {
+            const angle = (i / 6) * Math.PI * 2 - Math.PI / 6
+            const px = hx + hexSize * 0.4 * Math.cos(angle)
+            const py = hy + hexSize * 0.4 * Math.sin(angle)
+            if (i === 0) ctx.moveTo(px, py)
+            else ctx.lineTo(px, py)
+          }
+          ctx.closePath()
+          ctx.stroke()
+        }
+      }
+      ctx.globalAlpha = layer.opacity
+      break
+    }
+
+    case 'data-streams': {
+      // Falling matrix-style code
+      ctx.fillStyle = color
+      ctx.font = `${radius * 0.08}px monospace`
+      const chars = '01アイウエオカキクケコ'
+      const columns = 12
+      for (let col = 0; col < columns; col++) {
+        const x = position.x + (col * size.width / columns)
+        const charCount = 8
+        for (let i = 0; i < charCount; i++) {
+          const y = position.y + ((i * 20 + normalizedTime * 100 + col * 30) % size.height)
+          const charAlpha = 1 - (i / charCount)
+          ctx.globalAlpha = layer.opacity * charAlpha
+          const char = chars[Math.floor((normalizedTime * 10 + col + i) % chars.length)]
+          ctx.fillText(char, x, y)
+        }
+      }
+      ctx.globalAlpha = layer.opacity
+      break
+    }
+
+    case 'reactor-core': {
+      // Pulsing energy core
+      const corePulse = 0.7 + 0.3 * Math.sin(normalizedTime * Math.PI * 4)
+      
+      // Outer energy ring
+      ctx.strokeStyle = color + '60'
+      ctx.lineWidth = 4
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius * 0.7 * corePulse, 0, Math.PI * 2)
+      ctx.stroke()
+      
+      // Inner energy ring
+      ctx.strokeStyle = secondaryColor + '80'
+      ctx.lineWidth = 3
+      ctx.beginPath()
+      ctx.arc(centerX, centerY, radius * 0.4 * corePulse, 0, Math.PI * 2)
+      ctx.stroke()
+      
+      // Core glow
+      const coreGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 0.3 * corePulse)
+      coreGlow.addColorStop(0, secondaryColor + 'ff')
+      coreGlow.addColorStop(0.5, color + 'aa')
+      coreGlow.addColorStop(1, 'transparent')
+      ctx.fillStyle = coreGlow
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+      
+      // Energy arcs
+      ctx.strokeStyle = secondaryColor + 'cc'
+      ctx.lineWidth = 2
+      for (let i = 0; i < 4; i++) {
+        const arcAngle = normalizedTime * 2 + (i / 4) * Math.PI * 2
+        const arcRadius = radius * 0.5
+        ctx.beginPath()
+        ctx.arc(centerX, centerY, arcRadius, arcAngle, arcAngle + Math.PI * 0.3)
+        ctx.stroke()
+      }
+      break
+    }
+
     case 'arcane-circles':
     case 'portals': {
       // Rotating magic circle
