@@ -1081,6 +1081,8 @@ function PackSection({
 export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
   const [expandedPacks, setExpandedPacks] = useState<Record<EffectPack, boolean>>({
     core: true,
+    atmospheric: false,
+    terrain: false,
     fantasy: false,
     scifi: false,
   })
@@ -1101,7 +1103,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <ScrollArea className="flex-1">
         <div className="py-1">
-          {(['core', 'fantasy', 'scifi'] as EffectPack[]).map((pack) => (
+          {(['core', 'atmospheric', 'terrain', 'fantasy', 'scifi'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}
