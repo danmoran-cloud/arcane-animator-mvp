@@ -312,17 +312,18 @@ function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gri
     return (
       <svg
         className="absolute inset-0 pointer-events-none"
+        style={{ zIndex: 9999 }}
         width={canvasSize.width}
         height={canvasSize.height}
       >
-        <g className="text-primary/25">
+        <g className="text-primary/40">
           {hexPaths.map((d, i) => (
             <path
               key={i}
               d={d}
               fill="none"
               stroke="currentColor"
-              strokeWidth="0.5"
+              strokeWidth="1"
             />
           ))}
         </g>
@@ -334,6 +335,7 @@ function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gri
   return (
     <svg
       className="absolute inset-0 pointer-events-none"
+      style={{ zIndex: 9999 }}
       width={canvasSize.width}
       height={canvasSize.height}
     >
@@ -348,8 +350,8 @@ function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gri
             d={`M ${gridSize} 0 L 0 0 0 ${gridSize}`}
             fill="none"
             stroke="currentColor"
-            strokeWidth="0.5"
-            className="text-primary/25"
+            strokeWidth="1"
+            className="text-primary/40"
           />
         </pattern>
       </defs>
@@ -773,14 +775,6 @@ export function MapCanvas() {
               }}
             >
               <div className="absolute inset-0 bg-muted/20 rounded-lg border border-border/50" />
-              
-              {state.project?.gridEnabled && (
-                <GridOverlay 
-                  gridSize={state.project.gridSize} 
-                  gridType={state.project.gridType || 'square'} 
-                  canvasSize={canvasSize} 
-                />
-              )}
 
               {state.project?.layers
                 .slice()
@@ -808,6 +802,15 @@ export function MapCanvas() {
                     />
                   )
                 ))}
+              
+              {/* Grid overlay - rendered on top of all layers */}
+              {state.project?.gridEnabled && (
+                <GridOverlay 
+                  gridSize={state.project.gridSize} 
+                  gridType={state.project.gridType || 'square'} 
+                  canvasSize={canvasSize} 
+                />
+              )}
             </div>
           ) : (
             <EmptyCanvasState onUpload={handleUploadClick} />
