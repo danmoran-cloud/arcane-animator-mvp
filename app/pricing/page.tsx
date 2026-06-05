@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TOKEN_PACKS, formatPrice } from '@/lib/tokens'
-import { createCheckoutSession } from '@/app/actions/stripe'
+import { createTokenPurchaseCheckout } from '@/app/actions/stripe'
 import { Coins, Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
 
@@ -24,7 +24,7 @@ export default function PricingPage() {
   const handlePurchase = async (packId: string) => {
     setLoading(packId)
     try {
-      const result = await createCheckoutSession(packId)
+      const result = await createTokenPurchaseCheckout(packId)
       if (result.url) {
         router.push(result.url)
       } else if (result.error) {
