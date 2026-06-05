@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge'
 import { TOKEN_PACKS, formatPrice } from '@/lib/tokens'
 import { createTokenPurchaseCheckout } from '@/app/actions/stripe'
-import { Coins, Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
+import { Coins, Sparkles, Zap, Crown, ArrowLeft, Check, Wheat, Compass, Sword, Castle } from 'lucide-react'
 import Link from 'next/link'
 
 const packIcons: Record<string, React.ReactNode> = {
-  starter: <Coins className="w-8 h-8" />,
-  popular: <Zap className="w-8 h-8" />,
-  pro: <Sparkles className="w-8 h-8" />,
-  studio: <Crown className="w-8 h-8" />,
+  commoner: <Wheat className="w-8 h-8" />,
+  adventurer: <Compass className="w-8 h-8" />,
+  hero: <Sword className="w-8 h-8" />,
+  noble: <Castle className="w-8 h-8" />,
 }
 
 export default function PricingPage() {
