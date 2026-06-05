@@ -13,25 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Save, 
   FolderOpen, 
   Download, 
-  Settings, 
   Plus,
   Sparkles,
-  User,
-  Coins,
 } from 'lucide-react'
 import { ExportModal } from './export-modal'
+import { UserMenu } from './user-menu'
 
 export function TopNavBar() {
   const { state, createProject, saveProject, loadProject, getSavedProjects, dispatch } = useEditor()
@@ -229,32 +220,8 @@ export function TopNavBar() {
           <div className="w-1 h-1 rounded-full bg-primary/40" />
         </div>
 
-        {/* Token display (demo) */}
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 border border-primary/20">
-          <Coins className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-medium text-primary">100</span>
-        </div>
-
-        {/* User */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-3.5 h-3.5 text-primary" />
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-card border-border">
-            <DropdownMenuItem className="gap-2 text-xs">
-              <Settings className="w-3.5 h-3.5" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 text-xs text-muted-foreground">
-              v1.0.0
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* User Menu with Auth */}
+        <UserMenu />
       </div>
     </nav>
   )
