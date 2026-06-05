@@ -65,7 +65,7 @@ export default function SignUpPage() {
             {referralCode && (
               <div className="p-3 text-sm bg-primary/10 text-primary rounded-lg flex items-center gap-2">
                 <Gift className="w-4 h-4" />
-                Referral code applied! You&apos;ll get 5 bonus tokens.
+                Referral applied! You&apos;ll earn 5 bonus tokens after your first token purchase.
               </div>
             )}
             {error && (

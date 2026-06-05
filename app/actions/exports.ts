@@ -71,6 +71,23 @@ export async function checkExportAuthorization(
   }
 }
 
+export async function getReferralCode(): Promise<{ referralCode: string | null }> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { referralCode: null }
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('referral_code')
+    .eq('id', user.id)
+    .single()
+
+  return { referralCode: profile?.referral_code ?? null }
+}
+
 export async function recordExport(
   userId: string,
   resolution: ExportResolution,

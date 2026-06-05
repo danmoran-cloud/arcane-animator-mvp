@@ -45,6 +45,7 @@ import {
 } from '@/lib/export-types'
 import { calculateExportCost } from '@/lib/tokens'
 import { checkExportAuthorization, recordExport, type ExportAuthResult } from '@/app/actions/exports'
+import { ShareSection } from './share-section'
 import type { Project, Layer, ExpandedEffectLayer } from '@/lib/types'
 import Link from 'next/link'
 
@@ -68,6 +69,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   const [settings, setSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
   const [progress, setProgress] = useState<ExportProgress>({ status: 'idle', progress: 0 })
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [exportedAt, setExportedAt] = useState<Date | null>(null)
   const [authResult, setAuthResult] = useState<ExportAuthResult | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(false)
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
@@ -227,6 +229,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       setProgress({ status: 'finalizing', progress: 95, message: 'Creating download...' })
       const url = URL.createObjectURL(blob)
       setDownloadUrl(url)
+      setExportedAt(new Date())
       setProgress({ status: 'complete', progress: 100, message: 'Export complete!' })
 
     } catch (error) {
@@ -255,6 +258,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       URL.revokeObjectURL(downloadUrl)
       setDownloadUrl(null)
     }
+    setExportedAt(null)
     setProgress({ status: 'idle', progress: 0 })
     onOpenChange(false)
   }
@@ -264,11 +268,17 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       <DialogContent className="bg-card border-border sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="font-serif text-primary flex items-center gap-2">
-            <Film className="w-5 h-5" />
-            Export Animated Map
+            {progress.status === 'complete' ? (
+              <CheckCircle className="w-5 h-5 text-green-500" />
+            ) : (
+              <Film className="w-5 h-5" />
+            )}
+            {progress.status === 'complete' ? 'Export Complete' : 'Export Animated Map'}
           </DialogTitle>
           <DialogDescription>
-            Export your animated map as a video file for use in VTTs
+            {progress.status === 'complete'
+              ? 'Download, share, and grow your collection of animated maps'
+              : 'Export your animated map as a video file for use in VTTs'}
           </DialogDescription>
         </DialogHeader>
 
@@ -418,15 +428,77 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
               ) : null}
             </div>
           </div>
+        ) : progress.status === 'complete' ? (
+          <div className="py-2 space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+            {/* Success header */}
+            <div className="text-center space-y-1">
+              <div className="flex justify-center mb-2">
+                <div className="p-3 rounded-full bg-green-500/10">
+                  <CheckCircle className="w-8 h-8 text-green-500" />
+                </div>
+              </div>
+              <h3 className="font-serif text-lg text-primary">Your animated map is ready.</h3>
+              <p className="text-sm text-muted-foreground text-pretty">
+                Help other Game Masters discover animated maps and earn bonus tokens through referrals.
+              </p>
+            </div>
+
+            {/* Preview */}
+            {downloadUrl && (
+              <div className="rounded-lg overflow-hidden border border-border bg-black">
+                <video
+                  src={downloadUrl}
+                  className="w-full max-h-64 object-contain"
+                  controls
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
+              </div>
+            )}
+
+            {/* Export details */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-muted/40 border border-border p-2 text-center">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Resolution</p>
+                <p className="text-sm font-medium">{settings.resolution.toUpperCase()}</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 border border-border p-2 text-center">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Duration</p>
+                <p className="text-sm font-medium">{settings.duration}s</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 border border-border p-2 text-center">
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Date</p>
+                <p className="text-sm font-medium">
+                  {(exportedAt ?? new Date()).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </p>
+              </div>
+            </div>
+
+            {/* Download button */}
+            {downloadUrl && (
+              <Button
+                onClick={handleDownload}
+                className="w-full bg-primary text-primary-foreground gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Download WebM
+              </Button>
+            )}
+
+            {/* Share + referral */}
+            <div className="pt-2 border-t border-border">
+              <ShareSection />
+            </div>
+          </div>
         ) : (
           <div className="py-6 space-y-4">
             {/* Progress Display */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  {progress.status === 'complete' ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                  ) : progress.status === 'error' ? (
+                  {progress.status === 'error' ? (
                     <AlertCircle className="w-5 h-5 text-destructive" />
                   ) : (
                     <Loader2 className="w-5 h-5 text-primary animate-spin" />
@@ -454,19 +526,6 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                 </p>
               )}
             </div>
-
-            {/* Download Button */}
-            {progress.status === 'complete' && downloadUrl && (
-              <div className="pt-4 border-t border-border">
-                <Button 
-                  onClick={handleDownload}
-                  className="w-full bg-primary text-primary-foreground gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download WebM
-                </Button>
-              </div>
-            )}
           </div>
         )}
 

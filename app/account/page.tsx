@@ -12,13 +12,12 @@ import {
   Download, 
   History, 
   Gift, 
-  Copy,
   CheckCircle,
   Clock,
   XCircle
 } from 'lucide-react'
 import { formatPrice } from '@/lib/tokens'
-import { CopyReferralButton } from './copy-referral-button'
+import { ReferralDashboard } from './referral-dashboard'
 import { RedeemCouponForm } from './redeem-coupon-form'
 
 export default async function AccountPage() {
@@ -52,6 +51,19 @@ export default async function AccountPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(10)
+
+  // Fetch referrals where this user is the referrer
+  const { data: referrals } = await supabase
+    .from('referrals')
+    .select('id, status, reward_granted, created_at, referred_user_id')
+    .eq('referrer_user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  const referralStats = {
+    total: referrals?.length ?? 0,
+    rewarded: referrals?.filter((r) => r.reward_granted).length ?? 0,
+    pending: referrals?.filter((r) => !r.reward_granted).length ?? 0,
+  }
 
   // Check if user has free export available
   const today = new Date().toISOString().split('T')[0]
@@ -97,41 +109,26 @@ export default async function AccountPage() {
             </CardContent>
           </Card>
 
-          {/* Referral */}
+          {/* Redeem Coupon */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Gift className="w-5 h-5 text-primary" />
-                Refer Friends
-              </CardTitle>
-              <CardDescription>
-                Earn 5 tokens for each friend who signs up!
-              </CardDescription>
+              <CardTitle>Redeem Coupon</CardTitle>
+              <CardDescription>Have a coupon code? Enter it below to claim your tokens.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg mb-4">
-                <code className="flex-1 font-mono text-sm">
-                  {profile?.referral_code || 'Loading...'}
-                </code>
-                <CopyReferralButton code={profile?.referral_code || ''} />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Tokens earned from referrals: {profile?.referral_tokens_earned || 0}
-              </p>
+              <RedeemCouponForm userId={user.id} />
             </CardContent>
           </Card>
         </div>
 
-        {/* Redeem Coupon */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Redeem Coupon</CardTitle>
-            <CardDescription>Have a coupon code? Enter it below to claim your tokens.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RedeemCouponForm userId={user.id} />
-          </CardContent>
-        </Card>
+        {/* Referral Dashboard */}
+        <div className="mb-8">
+          <ReferralDashboard
+            referralCode={profile?.referral_code || ''}
+            tokensEarned={profile?.referral_tokens_earned || 0}
+            stats={referralStats}
+          />
+        </div>
 
         {/* Purchase History */}
         <Card className="mb-8">

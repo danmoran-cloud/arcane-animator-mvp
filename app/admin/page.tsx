@@ -13,7 +13,8 @@ import {
   DollarSign,
   TrendingUp,
   Gift,
-  Plus
+  Plus,
+  Share2
 } from 'lucide-react'
 import { CreateCouponForm } from './create-coupon-form'
 
@@ -78,6 +79,48 @@ export default async function AdminPage() {
     .select('*')
     .order('created_at', { ascending: false })
     .limit(10)
+
+  // Referral analytics
+  const { data: allReferrals } = await supabase
+    .from('referrals')
+    .select('id, status, reward_granted, referrer_user_id, created_at')
+
+  const totalReferrals = allReferrals?.length ?? 0
+  const rewardedReferrals = allReferrals?.filter((r) => r.reward_granted).length ?? 0
+  const pendingReferrals = totalReferrals - rewardedReferrals
+  const conversionRate = totalReferrals > 0 ? Math.round((rewardedReferrals / totalReferrals) * 100) : 0
+  // Each rewarded referral grants 5 tokens to referrer + 5 to referred = 10 total
+  const referralTokensGranted = rewardedReferrals * 10
+
+  // Top referrers (count referrals per referrer)
+  const referrerCounts = new Map<string, { total: number; rewarded: number }>()
+  for (const r of allReferrals ?? []) {
+    const entry = referrerCounts.get(r.referrer_user_id) ?? { total: 0, rewarded: 0 }
+    entry.total += 1
+    if (r.reward_granted) entry.rewarded += 1
+    referrerCounts.set(r.referrer_user_id, entry)
+  }
+  const topReferrerIds = [...referrerCounts.entries()]
+    .sort((a, b) => b[1].total - a[1].total)
+    .slice(0, 5)
+
+  let topReferrers: { id: string; name: string; total: number; rewarded: number }[] = []
+  if (topReferrerIds.length > 0) {
+    const { data: referrerProfiles } = await supabase
+      .from('profiles')
+      .select('id, email, display_name')
+      .in('id', topReferrerIds.map(([id]) => id))
+
+    topReferrers = topReferrerIds.map(([id, counts]) => {
+      const p = referrerProfiles?.find((rp) => rp.id === id)
+      return {
+        id,
+        name: p?.display_name || p?.email || 'Unknown user',
+        total: counts.total,
+        rewarded: counts.rewarded,
+      }
+    })
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -256,6 +299,74 @@ export default async function AdminPage() {
             ) : (
               <p className="text-muted-foreground text-center py-4">No coupons created yet</p>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Referral Analytics Section */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5" />
+              Referral Analytics
+            </CardTitle>
+            <CardDescription>Track referral-driven growth and rewards</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Referral stat grid */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-lg bg-muted/50 border border-border p-4">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Total Referrals
+                </p>
+                <p className="text-2xl font-bold mt-1">{totalReferrals}</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 border border-border p-4">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Converted
+                </p>
+                <p className="text-2xl font-bold mt-1">{rewardedReferrals}</p>
+                <p className="text-xs text-muted-foreground">{conversionRate}% conversion</p>
+              </div>
+              <div className="rounded-lg bg-muted/50 border border-border p-4">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Gift className="w-4 h-4" />
+                  Pending
+                </p>
+                <p className="text-2xl font-bold mt-1">{pendingReferrals}</p>
+                <p className="text-xs text-muted-foreground">awaiting first purchase</p>
+              </div>
+              <div className="rounded-lg bg-primary/10 border border-primary/20 p-4">
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  <Coins className="w-4 h-4 text-primary" />
+                  Tokens Granted
+                </p>
+                <p className="text-2xl font-bold mt-1 text-primary">{referralTokensGranted}</p>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Top referrers */}
+            <div>
+              <h3 className="font-medium mb-3">Top Referrers</h3>
+              {topReferrers.length > 0 ? (
+                <div className="space-y-3">
+                  {topReferrers.map((ref) => (
+                    <div key={ref.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                      <p className="font-medium">{ref.name}</p>
+                      <div className="text-right text-sm">
+                        <p className="font-medium">{ref.total} referred</p>
+                        <p className="text-xs text-muted-foreground">{ref.rewarded} converted</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">No referrals yet</p>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
