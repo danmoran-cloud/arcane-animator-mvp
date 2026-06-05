@@ -6,15 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TOKEN_PACKS, formatPrice } from '@/lib/tokens'
-import { createTokenPurchaseCheckout } from '@/app/actions/stripe'
-import { Coins, Sparkles, Zap, Crown, ArrowLeft, Check, Wheat, Compass, Sword, Castle } from 'lucide-react'
+import { createCheckoutSession } from '@/app/actions/stripe'
+import { Coins, Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
 
 const packIcons: Record<string, React.ReactNode> = {
-  commoner: <Wheat className="w-8 h-8" />,
-  adventurer: <Compass className="w-8 h-8" />,
-  hero: <Sword className="w-8 h-8" />,
-  noble: <Castle className="w-8 h-8" />,
+  starter: <Coins className="w-8 h-8" />,
+  popular: <Zap className="w-8 h-8" />,
+  pro: <Sparkles className="w-8 h-8" />,
+  studio: <Crown className="w-8 h-8" />,
 }
 
 export default function PricingPage() {
@@ -24,7 +24,7 @@ export default function PricingPage() {
   const handlePurchase = async (packId: string) => {
     setLoading(packId)
     try {
-      const result = await createTokenPurchaseCheckout(packId)
+      const result = await createCheckoutSession(packId)
       if (result.url) {
         router.push(result.url)
       } else if (result.error) {
