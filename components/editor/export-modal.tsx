@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -28,6 +29,9 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Coins,
+  Gift,
+  LogIn,
 } from 'lucide-react'
 import { 
   ExportSettings, 
@@ -39,7 +43,10 @@ import {
   DEFAULT_EXPORT_SETTINGS,
   RESOLUTION_CONFIGS,
 } from '@/lib/export-types'
+import { calculateExportCost } from '@/lib/tokens'
+import { checkExportAuthorization, recordExport, type ExportAuthResult } from '@/app/actions/exports'
 import type { Project, Layer, ExpandedEffectLayer } from '@/lib/types'
+import Link from 'next/link'
 
 interface ExportModalProps {
   open: boolean
@@ -61,10 +68,27 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   const [settings, setSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
   const [progress, setProgress] = useState<ExportProgress>({ status: 'idle', progress: 0 })
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+  const [authResult, setAuthResult] = useState<ExportAuthResult | null>(null)
+  const [checkingAuth, setCheckingAuth] = useState(false)
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
   const abortController = useRef<AbortController | null>(null)
 
   const isExporting = ['preparing', 'rendering', 'encoding', 'finalizing'].includes(progress.status)
+  const exportCost = calculateExportCost(settings.resolution, settings.duration)
+
+  // Check authorization when modal opens or settings change
+  useEffect(() => {
+    if (open) {
+      checkAuth()
+    }
+  }, [open, settings.resolution, settings.duration])
+
+  const checkAuth = async () => {
+    setCheckingAuth(true)
+    const result = await checkExportAuthorization(settings.resolution, settings.duration)
+    setAuthResult(result)
+    setCheckingAuth(false)
+  }
 
   // Preload images when modal opens
   useEffect(() => {
@@ -105,12 +129,24 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   }
 
   const handleExport = async () => {
-    if (!project) return
+    if (!project || !authResult?.authorized || !authResult.userId) return
 
     setProgress({ status: 'preparing', progress: 0, message: 'Preparing export...' })
     setDownloadUrl(null)
 
     try {
+      // Record the export and deduct tokens first
+      const recordResult = await recordExport(
+        authResult.userId,
+        settings.resolution,
+        settings.duration,
+        authResult.hasFreeExport || false
+      )
+
+      if (!recordResult.success) {
+        throw new Error(recordResult.error || 'Failed to process export')
+      }
+
       const { width, height } = RESOLUTION_CONFIGS[settings.resolution]
       const totalFrames = settings.duration * settings.frameRate
       const frameDuration = 1000 / settings.frameRate
@@ -332,6 +368,55 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                 {settings.duration * settings.frameRate} frames at {RESOLUTION_CONFIGS[settings.resolution].width}x{RESOLUTION_CONFIGS[settings.resolution].height}
               </p>
             </div>
+
+            {/* Token Cost Display */}
+            <div className="rounded-lg bg-primary/5 p-4 border border-primary/20 space-y-3">
+              {checkingAuth ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Checking account...
+                </div>
+              ) : authResult ? (
+                <>
+                  {!authResult.userId ? (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <LogIn className="w-4 h-4" />
+                        Sign in to export
+                      </div>
+                      <Button asChild size="sm" variant="outline" className="w-full">
+                        <Link href="/auth/login">Sign In</Link>
+                      </Button>
+                    </div>
+                  ) : authResult.hasFreeExport && settings.resolution === 'sd' ? (
+                    <div className="flex items-center gap-2">
+                      <Gift className="w-5 h-5 text-green-500" />
+                      <span className="font-medium text-green-600">Free daily export available!</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Coins className="w-5 h-5 text-primary" />
+                          <span className="font-medium">Cost: {exportCost} tokens</span>
+                        </div>
+                        <span className="text-sm text-muted-foreground">
+                          Balance: {authResult.tokenBalance || 0}
+                        </span>
+                      </div>
+                      {!authResult.authorized && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-destructive">{authResult.error}</span>
+                          <Button asChild size="sm" variant="outline">
+                            <Link href="/pricing">Buy Tokens</Link>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
           </div>
         ) : (
           <div className="py-6 space-y-4">
@@ -393,11 +478,11 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
               </Button>
               <Button 
                 onClick={handleExport}
-                disabled={!project}
+                disabled={!project || !authResult?.authorized || checkingAuth}
                 className="bg-primary text-primary-foreground gap-2"
               >
                 <Film className="w-4 h-4" />
-                Start Export
+                {authResult?.hasFreeExport && settings.resolution === 'sd' ? 'Export Free' : `Export (${exportCost} tokens)`}
               </Button>
             </>
           )}
