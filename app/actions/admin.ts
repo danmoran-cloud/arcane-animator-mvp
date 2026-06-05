@@ -3,7 +3,13 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
-export async function createCoupon(formData: FormData) {
+export async function createCoupon(data: {
+  code: string
+  tokenAmount: number
+  maxUses?: number
+  oneUsePerUser: boolean
+  expiresAt?: string
+}) {
   const supabase = await createClient()
   
   // Check admin status
@@ -22,20 +28,14 @@ export async function createCoupon(formData: FormData) {
     return { success: false, error: 'Unauthorized' }
   }
 
-  const code = formData.get('code') as string
-  const tokenAmount = parseInt(formData.get('tokenAmount') as string)
-  const maxUses = formData.get('maxUses') ? parseInt(formData.get('maxUses') as string) : null
-  const oneUsePerUser = formData.get('oneUsePerUser') === 'true'
-  const expiresAt = formData.get('expiresAt') as string | null
-
   const { error } = await supabase
     .from('coupons')
     .insert({
-      code: code.toUpperCase(),
-      token_amount: tokenAmount,
-      max_uses: maxUses,
-      one_use_per_user: oneUsePerUser,
-      expires_at: expiresAt || null,
+      code: data.code.toUpperCase(),
+      token_amount: data.tokenAmount,
+      max_uses: data.maxUses || null,
+      one_use_per_user: data.oneUsePerUser,
+      expires_at: data.expiresAt || null,
     })
 
   if (error) {
