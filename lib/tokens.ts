@@ -11,29 +11,29 @@ export interface TokenPack {
 
 export const TOKEN_PACKS: TokenPack[] = [
   {
-    id: 'starter',
-    name: 'Starter Pack',
+    id: 'commoner',
+    name: "Commoner's Pack",
     tokens: 10,
     priceInCents: 499, // $4.99
   },
   {
-    id: 'standard',
-    name: 'Standard Pack',
+    id: 'adventurer',
+    name: "Adventurer's Pack",
     tokens: 25,
     priceInCents: 999, // $9.99
     popular: true,
     savings: 'Save 20%',
   },
   {
-    id: 'pro',
-    name: 'Pro Pack',
+    id: 'hero',
+    name: "Hero's Pack",
     tokens: 60,
     priceInCents: 1999, // $19.99
     savings: 'Save 33%',
   },
   {
-    id: 'studio',
-    name: 'Studio Pack',
+    id: 'noble',
+    name: "Noble's Pack",
     tokens: 150,
     priceInCents: 3999, // $39.99
     savings: 'Save 46%',
