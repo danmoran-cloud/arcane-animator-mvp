@@ -116,6 +116,11 @@ export function canAffordExport(
 // Referral reward amount
 export const REFERRAL_REWARD_TOKENS = 5
 
+// Format price from cents to display string
+export function formatPrice(cents: number): string {
+  return `$${(cents / 100).toFixed(2)}`
+}
+
 // Check if user can use daily free export
 export function canUseFreeExport(lastFreeExportDate: Date | null): boolean {
   if (!lastFreeExportDate) return true
