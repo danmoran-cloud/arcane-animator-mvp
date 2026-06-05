@@ -34,7 +34,7 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/editor')
+    router.push('/')
     router.refresh()
   }
 
