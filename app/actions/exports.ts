@@ -19,9 +19,7 @@ export async function checkExportAuthorization(
 ): Promise<ExportAuthResult> {
   const supabase = await createClient()
   
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  
-  console.log('[v0] checkExportAuthorization - user:', user?.id, 'authError:', authError?.message)
+  const { data: { user } } = await supabase.auth.getUser()
   
   if (!user) {
     return { authorized: false, error: 'Please sign in to export' }
