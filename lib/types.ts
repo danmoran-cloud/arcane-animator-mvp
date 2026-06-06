@@ -66,6 +66,8 @@ export interface EditorState {
   panOffset: Position
   isDragging: boolean
   isResizing: boolean
+  /** Size of the visible canvas viewport in screen pixels (for centering new layers) */
+  viewportSize: { width: number; height: number }
 }
 
 // Re-exports for backwards compatibility

@@ -338,38 +338,81 @@ function CampfireEffect({ settings, width, height }: { settings: EffectSettings;
 // Water ripples effect - TOP DOWN: concentric circles (already correct)
 function WaterRipplesEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
   const rippleSources = useMemo(() => 
-    Array.from({ length: Math.floor(settings.density / 25) + 2 }, (_, i) => ({
+    Array.from({ length: Math.floor(settings.density / 25) + 3 }, (_, i) => ({
       id: i,
-      x: 20 + Math.random() * 60,
-      y: 20 + Math.random() * 60,
-      delay: i * 2,
+      x: 10 + Math.random() * 80,
+      y: 10 + Math.random() * 80,
+      delay: i * 1.3,
+      size: 24 + Math.random() * 28,
     })),
   [settings.density])
+
+  const tint = settings.color || '#3b82f6'
+  const speedFactor = 100 / (settings.speed || 50)
 
   return (
     <div className="absolute inset-0 overflow-hidden">
       <style>{`
-        @keyframes ripple-expand {
-          0% { transform: scale(0); opacity: 0.6; }
-          100% { transform: scale(4); opacity: 0; }
+        @keyframes water-ripple-expand {
+          0% { transform: scale(0.2); opacity: 0.7; }
+          100% { transform: scale(3.5); opacity: 0; }
+        }
+        @keyframes water-surface-shift {
+          0% { background-position: 0% 0%, 0% 0%; }
+          50% { background-position: 100% 50%, -50% 100%; }
+          100% { background-position: 0% 0%, 0% 0%; }
+        }
+        @keyframes water-sheen {
+          0%, 100% { opacity: 0.25; }
+          50% { opacity: 0.5; }
         }
       `}</style>
+
+      {/* Water surface base fill */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(180deg, ${tint}66 0%, ${tint}99 100%)`,
+        }}
+      />
+
+      {/* Animated caustic/wave texture */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `radial-gradient(ellipse at 30% 40%, ${settings.secondaryColor || '#ffffff'}33 0%, transparent 45%), radial-gradient(ellipse at 70% 60%, ${tint}55 0%, transparent 50%)`,
+          backgroundSize: '120% 120%, 140% 140%',
+          mixBlendMode: 'screen',
+          animation: `water-surface-shift ${8 * speedFactor}s ease-in-out infinite`,
+        }}
+      />
+
+      {/* Surface sheen sweep */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `linear-gradient(115deg, transparent 35%, ${settings.secondaryColor || '#ffffff'}40 50%, transparent 65%)`,
+          animation: `water-sheen ${5 * speedFactor}s ease-in-out infinite`,
+        }}
+      />
+
+      {/* Expanding ripple rings */}
       {rippleSources.map((source) => (
         <div key={source.id}>
-          {[0, 1, 2].map((ring) => (
+          {[0, 1].map((ring) => (
             <div
               key={ring}
-              className="absolute rounded-full border"
+              className="absolute rounded-full border-2"
               style={{
                 left: `${source.x}%`,
                 top: `${source.y}%`,
-                width: 30,
-                height: 30,
-                marginLeft: -15,
-                marginTop: -15,
-                borderColor: settings.color,
-                animation: `ripple-expand ${3 * (100 / settings.speed)}s ease-out infinite`,
-                animationDelay: `${source.delay + ring * 0.8}s`,
+                width: source.size,
+                height: source.size * 0.7,
+                marginLeft: -source.size / 2,
+                marginTop: -(source.size * 0.7) / 2,
+                borderColor: `${settings.secondaryColor || '#ffffff'}aa`,
+                animation: `water-ripple-expand ${4 * speedFactor}s ease-out infinite`,
+                animationDelay: `${source.delay + ring * 1.2}s`,
               }}
             />
           ))}
@@ -381,40 +424,65 @@ function WaterRipplesEffect({ settings, width, height }: { settings: EffectSetti
 
 // Waterfall effect - TOP DOWN: water stream with spray
 function WaterfallEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
+  const tint = settings.color || '#3b82f6'
+  const foam = settings.secondaryColor || '#ffffff'
+  const speedFactor = 100 / (settings.speed || 50)
+
   return (
     <div className="absolute inset-0 overflow-hidden">
       <style>{`
         @keyframes water-flow-topdown {
           0% { background-position: 0 0; }
-          100% { background-position: 0 100px; }
+          100% { background-position: 0 200px; }
         }
         @keyframes spray-pulse {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.6; transform: scale(1.2); }
+          0%, 100% { opacity: 0.35; transform: translateX(-50%) scale(1); }
+          50% { opacity: 0.65; transform: translateX(-50%) scale(1.15); }
         }
       `}</style>
-      
-      {/* Water flow band */}
-      <div 
-        className="absolute left-1/2 -translate-x-1/2 top-0 h-full"
+
+      {/* Water flow band - fills most of the layer width */}
+      <div
+        className="absolute left-1/2 -translate-x-1/2 top-0 h-full overflow-hidden"
+        style={{ width: '70%' }}
+      >
+        {/* Base water color */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(180deg, ${tint}cc 0%, ${tint}aa 60%, ${foam}88 100%)`,
+          }}
+        />
+        {/* Flowing streaks */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `repeating-linear-gradient(180deg, ${foam}55 0px, transparent 8px, transparent 22px, ${foam}33 30px)`,
+            backgroundSize: '100% 60px',
+            animation: `water-flow-topdown ${0.6 * speedFactor}s linear infinite`,
+          }}
+        />
+        {/* Highlight streaks */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `repeating-linear-gradient(180deg, ${foam}80 0px, transparent 4px, transparent 40px)`,
+            backgroundSize: '100% 90px',
+            opacity: 0.6,
+            animation: `water-flow-topdown ${0.9 * speedFactor}s linear infinite`,
+          }}
+        />
+      </div>
+
+      {/* Spray/foam at bottom */}
+      <div
+        className="absolute bottom-0 left-1/2 rounded-full"
         style={{
-          width: '20%',
-          background: `linear-gradient(180deg, ${settings.color}, ${settings.secondaryColor || '#fff'}, ${settings.color})`,
-          backgroundSize: '100% 50px',
-          opacity: 0.7,
-          animation: `water-flow-topdown ${0.5 * (100 / settings.speed)}s linear infinite`,
-        }}
-      />
-      
-      {/* Spray at bottom */}
-      <div 
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full"
-        style={{
-          width: '50%',
+          width: '80%',
           height: '30%',
-          background: `radial-gradient(ellipse, ${settings.secondaryColor || '#fff'}50, transparent 70%)`,
-          animation: 'spray-pulse 1.5s ease-in-out infinite',
-          filter: 'blur(10px)',
+          background: `radial-gradient(ellipse at center bottom, ${foam}66, transparent 70%)`,
+          animation: `spray-pulse ${1.5 * speedFactor}s ease-in-out infinite`,
+          filter: 'blur(8px)',
         }}
       />
     </div>

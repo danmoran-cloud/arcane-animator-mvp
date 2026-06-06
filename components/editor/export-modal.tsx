@@ -782,15 +782,32 @@ function renderEffect(
     }
 
     case 'water-ripples': {
-      // Concentric ripples
-      ctx.strokeStyle = color + '40'
-      ctx.lineWidth = 1
+      // Filled water surface base
+      const waterGradient = ctx.createLinearGradient(position.x, position.y, position.x, position.y + size.height)
+      waterGradient.addColorStop(0, color + '66')
+      waterGradient.addColorStop(1, color + '99')
+      ctx.fillStyle = waterGradient
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+
+      // Caustic highlights
+      const caustic = ctx.createRadialGradient(
+        position.x + size.width * 0.35, position.y + size.height * 0.4, 0,
+        position.x + size.width * 0.35, position.y + size.height * 0.4, size.width * 0.5
+      )
+      caustic.addColorStop(0, (secondaryColor || '#ffffff') + '33')
+      caustic.addColorStop(1, 'transparent')
+      ctx.fillStyle = caustic
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+
+      // Expanding ripple rings
+      ctx.strokeStyle = (secondaryColor || '#ffffff') + 'aa'
+      ctx.lineWidth = 2
       for (let i = 0; i < 4; i++) {
         const rippleRadius = ((normalizedTime * 50 + i * 30) % radius)
         const alpha = 1 - rippleRadius / radius
         ctx.globalAlpha = layer.opacity * alpha
         ctx.beginPath()
-        ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2)
+        ctx.ellipse(centerX, centerY, rippleRadius, rippleRadius * 0.7, 0, 0, Math.PI * 2)
         ctx.stroke()
       }
       ctx.globalAlpha = layer.opacity
@@ -868,21 +885,32 @@ function renderEffect(
     }
 
     case 'waterfall': {
-      // Cascading water lines
-      ctx.strokeStyle = color + '70'
+      // Filled flowing water band (70% width, centered)
+      const bandWidth = size.width * 0.7
+      const bandX = position.x + (size.width - bandWidth) / 2
+      const flowGradient = ctx.createLinearGradient(bandX, position.y, bandX, position.y + size.height)
+      flowGradient.addColorStop(0, color + 'cc')
+      flowGradient.addColorStop(0.6, color + 'aa')
+      flowGradient.addColorStop(1, (secondaryColor || '#ffffff') + '88')
+      ctx.fillStyle = flowGradient
+      ctx.fillRect(bandX, position.y, bandWidth, size.height)
+
+      // Flowing highlight streaks
+      ctx.strokeStyle = (secondaryColor || '#ffffff') + '99'
       ctx.lineWidth = 3
+      const streakOffset = (normalizedTime * 200) % 60
       for (let i = 0; i < 8; i++) {
-        const x = position.x + size.width * 0.2 + (i * size.width * 0.6 / 8)
+        const x = bandX + (i + 0.5) * bandWidth / 8
         const waveOffset = Math.sin(normalizedTime * 4 + i) * 3
         ctx.beginPath()
-        ctx.moveTo(x + waveOffset, position.y)
+        ctx.moveTo(x + waveOffset, position.y - 60 + streakOffset)
         ctx.lineTo(x - waveOffset, position.y + size.height)
         ctx.stroke()
       }
       // Mist at bottom
       const mistGradient = ctx.createLinearGradient(position.x, position.y + size.height * 0.7, position.x, position.y + size.height)
       mistGradient.addColorStop(0, 'transparent')
-      mistGradient.addColorStop(1, (secondaryColor || '#ffffff') + '60')
+      mistGradient.addColorStop(1, (secondaryColor || '#ffffff') + '66')
       ctx.fillStyle = mistGradient
       ctx.fillRect(position.x, position.y, size.width, size.height)
       break
