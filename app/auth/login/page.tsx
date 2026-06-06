@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import { Logo } from '@/components/logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -43,11 +44,9 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-xl bg-primary/10">
-              <Sparkles className="w-8 h-8 text-primary" />
-            </div>
+            <Logo size={56} showWordmark={false} href="/" />
           </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardTitle className="text-2xl font-serif tracking-wide">Welcome Back</CardTitle>
           <CardDescription>Sign in to your Arcane Animator account</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>

@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TOKEN_PACKS, formatPrice } from '@/lib/tokens'
-import { createCheckoutSession } from '@/app/actions/stripe'
+import { createTokenPurchaseCheckout } from '@/app/actions/stripe'
 import { Coins, Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
+import { Logo } from '@/components/logo'
 
 const packIcons: Record<string, React.ReactNode> = {
   starter: <Coins className="w-8 h-8" />,
@@ -24,7 +25,7 @@ export default function PricingPage() {
   const handlePurchase = async (packId: string) => {
     setLoading(packId)
     try {
-      const result = await createCheckoutSession(packId)
+      const result = await createTokenPurchaseCheckout(packId)
       if (result.url) {
         router.push(result.url)
       } else if (result.error) {
@@ -49,8 +50,11 @@ export default function PricingPage() {
         </div>
 
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Get Export Tokens</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <div className="flex justify-center mb-6">
+            <Logo size={44} withTagline href="/" />
+          </div>
+          <h1 className="text-4xl font-serif font-bold tracking-wide mb-4 text-balance">Get Export Tokens</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
             Purchase tokens to export your animated maps as high-quality WebM videos for use in your favorite VTT.
           </p>
         </div>
