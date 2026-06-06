@@ -187,23 +187,30 @@ function TorchEffect({ settings, width, height }: { settings: EffectSettings; wi
 // Sprite: 60 frames, 64x64 each, 10 columns x 6 rows
 function Torch2Effect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
   const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png'
-  const frameWidth = 64
-  const frameHeight = 64
   const columns = 10
   const rows = 6
   const totalFrames = 60
   const animationDuration = (100 / (settings.speed || 50)) * 2 // seconds
-  
+
+  // Percentage-based sprite sheet rendering so the active frame always FILLS
+  // the layer bounds on both axes (X and Y stretch independently with the box).
+  // For an N-frame sheet, background-size is (columns*100%) x (rows*100%) which
+  // sizes each frame to exactly the container, and background-position uses the
+  // percentage form col/(columns-1) x row/(rows-1).
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
       <style>{`
         @keyframes torch2-sprite {
-          0% { background-position: 0 0; }
+          0% { background-position: 0% 0%; }
           ${Array.from({ length: totalFrames }, (_, i) => {
             const col = i % columns
             const row = Math.floor(i / columns)
+            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
+            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
             const percent = ((i + 1) / totalFrames) * 100
-            return `${percent.toFixed(2)}% { background-position: -${col * frameWidth}px -${row * frameHeight}px; }`
+            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
           }).join('\n          ')}
         }
         @keyframes torch2-glow {
@@ -223,14 +230,14 @@ function Torch2Effect({ settings, width, height }: { settings: EffectSettings; w
         }}
       />
       
-      {/* Animated flame sprite */}
+      {/* Animated flame sprite - fills the entire layer bounds (object-fit: fill equivalent) */}
       <div 
-        className="absolute"
+        className="absolute inset-0"
         style={{
-          width: frameWidth * (settings.scale || 1),
-          height: frameHeight * (settings.scale || 1),
+          width: '100%',
+          height: '100%',
           backgroundImage: `url(${spriteUrl})`,
-          backgroundSize: `${columns * frameWidth}px ${rows * frameHeight}px`,
+          backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
           animation: `torch2-sprite ${animationDuration}s steps(1) infinite`,
           mixBlendMode: 'screen', // Makes black background transparent

@@ -669,12 +669,12 @@ function renderEffect(
         const sx = col * frameWidth
         const sy = row * frameHeight
         
-        // Draw the sprite frame centered in the effect area
-        const scale = Math.min(size.width, size.height) / frameWidth
-        const drawWidth = frameWidth * scale
-        const drawHeight = frameHeight * scale
-        const drawX = centerX - drawWidth / 2
-        const drawY = centerY - drawHeight / 2
+        // Stretch the sprite frame to FILL the entire layer bounds on both axes,
+        // matching the editor preview (object-fit: fill / background-size: 100% 100%).
+        const drawX = position.x
+        const drawY = position.y
+        const drawWidth = size.width
+        const drawHeight = size.height
         
         // Draw ambient glow first
         const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
