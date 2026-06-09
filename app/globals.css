@@ -4,77 +4,77 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Arcane Animator brand palette */
-  /* Background: deep purple-black (#0E0E12) */
-  --background: oklch(0.16 0.012 295);
-  --foreground: oklch(0.89 0.035 85);
+  /* Fantasy Theme - Arcane Animator */
+  /* Primary: Deep charcoal & Dark walnut wood */
+  --background: oklch(0.15 0.02 60);
+  --foreground: oklch(0.92 0.02 80);
   
-  /* Card: dark surface (#1D1D23 / #1A1025) */
-  --card: oklch(0.21 0.018 295);
-  --card-foreground: oklch(0.89 0.035 85);
+  /* Card: Aged parchment feel */
+  --card: oklch(0.22 0.025 50);
+  --card-foreground: oklch(0.90 0.02 80);
   
-  /* Popover: dark panel */
-  --popover: oklch(0.19 0.018 295);
-  --popover-foreground: oklch(0.89 0.035 85);
+  /* Popover: Dark wood panels */
+  --popover: oklch(0.18 0.02 55);
+  --popover-foreground: oklch(0.90 0.02 80);
   
-  /* Primary: burnished gold (#D4AF37) - CTAs, buttons, borders */
-  --primary: oklch(0.75 0.13 85);
-  --primary-foreground: oklch(0.16 0.012 295);
+  /* Primary: Burnished gold */
+  --primary: oklch(0.72 0.14 75);
+  --primary-foreground: oklch(0.15 0.02 60);
   
-  /* Secondary: deep purple surface */
-  --secondary: oklch(0.32 0.09 295);
-  --secondary-foreground: oklch(0.92 0.04 295);
+  /* Secondary: Antique bronze */
+  --secondary: oklch(0.45 0.08 55);
+  --secondary-foreground: oklch(0.90 0.02 80);
   
-  /* Muted: dark purple-grey */
-  --muted: oklch(0.26 0.02 295);
-  --muted-foreground: oklch(0.72 0.02 90);
+  /* Muted: Darker wood tones */
+  --muted: oklch(0.25 0.02 50);
+  --muted-foreground: oklch(0.65 0.02 70);
   
-  /* Accent: arcane purple (#7B4DFF) - brand color, links, highlights, glows */
-  --accent: oklch(0.55 0.22 290);
-  --accent-foreground: oklch(0.97 0.01 290);
+  /* Accent: Arcane blue glow */
+  --accent: oklch(0.55 0.18 250);
+  --accent-foreground: oklch(0.95 0.01 250);
   
-  /* Destructive: deep red */
+  /* Destructive: Deep red */
   --destructive: oklch(0.50 0.20 25);
   --destructive-foreground: oklch(0.95 0.02 25);
   
-  /* Borders: gold trim */
-  --border: oklch(0.42 0.06 90);
-  --input: oklch(0.28 0.02 295);
-  --ring: oklch(0.55 0.22 290);
+  /* Borders: Bronze trim */
+  --border: oklch(0.40 0.06 60);
+  --input: oklch(0.28 0.02 55);
+  --ring: oklch(0.72 0.14 75);
   
   /* Magical accent colors */
-  --arcane-blue: oklch(0.55 0.22 290);
-  --arcane-blue-glow: oklch(0.72 0.15 295);
+  --arcane-blue: oklch(0.60 0.20 250);
+  --arcane-blue-glow: oklch(0.70 0.18 250);
   --emerald-magic: oklch(0.60 0.18 160);
-  --purple-energy: oklch(0.55 0.22 290);
-  --gold-highlight: oklch(0.83 0.11 85);
-  --parchment: oklch(0.89 0.04 85);
-  --parchment-dark: oklch(0.30 0.03 295);
+  --purple-energy: oklch(0.55 0.22 300);
+  --gold-highlight: oklch(0.80 0.15 80);
+  --parchment: oklch(0.85 0.04 80);
+  --parchment-dark: oklch(0.30 0.03 60);
   
-  /* Chart colors - brand themed */
-  --chart-1: oklch(0.55 0.22 290);
-  --chart-2: oklch(0.72 0.15 295);
-  --chart-3: oklch(0.75 0.13 85);
-  --chart-4: oklch(0.83 0.11 85);
-  --chart-5: oklch(0.60 0.18 160);
+  /* Chart colors - magical themed */
+  --chart-1: oklch(0.60 0.20 250);
+  --chart-2: oklch(0.60 0.18 160);
+  --chart-3: oklch(0.55 0.22 300);
+  --chart-4: oklch(0.72 0.14 75);
+  --chart-5: oklch(0.50 0.20 25);
   
   --radius: 0.5rem;
   
-  /* Sidebar: dark panel */
-  --sidebar: oklch(0.19 0.018 295);
-  --sidebar-foreground: oklch(0.89 0.035 85);
-  --sidebar-primary: oklch(0.75 0.13 85);
-  --sidebar-primary-foreground: oklch(0.16 0.012 295);
-  --sidebar-accent: oklch(0.26 0.02 295);
-  --sidebar-accent-foreground: oklch(0.89 0.035 85);
-  --sidebar-border: oklch(0.35 0.04 295);
-  --sidebar-ring: oklch(0.55 0.22 290);
+  /* Sidebar: Dark panel */
+  --sidebar: oklch(0.18 0.02 55);
+  --sidebar-foreground: oklch(0.90 0.02 80);
+  --sidebar-primary: oklch(0.72 0.14 75);
+  --sidebar-primary-foreground: oklch(0.15 0.02 60);
+  --sidebar-accent: oklch(0.25 0.02 50);
+  --sidebar-accent-foreground: oklch(0.90 0.02 80);
+  --sidebar-border: oklch(0.35 0.04 55);
+  --sidebar-ring: oklch(0.72 0.14 75);
 }
 
 @theme inline {
-  --font-sans: var(--font-manrope), 'Inter', 'Helvetica Neue', sans-serif;
-  --font-serif: var(--font-cinzel), 'Palatino Linotype', serif;
-  --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
+  --font-sans: 'Cormorant Garamond', 'Georgia', serif;
+  --font-serif: 'Cinzel', 'Palatino Linotype', serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -133,38 +133,37 @@
 @layer utilities {
   .fantasy-border {
     border: 1px solid var(--border);
-    box-shadow: inset 0 1px 0 0 oklch(0.75 0.13 85 / 0.2),
-                0 2px 4px oklch(0 0 0 / 0.4);
+    box-shadow: inset 0 1px 0 0 oklch(0.50 0.06 60 / 0.3),
+                0 2px 4px oklch(0 0 0 / 0.3);
   }
   
   .fantasy-glow {
-    box-shadow: 0 0 20px oklch(0.55 0.22 290 / 0.35),
-                0 0 40px oklch(0.55 0.22 290 / 0.12);
+    box-shadow: 0 0 20px oklch(0.60 0.20 250 / 0.3),
+                0 0 40px oklch(0.60 0.20 250 / 0.1);
   }
   
   .fantasy-gold-glow {
-    box-shadow: 0 0 10px oklch(0.75 0.13 85 / 0.4),
-                0 0 20px oklch(0.75 0.13 85 / 0.2);
+    box-shadow: 0 0 10px oklch(0.72 0.14 75 / 0.4),
+                0 0 20px oklch(0.72 0.14 75 / 0.2);
   }
   
   .text-fantasy-heading {
-    font-family: var(--font-cinzel), serif;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.05em;
   }
   
   .parchment-bg {
     background: linear-gradient(
       135deg,
-      oklch(0.24 0.025 295) 0%,
-      oklch(0.21 0.02 295) 50%,
-      oklch(0.19 0.025 295) 100%
+      oklch(0.25 0.025 55) 0%,
+      oklch(0.22 0.02 50) 50%,
+      oklch(0.20 0.025 55) 100%
     );
   }
   
   .ornate-border {
     position: relative;
-    border: 2px solid oklch(0.42 0.06 90);
+    border: 2px solid oklch(0.45 0.08 55);
     border-radius: var(--radius);
   }
   
@@ -172,7 +171,7 @@
     content: '';
     position: absolute;
     inset: -1px;
-    border: 1px solid oklch(0.75 0.13 85 / 0.3);
+    border: 1px solid oklch(0.72 0.14 75 / 0.3);
     border-radius: inherit;
     pointer-events: none;
   }
@@ -239,17 +238,17 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: oklch(0.19 0.018 295);
+  background: oklch(0.18 0.02 55);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.40 0.06 295);
+  background: oklch(0.40 0.06 60);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.50 0.10 290);
+  background: oklch(0.50 0.08 60);
 }
 
 /* Mini Effect Preview Animations - TOP DOWN VIEWS */

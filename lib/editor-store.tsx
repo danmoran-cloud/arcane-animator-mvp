@@ -30,7 +30,6 @@ type EditorAction =
   | { type: 'SET_GRID_SIZE'; size: number }
   | { type: 'SET_DRAGGING'; isDragging: boolean }
   | { type: 'SET_RESIZING'; isResizing: boolean }
-  | { type: 'SET_VIEWPORT_SIZE'; size: { width: number; height: number } }
 
 const initialState: EditorState = {
   project: null,
@@ -39,7 +38,6 @@ const initialState: EditorState = {
   panOffset: { x: 0, y: 0 },
   isDragging: false,
   isResizing: false,
-  viewportSize: { width: 1280, height: 720 },
 }
 
 function createNewProject(name: string): Project {
@@ -204,12 +202,6 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         panOffset: action.offset,
       }
     
-    case 'SET_VIEWPORT_SIZE':
-      return {
-        ...state,
-        viewportSize: action.size,
-      }
-    
     case 'TOGGLE_GRID':
       if (!state.project) return state
       return {
@@ -332,15 +324,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   }
 
   const addEffectLayer = (effect: EffectDefinition) => {
-    const size = { width: 300, height: 300 }
-
-    // Place the new layer at the CENTER of the current viewport, in image
-    // coordinates, so it's immediately visible no matter how the user has
-    // panned/zoomed. Screen -> image: image = (screen - panOffset) / zoom.
-    const { zoom, panOffset, viewportSize } = state
-    const viewCenterX = (viewportSize.width / 2 - panOffset.x) / zoom
-    const viewCenterY = (viewportSize.height / 2 - panOffset.y) / zoom
-
     const layer: ExpandedEffectLayer = {
       id: uuidv4(),
       name: effect.name,
@@ -348,11 +331,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       effectId: effect.id,
       category: effect.pack,
       settings: { ...effect.defaultSettings },
-      position: {
-        x: Math.round(viewCenterX - size.width / 2),
-        y: Math.round(viewCenterY - size.height / 2),
-      },
-      size,
+      position: { x: 100, y: 100 },
+      size: { width: 300, height: 300 },
       rotation: 0,
       opacity: 1,
       visible: true,
@@ -360,7 +340,6 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       zIndex: state.project?.layers.length || 0,
     }
     dispatch({ type: 'ADD_LAYER', layer })
-    dispatch({ type: 'SELECT_LAYER', layerId: layer.id })
   }
 
   const selectLayer = (layerId: string | null) => {

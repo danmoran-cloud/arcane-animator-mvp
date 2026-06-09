@@ -2,7 +2,6 @@ import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Mail, Sparkles } from 'lucide-react'
-import { Logo } from '@/components/logo'
 
 export default function SignUpSuccessPage() {
   return (
@@ -10,14 +9,11 @@ export default function SignUpSuccessPage() {
       <Card className="w-full max-w-md text-center">
         <CardHeader>
           <div className="flex justify-center mb-4">
-            <Logo size={48} showWordmark={false} href="/" />
-          </div>
-          <div className="flex justify-center mb-2">
-            <div className="p-3 rounded-full bg-primary/10">
-              <Mail className="w-8 h-8 text-primary" />
+            <div className="p-4 rounded-full bg-primary/10">
+              <Mail className="w-10 h-10 text-primary" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-serif tracking-wide">Check Your Email</CardTitle>
+          <CardTitle className="text-2xl">Check Your Email</CardTitle>
           <CardDescription className="text-base">
             We&apos;ve sent you a confirmation link to verify your email address.
           </CardDescription>

@@ -19,10 +19,10 @@ import {
   FolderOpen, 
   Download, 
   Plus,
+  Sparkles,
 } from 'lucide-react'
 import { ExportModal } from './export-modal'
 import { UserMenu } from './user-menu'
-import { Logo } from '@/components/logo'
 
 export function TopNavBar() {
   const { state, createProject, saveProject, loadProject, getSavedProjects, dispatch } = useEditor()
@@ -67,7 +67,15 @@ export function TopNavBar() {
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       
       {/* Logo */}
-      <Logo size={26} href="/" />
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <Sparkles className="w-6 h-6 text-primary" />
+          <div className="absolute inset-0 blur-sm bg-primary/40 -z-10 animate-pulse" />
+        </div>
+        <span className="font-serif text-base font-semibold text-primary tracking-wide">
+          Arcane Animator
+        </span>
+      </div>
 
       {/* Ornate separator */}
       <div className="flex items-center gap-1 px-2">
