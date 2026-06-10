@@ -9,8 +9,8 @@ export type EffectId =
   | 'rain' | 'snow' | 'fog' | 'mist' | 'wind' | 'lightning-storm' | 'dust-storm' | 'blizzard'
   // Terrain Pack (6) - Ground/surface effects
   | 'water-ripples' | 'waterfall' | 'lava-flow' | 'swamp-bubbles' | 'ice-crystals' | 'smoke-vents'
-  // Fantasy Pack (6)
-  | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
+  // Fantasy Pack (7)
+  | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions' | 'fire-portal'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
 
@@ -528,6 +528,23 @@ export const effectsLibrary: EffectDefinition[] = [
       density: 20,
       color: '#e0f2fe',
       glowIntensity: 60,
+      scale: 1,
+    },
+  },
+  {
+    id: 'fire-portal',
+    name: 'Fire Portal',
+    pack: 'fantasy',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Erupting fiery portal sprite animation',
+    defaultSettings: {
+      speed: 50,
+      intensity: 90,
+      density: 50,
+      color: '#ff8c1a',
+      secondaryColor: '#ffcc66',
+      glowIntensity: 90,
       scale: 1,
     },
   },

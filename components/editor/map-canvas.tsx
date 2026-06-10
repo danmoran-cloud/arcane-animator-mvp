@@ -417,6 +417,25 @@ export function MapCanvas() {
     }
   }, [state.selectedLayerId, isSpaceDown, dispatch])
 
+  // Keep the store's viewport size in sync with the canvas container so new
+  // effect layers can be placed at the center of what the user is looking at.
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const updateSize = () => {
+      const rect = container.getBoundingClientRect()
+      if (rect.width > 0 && rect.height > 0) {
+        dispatch({ type: 'SET_VIEWPORT_SIZE', size: { width: rect.width, height: rect.height } })
+      }
+    }
+
+    updateSize()
+    const observer = new ResizeObserver(updateSize)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [dispatch])
+
   // Mouse wheel zoom centered on cursor
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault()

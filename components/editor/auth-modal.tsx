@@ -12,7 +12,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Sparkles, Mail, Lock, User, Loader2 } from 'lucide-react'
+import { Mail, Lock, User, Loader2 } from 'lucide-react'
+import { Logo } from '@/components/logo'
 
 export function AuthModal() {
   const { state, login, signup, closeAuthModal, dispatch } = useAuth()
@@ -58,10 +59,8 @@ export function AuthModal() {
         <DialogHeader className="text-center">
           <div className="flex justify-center mb-4">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-primary" />
-              </div>
-              <div className="absolute inset-0 blur-xl bg-primary/20 -z-10" />
+              <Logo size={56} showWordmark={false} />
+              <div className="absolute inset-0 blur-xl bg-accent/20 -z-10" />
             </div>
           </div>
           <DialogTitle className="font-serif text-2xl text-primary">

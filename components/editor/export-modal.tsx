@@ -128,6 +128,20 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       })
       imageCache.current.set(torch2SpriteUrl, img)
     }
+
+    // Preload fire-portal sprite sheet if any fire-portal effects exist
+    const firePortalSpriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Explosion21-a4r8cvpEimrFAY0R7JQtNKmhl57tll.png'
+    const hasFirePortal = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === 'fire-portal')
+    if (hasFirePortal && !imageCache.current.has(firePortalSpriteUrl)) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => resolve()
+        img.src = firePortalSpriteUrl
+      })
+      imageCache.current.set(firePortalSpriteUrl, img)
+    }
   }
 
   const handleExport = async () => {
@@ -669,12 +683,12 @@ function renderEffect(
         const sx = col * frameWidth
         const sy = row * frameHeight
         
-        // Draw the sprite frame centered in the effect area
-        const scale = Math.min(size.width, size.height) / frameWidth
-        const drawWidth = frameWidth * scale
-        const drawHeight = frameHeight * scale
-        const drawX = centerX - drawWidth / 2
-        const drawY = centerY - drawHeight / 2
+        // Stretch the sprite frame to FILL the entire layer bounds on both axes,
+        // matching the editor preview (object-fit: fill / background-size: 100% 100%).
+        const drawX = position.x
+        const drawY = position.y
+        const drawWidth = size.width
+        const drawHeight = size.height
         
         // Draw ambient glow first
         const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
@@ -696,6 +710,61 @@ function renderEffect(
         // Fallback to basic glow if sprite not loaded
         const flickerIntensity = 0.7 + 0.3 * Math.sin(normalizedTime * Math.PI * 8)
         const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * flickerIntensity)
+        gradient.addColorStop(0, secondaryColor + 'cc')
+        gradient.addColorStop(0.5, color + '66')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'fire-portal': {
+      // Sprite sheet animation - 16 frames, 128x128 each, 4 columns x 4 rows
+      const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Explosion21-a4r8cvpEimrFAY0R7JQtNKmhl57tll.png'
+      const spriteImg = imageCache.get(spriteUrl)
+
+      if (spriteImg) {
+        const frameWidth = 128
+        const frameHeight = 128
+        const columns = 4
+        const totalFrames = 16
+
+        // Calculate current frame based on time
+        const frameIndex = Math.floor((normalizedTime * 16) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+
+        // Source coordinates in sprite sheet
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Stretch the sprite frame to FILL the entire layer bounds on both axes,
+        // matching the editor preview (background-size: 100% 100%).
+        const drawX = position.x
+        const drawY = position.y
+        const drawWidth = size.width
+        const drawHeight = size.height
+
+        // Draw ambient glow first
+        const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        glowGradient.addColorStop(0, color + '50')
+        glowGradient.addColorStop(0.5, color + '25')
+        glowGradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = glowGradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+
+        // Draw sprite frame with additive blending to simulate screen blend mode
+        ctx.globalCompositeOperation = 'lighter'
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          drawX, drawY, drawWidth, drawHeight
+        )
+        ctx.globalCompositeOperation = 'source-over'
+      } else {
+        // Fallback to basic glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * (0.8 + pulse * 0.2))
         gradient.addColorStop(0, secondaryColor + 'cc')
         gradient.addColorStop(0.5, color + '66')
         gradient.addColorStop(1, 'transparent')
@@ -782,15 +851,32 @@ function renderEffect(
     }
 
     case 'water-ripples': {
-      // Concentric ripples
-      ctx.strokeStyle = color + '40'
-      ctx.lineWidth = 1
+      // Filled water surface base
+      const waterGradient = ctx.createLinearGradient(position.x, position.y, position.x, position.y + size.height)
+      waterGradient.addColorStop(0, color + '66')
+      waterGradient.addColorStop(1, color + '99')
+      ctx.fillStyle = waterGradient
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+
+      // Caustic highlights
+      const caustic = ctx.createRadialGradient(
+        position.x + size.width * 0.35, position.y + size.height * 0.4, 0,
+        position.x + size.width * 0.35, position.y + size.height * 0.4, size.width * 0.5
+      )
+      caustic.addColorStop(0, (secondaryColor || '#ffffff') + '33')
+      caustic.addColorStop(1, 'transparent')
+      ctx.fillStyle = caustic
+      ctx.fillRect(position.x, position.y, size.width, size.height)
+
+      // Expanding ripple rings
+      ctx.strokeStyle = (secondaryColor || '#ffffff') + 'aa'
+      ctx.lineWidth = 2
       for (let i = 0; i < 4; i++) {
         const rippleRadius = ((normalizedTime * 50 + i * 30) % radius)
         const alpha = 1 - rippleRadius / radius
         ctx.globalAlpha = layer.opacity * alpha
         ctx.beginPath()
-        ctx.arc(centerX, centerY, rippleRadius, 0, Math.PI * 2)
+        ctx.ellipse(centerX, centerY, rippleRadius, rippleRadius * 0.7, 0, 0, Math.PI * 2)
         ctx.stroke()
       }
       ctx.globalAlpha = layer.opacity
@@ -868,21 +954,32 @@ function renderEffect(
     }
 
     case 'waterfall': {
-      // Cascading water lines
-      ctx.strokeStyle = color + '70'
+      // Filled flowing water band (70% width, centered)
+      const bandWidth = size.width * 0.7
+      const bandX = position.x + (size.width - bandWidth) / 2
+      const flowGradient = ctx.createLinearGradient(bandX, position.y, bandX, position.y + size.height)
+      flowGradient.addColorStop(0, color + 'cc')
+      flowGradient.addColorStop(0.6, color + 'aa')
+      flowGradient.addColorStop(1, (secondaryColor || '#ffffff') + '88')
+      ctx.fillStyle = flowGradient
+      ctx.fillRect(bandX, position.y, bandWidth, size.height)
+
+      // Flowing highlight streaks
+      ctx.strokeStyle = (secondaryColor || '#ffffff') + '99'
       ctx.lineWidth = 3
+      const streakOffset = (normalizedTime * 200) % 60
       for (let i = 0; i < 8; i++) {
-        const x = position.x + size.width * 0.2 + (i * size.width * 0.6 / 8)
+        const x = bandX + (i + 0.5) * bandWidth / 8
         const waveOffset = Math.sin(normalizedTime * 4 + i) * 3
         ctx.beginPath()
-        ctx.moveTo(x + waveOffset, position.y)
+        ctx.moveTo(x + waveOffset, position.y - 60 + streakOffset)
         ctx.lineTo(x - waveOffset, position.y + size.height)
         ctx.stroke()
       }
       // Mist at bottom
       const mistGradient = ctx.createLinearGradient(position.x, position.y + size.height * 0.7, position.x, position.y + size.height)
       mistGradient.addColorStop(0, 'transparent')
-      mistGradient.addColorStop(1, (secondaryColor || '#ffffff') + '60')
+      mistGradient.addColorStop(1, (secondaryColor || '#ffffff') + '66')
       ctx.fillStyle = mistGradient
       ctx.fillRect(position.x, position.y, size.width, size.height)
       break
