@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -20,6 +20,7 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'cloud': Cloud,
   'mountain': Mountain,
   'sparkles': Sparkles,
+  'circle-dot': CircleDot,
   'cpu': Cpu,
 }
 
@@ -1151,6 +1152,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
     atmospheric: false,
     terrain: false,
     fantasy: false,
+    portal: false,
     scifi: false,
   })
   
@@ -1170,7 +1172,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
         <div className="py-1">
-          {(['core', 'atmospheric', 'terrain', 'fantasy', 'scifi'] as EffectPack[]).map((pack) => (
+          {(['core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}

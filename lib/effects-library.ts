@@ -1,6 +1,6 @@
 // Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'scifi'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
@@ -9,8 +9,10 @@ export type EffectId =
   | 'rain' | 'snow' | 'fog' | 'mist' | 'wind' | 'lightning-storm' | 'dust-storm' | 'blizzard'
   // Terrain Pack (6) - Ground/surface effects
   | 'water-ripples' | 'waterfall' | 'lava-flow' | 'swamp-bubbles' | 'ice-crystals' | 'smoke-vents'
-  // Fantasy Pack (8)
-  | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions' | 'blue-portal' | 'fire-portal'
+  // Fantasy Pack (6)
+  | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
+  // Portal Pack (2)
+  | 'blue-portal' | 'fire-portal'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
 
@@ -62,6 +64,12 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     icon: 'sparkles', 
     color: '#8b5cf6',
     description: 'Magical and mystical effects'
+  },
+  portal: { 
+    name: 'Portal', 
+    icon: 'circle-dot', 
+    color: '#22d3ee',
+    description: 'Animated arcane portal gateways'
   },
   scifi: { 
     name: 'Sci-Fi', 
@@ -534,7 +542,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'blue-portal',
     name: 'Blue Portal',
-    pack: 'fantasy',
+    pack: 'portal',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Expanding arcane blue ring portal',
@@ -551,7 +559,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'fire-portal',
     name: 'Fire Portal',
-    pack: 'fantasy',
+    pack: 'portal',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Erupting fiery portal sprite animation',
