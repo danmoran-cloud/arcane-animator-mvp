@@ -9,8 +9,8 @@ export type EffectId =
   | 'rain' | 'snow' | 'fog' | 'mist' | 'wind' | 'lightning-storm' | 'dust-storm' | 'blizzard'
   // Terrain Pack (6) - Ground/surface effects
   | 'water-ripples' | 'waterfall' | 'lava-flow' | 'swamp-bubbles' | 'ice-crystals' | 'smoke-vents'
-  // Fantasy Pack (6)
-  | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
+  // Fantasy Pack (7)
+  | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions' | 'blue-portal'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
 
@@ -528,6 +528,23 @@ export const effectsLibrary: EffectDefinition[] = [
       density: 20,
       color: '#e0f2fe',
       glowIntensity: 60,
+      scale: 1,
+    },
+  },
+  {
+    id: 'blue-portal',
+    name: 'Blue Portal',
+    pack: 'fantasy',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Expanding arcane blue ring portal',
+    defaultSettings: {
+      speed: 50,
+      intensity: 90,
+      density: 50,
+      color: '#22d3ee',
+      secondaryColor: '#a5f3fc',
+      glowIntensity: 90,
       scale: 1,
     },
   },

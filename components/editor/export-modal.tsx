@@ -128,6 +128,20 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       })
       imageCache.current.set(torch2SpriteUrl, img)
     }
+
+    // Preload blue-portal sprite sheet if any blue-portal effects exist
+    const bluePortalSpriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Effect95-NLQsM059PmMoiyKgtrIJzfzdTZPNaP.png'
+    const hasBluePortal = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === 'blue-portal')
+    if (hasBluePortal && !imageCache.current.has(bluePortalSpriteUrl)) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => resolve()
+        img.src = bluePortalSpriteUrl
+      })
+      imageCache.current.set(bluePortalSpriteUrl, img)
+    }
   }
 
   const handleExport = async () => {
@@ -696,6 +710,61 @@ function renderEffect(
         // Fallback to basic glow if sprite not loaded
         const flickerIntensity = 0.7 + 0.3 * Math.sin(normalizedTime * Math.PI * 8)
         const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * flickerIntensity)
+        gradient.addColorStop(0, secondaryColor + 'cc')
+        gradient.addColorStop(0.5, color + '66')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'blue-portal': {
+      // Sprite sheet animation - 16 frames, 128x128 each, 4 columns x 4 rows
+      const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Effect95-NLQsM059PmMoiyKgtrIJzfzdTZPNaP.png'
+      const spriteImg = imageCache.get(spriteUrl)
+
+      if (spriteImg) {
+        const frameWidth = 128
+        const frameHeight = 128
+        const columns = 4
+        const totalFrames = 16
+
+        // Calculate current frame based on time
+        const frameIndex = Math.floor((normalizedTime * 16) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+
+        // Source coordinates in sprite sheet
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Stretch the sprite frame to FILL the entire layer bounds on both axes,
+        // matching the editor preview (background-size: 100% 100%).
+        const drawX = position.x
+        const drawY = position.y
+        const drawWidth = size.width
+        const drawHeight = size.height
+
+        // Draw ambient glow first
+        const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        glowGradient.addColorStop(0, color + '50')
+        glowGradient.addColorStop(0.5, color + '25')
+        glowGradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = glowGradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+
+        // Draw sprite frame with additive blending to simulate screen blend mode
+        ctx.globalCompositeOperation = 'lighter'
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          drawX, drawY, drawWidth, drawHeight
+        )
+        ctx.globalCompositeOperation = 'source-over'
+      } else {
+        // Fallback to basic glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * (0.8 + pulse * 0.2))
         gradient.addColorStop(0, secondaryColor + 'cc')
         gradient.addColorStop(0.5, color + '66')
         gradient.addColorStop(1, 'transparent')

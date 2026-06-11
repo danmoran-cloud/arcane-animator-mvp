@@ -259,6 +259,79 @@ function Torch2Effect({ settings, width, height }: { settings: EffectSettings; w
   )
 }
 
+// Blue Portal effect - Animated sprite sheet expanding blue ring portal
+// Sprite: 16 frames, 128x128 each, 4 columns x 4 rows (512x512 sheet)
+function BluePortalEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
+  const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Effect95-NLQsM059PmMoiyKgtrIJzfzdTZPNaP.png'
+  const columns = 4
+  const rows = 4
+  const totalFrames = 16
+  const animationDuration = (100 / (settings.speed || 50)) * 2 // seconds
+
+  // Percentage-based sprite sheet rendering so the active frame always FILLS
+  // the layer bounds on both axes. background-size is (columns*100%) x (rows*100%)
+  // and background-position uses the percentage form col/(columns-1) x row/(rows-1).
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes blueportal-sprite {
+          0% { background-position: 0% 0%; }
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
+            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
+            const percent = ((i + 1) / totalFrames) * 100
+            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
+          }).join('\n          ')}
+        }
+        @keyframes blueportal-glow {
+          0%, 100% { opacity: 0.5; transform: scale(0.95); }
+          50% { opacity: 0.85; transform: scale(1.08); }
+        }
+      `}</style>
+
+      {/* Ambient glow beneath */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '100%',
+          height: '100%',
+          background: `radial-gradient(circle, ${settings.color}45 0%, transparent 70%)`,
+          animation: `blueportal-glow ${animationDuration / 2}s ease-in-out infinite`,
+        }}
+      />
+
+      {/* Animated portal sprite - fills the entire layer bounds */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          animation: `blueportal-sprite ${animationDuration}s steps(1) infinite`,
+          mixBlendMode: 'screen', // Makes black background transparent
+        }}
+      />
+
+      {/* Inner core glow */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '45%',
+          height: '45%',
+          background: `radial-gradient(circle, ${settings.secondaryColor || '#a5f3fc'}55 0%, transparent 70%)`,
+          animation: `blueportal-glow ${animationDuration / 3}s ease-in-out infinite`,
+        }}
+      />
+    </div>
+  )
+}
+
 // Campfire effect - TOP DOWN: larger radial glow with flickering light radius
 function CampfireEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
   return (
@@ -1170,6 +1243,7 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
     'divine-light': TorchEffect,
     'necrotic-corruption': SmokeEffect,
     'spirit-apparitions': FogEffect,
+    'blue-portal': BluePortalEffect,
     // Sci-Fi Pack
     'holograms': PortalsEffect,
     'energy-shields': ArcaneCirclesEffect,

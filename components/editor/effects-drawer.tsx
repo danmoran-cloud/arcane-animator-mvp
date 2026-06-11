@@ -325,6 +325,22 @@ function MiniPortal() {
   )
 }
 
+// Blue Portal: expanding cyan ring
+function MiniBluePortal() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute w-5 h-5 rounded-full border-2"
+        style={{
+          borderColor: '#22d3ee',
+          boxShadow: '0 0 6px #22d3ee, inset 0 0 4px #a5f3fc',
+          animation: 'miniPortalPulse 1.4s ease-in-out infinite',
+        }}
+      />
+    </div>
+  )
+}
+
 // Crystal: glowing point with light halo from above
 function MiniCrystal() {
   return (
@@ -1010,6 +1026,7 @@ const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   'divine-light': MiniDivineLight,
   'necrotic-corruption': MiniNecrotic,
   'spirit-apparitions': MiniSpirits,
+  'blue-portal': MiniBluePortal,
   // Sci-Fi Pack
   'holograms': MiniHologram,
   'energy-shields': MiniEnergyShield,
