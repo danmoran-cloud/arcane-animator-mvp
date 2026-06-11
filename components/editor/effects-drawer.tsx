@@ -341,6 +341,22 @@ function MiniBluePortal() {
   )
 }
 
+// Fire Portal: glowing orange ring
+function MiniFirePortal() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute w-5 h-5 rounded-full border-2"
+        style={{
+          borderColor: '#ff8c1a',
+          boxShadow: '0 0 6px #ff8c1a, inset 0 0 4px #ffcc66',
+          animation: 'miniPortalPulse 1.4s ease-in-out infinite',
+        }}
+      />
+    </div>
+  )
+}
+
 // Crystal: glowing point with light halo from above
 function MiniCrystal() {
   return (
@@ -1027,6 +1043,7 @@ const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   'necrotic-corruption': MiniNecrotic,
   'spirit-apparitions': MiniSpirits,
   'blue-portal': MiniBluePortal,
+  'fire-portal': MiniFirePortal,
   // Sci-Fi Pack
   'holograms': MiniHologram,
   'energy-shields': MiniEnergyShield,
