@@ -1,6 +1,6 @@
 // Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi' | 'caustics'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
@@ -15,6 +15,10 @@ export type EffectId =
   | 'blue-portal' | 'fire-portal'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
+  // Caustics Pack (15) - underwater light sprite-sheet animations
+  | 'caustics-shallow-clear' | 'caustics-deep-blue' | 'caustics-tropical-shallow' | 'caustics-soft-sand' | 'caustics-rocky-bottom'
+  | 'caustics-fast-moving' | 'caustics-slow-gentle' | 'caustics-blue-green' | 'caustics-sunlit-deep' | 'caustics-murky-water'
+  | 'caustics-cave-water' | 'caustics-kelp-forest' | 'caustics-rippling-sand' | 'caustics-wavy-surface' | 'caustics-magic-glow'
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
 
@@ -76,6 +80,12 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     icon: 'cpu', 
     color: '#06b6d4',
     description: 'Futuristic technology effects'
+  },
+  caustics: { 
+    name: 'Caustics', 
+    icon: 'waves', 
+    color: '#38bdf8',
+    description: 'Underwater light caustics'
   },
 }
 
@@ -640,6 +650,143 @@ export const effectsLibrary: EffectDefinition[] = [
       glowIntensity: 95,
       scale: 1,
     },
+  },
+
+  // ===== CAUSTICS PACK - underwater light sprite sheets (5x5, 25 frames) =====
+  {
+    id: 'caustics-shallow-clear',
+    name: 'Shallow Clear Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Crisp light ripples in shallow clear water',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#7dd3fc', secondaryColor: '#e0f2fe', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'caustics-deep-blue',
+    name: 'Deep Blue Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Cool caustics in deep blue water',
+    defaultSettings: { speed: 40, intensity: 75, density: 55, color: '#3b82f6', secondaryColor: '#93c5fd', glowIntensity: 65, scale: 1 },
+  },
+  {
+    id: 'caustics-tropical-shallow',
+    name: 'Tropical Shallow Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Bright turquoise tropical caustics',
+    defaultSettings: { speed: 55, intensity: 85, density: 50, color: '#2dd4bf', secondaryColor: '#a7f3d0', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'caustics-soft-sand',
+    name: 'Soft Sand Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Soft diffuse caustics over sand',
+    defaultSettings: { speed: 45, intensity: 70, density: 50, color: '#bae6fd', secondaryColor: '#f0f9ff', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'caustics-rocky-bottom',
+    name: 'Rocky Bottom Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Caustics scattered over rocky bottom',
+    defaultSettings: { speed: 48, intensity: 78, density: 55, color: '#67e8f9', secondaryColor: '#cffafe', glowIntensity: 65, scale: 1 },
+  },
+  {
+    id: 'caustics-fast-moving',
+    name: 'Fast Moving Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Rapidly shifting light patterns',
+    defaultSettings: { speed: 80, intensity: 88, density: 50, color: '#22d3ee', secondaryColor: '#ecfeff', glowIntensity: 75, scale: 1 },
+  },
+  {
+    id: 'caustics-slow-gentle',
+    name: 'Slow Gentle Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Slow, calming light ripples',
+    defaultSettings: { speed: 25, intensity: 65, density: 45, color: '#5eead4', secondaryColor: '#ccfbf1', glowIntensity: 55, scale: 1 },
+  },
+  {
+    id: 'caustics-blue-green',
+    name: 'Blue Green Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Blended blue-green water caustics',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#14b8a6', secondaryColor: '#99f6e4', glowIntensity: 68, scale: 1 },
+  },
+  {
+    id: 'caustics-sunlit-deep',
+    name: 'Sunlit Deep Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Sun rays piercing deep water',
+    defaultSettings: { speed: 42, intensity: 82, density: 55, color: '#60a5fa', secondaryColor: '#dbeafe', glowIntensity: 72, scale: 1 },
+  },
+  {
+    id: 'caustics-murky-water',
+    name: 'Murky Water Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Hazy caustics in murky green water',
+    defaultSettings: { speed: 38, intensity: 60, density: 60, color: '#84cc16', secondaryColor: '#d9f99d', glowIntensity: 50, scale: 1 },
+  },
+  {
+    id: 'caustics-cave-water',
+    name: 'Cave Water Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Stark caustics in dark cave water',
+    defaultSettings: { speed: 35, intensity: 85, density: 45, color: '#bfdbfe', secondaryColor: '#ffffff', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'caustics-kelp-forest',
+    name: 'Kelp Forest Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Green-tinted caustics through kelp',
+    defaultSettings: { speed: 40, intensity: 72, density: 55, color: '#4ade80', secondaryColor: '#bbf7d0', glowIntensity: 58, scale: 1 },
+  },
+  {
+    id: 'caustics-rippling-sand',
+    name: 'Rippling Sand Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Radiating caustics over rippled sand',
+    defaultSettings: { speed: 52, intensity: 84, density: 50, color: '#a5f3fc', secondaryColor: '#ffffff', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'caustics-wavy-surface',
+    name: 'Wavy Surface Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Caustics from a wavy water surface',
+    defaultSettings: { speed: 58, intensity: 80, density: 52, color: '#38bdf8', secondaryColor: '#e0f2fe', glowIntensity: 68, scale: 1 },
+  },
+  {
+    id: 'caustics-magic-glow',
+    name: 'Magic Glow Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Glowing magical caustic light',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#22d3ee', secondaryColor: '#cffafe', glowIntensity: 85, scale: 1 },
   },
 ]
 

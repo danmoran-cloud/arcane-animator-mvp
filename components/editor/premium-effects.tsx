@@ -405,6 +405,84 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
   )
 }
 
+// ===== CAUSTICS PACK =====
+// Generic sprite-sheet renderer for underwater caustics.
+// Each sheet is 5 columns x 5 rows = 25 frames, luminance-keyed (alpha baked in).
+const CAUSTICS_SPRITES: Record<string, string> = {
+  'caustics-shallow-clear': '/effects/caustics/shallow-clear.png',
+  'caustics-deep-blue': '/effects/caustics/deep-blue.png',
+  'caustics-tropical-shallow': '/effects/caustics/tropical-shallow.png',
+  'caustics-soft-sand': '/effects/caustics/soft-sand.png',
+  'caustics-rocky-bottom': '/effects/caustics/rocky-bottom.png',
+  'caustics-fast-moving': '/effects/caustics/fast-moving.png',
+  'caustics-slow-gentle': '/effects/caustics/slow-gentle.png',
+  'caustics-blue-green': '/effects/caustics/blue-green.png',
+  'caustics-sunlit-deep': '/effects/caustics/sunlit-deep.png',
+  'caustics-murky-water': '/effects/caustics/murky-water.png',
+  'caustics-cave-water': '/effects/caustics/cave-water.png',
+  'caustics-kelp-forest': '/effects/caustics/kelp-forest.png',
+  'caustics-rippling-sand': '/effects/caustics/rippling-sand.png',
+  'caustics-wavy-surface': '/effects/caustics/wavy-surface.png',
+  'caustics-magic-glow': '/effects/caustics/magic-glow.png',
+}
+
+const CAUSTICS_COLUMNS = 5
+const CAUSTICS_ROWS = 5
+const CAUSTICS_FRAMES = 25
+
+function CausticsSpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spriteUrl = CAUSTICS_SPRITES[effectId]
+  const columns = CAUSTICS_COLUMNS
+  const rows = CAUSTICS_ROWS
+  const totalFrames = CAUSTICS_FRAMES
+  // Higher speed -> shorter duration (roughly 1s..5s)
+  const animationDuration = (100 / (settings.speed || 50)) * 2.2
+  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  if (!spriteUrl) return null
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes caustics-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = (col / (columns - 1)) * 100
+            const posY = (row / (rows - 1)) * 100
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+
+      {/* Optional tint wash tied to the effect color, multiplied under the caustics */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: `radial-gradient(circle at 50% 40%, ${settings.color}22 0%, transparent 75%)`,
+          opacity: (settings.glowIntensity ?? 60) / 100,
+        }}
+      />
+
+      {/* Animated caustics sprite - fills the layer bounds, screen-blended for light */}
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          animation: `caustics-${keyId} ${animationDuration}s steps(1) infinite`,
+          opacity: Math.max(0.3, (settings.intensity ?? 80) / 100),
+          mixBlendMode: 'screen',
+        }}
+      />
+    </div>
+  )
+}
+
 // Campfire effect - TOP DOWN: larger radial glow with flickering light radius
 function CampfireEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
   return (
@@ -1283,6 +1361,11 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
     ...effectDef?.defaultSettings,
     ...settings,
   } as EffectSettings
+
+  // Caustics pack: generic sprite-sheet renderer driven by effectId
+  if (effectId.startsWith('caustics-')) {
+    return <CausticsSpriteEffect effectId={effectId} settings={mergedSettings} />
+  }
 
   const effectComponents: Record<string, React.FC<{ settings: EffectSettings; width: number; height: number }>> = {
     // Core Pack

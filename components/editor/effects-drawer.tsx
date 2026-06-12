@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Waves
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -22,6 +22,7 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'sparkles': Sparkles,
   'circle-dot': CircleDot,
   'cpu': Cpu,
+  'waves': Waves,
 }
 
 // TOP-DOWN Mini effect preview components
@@ -1010,6 +1011,43 @@ function MiniTorch2() {
   )
 }
 
+// Factory for Caustics sprite-sheet thumbnails.
+// Animates through the 5x5 (25-frame) sheet inside the small preview tile.
+function makeMiniCaustics(src: string): React.FC {
+  const columns = 5
+  const rows = 5
+  const totalFrames = 25
+  const keyId = src.replace(/[^a-z0-9]/gi, '')
+  const MiniCaustics: React.FC = () => (
+    <div className="absolute inset-0 overflow-hidden bg-slate-900">
+      <style>{`
+        @keyframes minicaustics-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = (col / (columns - 1)) * 100
+            const posY = (row / (rows - 1)) * 100
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(2)}% ${posY.toFixed(2)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${src})`,
+          backgroundSize: `${columns * 100}% ${rows * 100}%`,
+          backgroundRepeat: 'no-repeat',
+          animation: `minicaustics-${keyId} 2.5s steps(1) infinite`,
+          mixBlendMode: 'screen',
+        }}
+      />
+    </div>
+  )
+  return MiniCaustics
+}
+
 // Map effect IDs to their preview components
 const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   // Core Pack
@@ -1050,6 +1088,22 @@ const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   'energy-shields': MiniEnergyShield,
   'data-streams': MiniDataStream,
   'reactor-core': MiniReactorCore,
+  // Caustics Pack - animated sprite-sheet thumbnails
+  'caustics-shallow-clear': makeMiniCaustics('/effects/caustics/shallow-clear.png'),
+  'caustics-deep-blue': makeMiniCaustics('/effects/caustics/deep-blue.png'),
+  'caustics-tropical-shallow': makeMiniCaustics('/effects/caustics/tropical-shallow.png'),
+  'caustics-soft-sand': makeMiniCaustics('/effects/caustics/soft-sand.png'),
+  'caustics-rocky-bottom': makeMiniCaustics('/effects/caustics/rocky-bottom.png'),
+  'caustics-fast-moving': makeMiniCaustics('/effects/caustics/fast-moving.png'),
+  'caustics-slow-gentle': makeMiniCaustics('/effects/caustics/slow-gentle.png'),
+  'caustics-blue-green': makeMiniCaustics('/effects/caustics/blue-green.png'),
+  'caustics-sunlit-deep': makeMiniCaustics('/effects/caustics/sunlit-deep.png'),
+  'caustics-murky-water': makeMiniCaustics('/effects/caustics/murky-water.png'),
+  'caustics-cave-water': makeMiniCaustics('/effects/caustics/cave-water.png'),
+  'caustics-kelp-forest': makeMiniCaustics('/effects/caustics/kelp-forest.png'),
+  'caustics-rippling-sand': makeMiniCaustics('/effects/caustics/rippling-sand.png'),
+  'caustics-wavy-surface': makeMiniCaustics('/effects/caustics/wavy-surface.png'),
+  'caustics-magic-glow': makeMiniCaustics('/effects/caustics/magic-glow.png'),
 }
 
 interface EffectsDrawerProps {
@@ -1154,6 +1208,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
     fantasy: false,
     portal: false,
     scifi: false,
+    caustics: true,
   })
   
   const togglePack = (pack: EffectPack) => {
@@ -1172,7 +1227,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
         <div className="py-1">
-          {(['core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
+          {(['caustics', 'core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}

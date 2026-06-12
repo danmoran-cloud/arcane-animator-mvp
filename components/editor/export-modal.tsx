@@ -65,6 +65,28 @@ const STATUS_MESSAGES: Record<string, string> = {
   error: 'Export failed',
 }
 
+// Caustics sprite sheets (5 columns x 5 rows = 25 frames, alpha baked in)
+const CAUSTICS_SPRITE_PATHS: Record<string, string> = {
+  'caustics-shallow-clear': '/effects/caustics/shallow-clear.png',
+  'caustics-deep-blue': '/effects/caustics/deep-blue.png',
+  'caustics-tropical-shallow': '/effects/caustics/tropical-shallow.png',
+  'caustics-soft-sand': '/effects/caustics/soft-sand.png',
+  'caustics-rocky-bottom': '/effects/caustics/rocky-bottom.png',
+  'caustics-fast-moving': '/effects/caustics/fast-moving.png',
+  'caustics-slow-gentle': '/effects/caustics/slow-gentle.png',
+  'caustics-blue-green': '/effects/caustics/blue-green.png',
+  'caustics-sunlit-deep': '/effects/caustics/sunlit-deep.png',
+  'caustics-murky-water': '/effects/caustics/murky-water.png',
+  'caustics-cave-water': '/effects/caustics/cave-water.png',
+  'caustics-kelp-forest': '/effects/caustics/kelp-forest.png',
+  'caustics-rippling-sand': '/effects/caustics/rippling-sand.png',
+  'caustics-wavy-surface': '/effects/caustics/wavy-surface.png',
+  'caustics-magic-glow': '/effects/caustics/magic-glow.png',
+}
+const CAUSTICS_SPRITE_COLUMNS = 5
+const CAUSTICS_SPRITE_ROWS = 5
+const CAUSTICS_SPRITE_FRAMES = 25
+
 export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   const [settings, setSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
   const [progress, setProgress] = useState<ExportProgress>({ status: 'idle', progress: 0 })
@@ -155,6 +177,21 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
         img.src = firePortalSpriteUrl
       })
       imageCache.current.set(firePortalSpriteUrl, img)
+    }
+
+    // Preload Caustics sprite sheets present in the project
+    for (const [id, url] of Object.entries(CAUSTICS_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
     }
   }
 
@@ -680,6 +717,58 @@ function renderEffect(
   ctx.save()
 
   switch (effectId) {
+    case 'caustics-shallow-clear':
+    case 'caustics-deep-blue':
+    case 'caustics-tropical-shallow':
+    case 'caustics-soft-sand':
+    case 'caustics-rocky-bottom':
+    case 'caustics-fast-moving':
+    case 'caustics-slow-gentle':
+    case 'caustics-blue-green':
+    case 'caustics-sunlit-deep':
+    case 'caustics-murky-water':
+    case 'caustics-cave-water':
+    case 'caustics-kelp-forest':
+    case 'caustics-rippling-sand':
+    case 'caustics-wavy-surface':
+    case 'caustics-magic-glow': {
+      // Caustics sprite sheet - 5 cols x 5 rows = 25 frames, screen-blended light
+      const spriteUrl = CAUSTICS_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = CAUSTICS_SPRITE_COLUMNS
+        const totalFrames = CAUSTICS_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / CAUSTICS_SPRITE_ROWS
+
+        const frameIndex = Math.floor((normalizedTime * 18) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        const intensity = (settings?.intensity as number) ?? 80
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = layer.opacity * Math.max(0.3, intensity / 100)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalCompositeOperation = 'source-over'
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback wash if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
     case 'torch-2': {
       // Sprite sheet animation - 60 frames, 64x64 each, 10 columns x 6 rows
       const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png'
