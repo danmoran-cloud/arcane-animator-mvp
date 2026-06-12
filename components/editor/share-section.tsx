@@ -11,6 +11,10 @@ import { Check, Copy, Gift, Share2, Loader2 } from 'lucide-react'
 interface ShareSectionProps {
   // Optional hosted URL for the exported file (Copy Link button shows only if present)
   hostedUrl?: string | null
+  // Which part of the section to render. Defaults to 'all'.
+  // 'referral' renders only the "Earn bonus tokens" referral block.
+  // 'social' renders the hosted link + social share buttons.
+  section?: 'all' | 'referral' | 'social'
 }
 
 // Inline brand glyphs (lucide has no brand marks). Kept as small inline SVGs.
@@ -50,7 +54,7 @@ function DiscordIcon() {
   )
 }
 
-export function ShareSection({ hostedUrl }: ShareSectionProps) {
+export function ShareSection({ hostedUrl, section = 'all' }: ShareSectionProps) {
   const [referralCode, setReferralCode] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [copiedLink, setCopiedLink] = useState(false)
@@ -112,7 +116,7 @@ export function ShareSection({ hostedUrl }: ShareSectionProps) {
   return (
     <div className="space-y-4">
       {/* Hosted file link */}
-      {hostedUrl && (
+      {section !== 'referral' && hostedUrl && (
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Shareable link</p>
           <div className="flex gap-2">
@@ -125,66 +129,70 @@ export function ShareSection({ hostedUrl }: ShareSectionProps) {
       )}
 
       {/* Share buttons */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Share2 className="w-4 h-4 text-muted-foreground" />
-          <p className="text-sm font-medium">Share your creation</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {shareTargets.map((target) => (
-            <Button
-              key={target.name}
-              asChild
-              variant="outline"
-              size="sm"
-              className="gap-2"
-            >
-              <a href={target.url} target="_blank" rel="noopener noreferrer">
-                {target.icon}
-                {target.name}
-              </a>
+      {section !== 'referral' && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Share2 className="w-4 h-4 text-muted-foreground" />
+            <p className="text-sm font-medium">Share your creation</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {shareTargets.map((target) => (
+              <Button
+                key={target.name}
+                asChild
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <a href={target.url} target="_blank" rel="noopener noreferrer">
+                  {target.icon}
+                  {target.name}
+                </a>
+              </Button>
+            ))}
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleDiscord}>
+              <DiscordIcon />
+              Discord
             </Button>
-          ))}
-          <Button variant="outline" size="sm" className="gap-2" onClick={handleDiscord}>
-            <DiscordIcon />
-            Discord
-          </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Referral section */}
-      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-        <div className="flex items-start gap-2">
-          <Gift className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium">Earn bonus tokens</p>
-            <p className="text-xs text-muted-foreground text-pretty">
-              When a friend signs up with your link and makes their first purchase, you both get 5 bonus tokens.
-            </p>
-          </div>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            Loading your referral link...
-          </div>
-        ) : referralCode ? (
-          <div className="space-y-2">
-            <div className="flex gap-2">
-              <Input readOnly value={referralLink} className="text-xs font-mono" />
-              <Button variant="outline" size="icon" onClick={handleCopyReferral} className="shrink-0">
-                {copiedLink ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-              </Button>
+      {section !== 'social' && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <Gift className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium">Earn bonus tokens</p>
+              <p className="text-xs text-muted-foreground text-pretty">
+                When a friend signs up with your link and makes their first purchase, you both get 5 bonus tokens.
+              </p>
             </div>
-            <Badge variant="secondary" className="font-mono">
-              Code: {referralCode}
-            </Badge>
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">Sign in to get your referral link.</p>
-        )}
-      </div>
+
+          {loading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Loading your referral link...
+            </div>
+          ) : referralCode ? (
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input readOnly value={referralLink} className="text-xs font-mono" />
+                <Button variant="outline" size="icon" onClick={handleCopyReferral} className="shrink-0">
+                  {copiedLink ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+              <Badge variant="secondary" className="font-mono">
+                Code: {referralCode}
+              </Badge>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">Sign in to get your referral link.</p>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -65,6 +65,50 @@ const STATUS_MESSAGES: Record<string, string> = {
   error: 'Export failed',
 }
 
+// Launch Effects sprite sheets (5 columns x 6 rows = 30 frames, baked-in alpha)
+const LAUNCH_SPRITE_PATHS: Record<string, string> = {
+  'launch-torch-light': '/effects/launch/torch-light.png',
+  'launch-lantern-glow': '/effects/launch/lantern-glow.png',
+  'launch-campfire': '/effects/launch/campfire-blaze.png',
+  'launch-smoke-wisps': '/effects/launch/smoke-wisps.png',
+  'launch-running-water': '/effects/launch/running-water.png',
+  'launch-rain': '/effects/launch/rain-shower.png',
+  'launch-fog': '/effects/launch/rolling-fog.png',
+  'launch-floating-dust': '/effects/launch/floating-dust.png',
+  'launch-fireflies': '/effects/launch/fireflies.png',
+  'launch-arcane-runes': '/effects/launch/arcane-runes.png',
+  'launch-portal': '/effects/launch/portal-vortex.png',
+  'launch-lightning': '/effects/launch/lightning-strike.png',
+  'launch-divine-light': '/effects/launch/divine-light.png',
+  'launch-necrotic-corruption': '/effects/launch/necrotic-corruption.png',
+  'launch-ghost-apparition': '/effects/launch/ghost-apparition.png',
+}
+const LAUNCH_SPRITE_COLUMNS = 5
+const LAUNCH_SPRITE_ROWS = 6
+const LAUNCH_SPRITE_FRAMES = 30
+
+// Caustics sprite sheets (5 columns x 5 rows = 25 frames, alpha baked in)
+const CAUSTICS_SPRITE_PATHS: Record<string, string> = {
+  'caustics-shallow-clear': '/effects/caustics/shallow-clear.png',
+  'caustics-deep-blue': '/effects/caustics/deep-blue.png',
+  'caustics-tropical-shallow': '/effects/caustics/tropical-shallow.png',
+  'caustics-soft-sand': '/effects/caustics/soft-sand.png',
+  'caustics-rocky-bottom': '/effects/caustics/rocky-bottom.png',
+  'caustics-fast-moving': '/effects/caustics/fast-moving.png',
+  'caustics-slow-gentle': '/effects/caustics/slow-gentle.png',
+  'caustics-blue-green': '/effects/caustics/blue-green.png',
+  'caustics-sunlit-deep': '/effects/caustics/sunlit-deep.png',
+  'caustics-murky-water': '/effects/caustics/murky-water.png',
+  'caustics-cave-water': '/effects/caustics/cave-water.png',
+  'caustics-kelp-forest': '/effects/caustics/kelp-forest.png',
+  'caustics-rippling-sand': '/effects/caustics/rippling-sand.png',
+  'caustics-wavy-surface': '/effects/caustics/wavy-surface.png',
+  'caustics-magic-glow': '/effects/caustics/magic-glow.png',
+}
+const CAUSTICS_SPRITE_COLUMNS = 5
+const CAUSTICS_SPRITE_ROWS = 5
+const CAUSTICS_SPRITE_FRAMES = 25
+
 export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   const [settings, setSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
   const [progress, setProgress] = useState<ExportProgress>({ status: 'idle', progress: 0 })
@@ -127,6 +171,64 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
         img.src = torch2SpriteUrl
       })
       imageCache.current.set(torch2SpriteUrl, img)
+    }
+
+    // Preload blue-portal sprite sheet if any blue-portal effects exist
+    const bluePortalSpriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Effect95-NLQsM059PmMoiyKgtrIJzfzdTZPNaP.png'
+    const hasBluePortal = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === 'blue-portal')
+    if (hasBluePortal && !imageCache.current.has(bluePortalSpriteUrl)) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => resolve()
+        img.src = bluePortalSpriteUrl
+      })
+      imageCache.current.set(bluePortalSpriteUrl, img)
+    }
+
+    // Preload fire-portal sprite sheet if any fire-portal effects exist
+    const firePortalSpriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Explosion21-a4r8cvpEimrFAY0R7JQtNKmhl57tll.png'
+    const hasFirePortal = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === 'fire-portal')
+    if (hasFirePortal && !imageCache.current.has(firePortalSpriteUrl)) {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      await new Promise<void>((resolve) => {
+        img.onload = () => resolve()
+        img.onerror = () => resolve()
+        img.src = firePortalSpriteUrl
+      })
+      imageCache.current.set(firePortalSpriteUrl, img)
+    }
+
+    // Preload Launch Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(LAUNCH_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
+    }
+
+    // Preload Caustics sprite sheets present in the project
+    for (const [id, url] of Object.entries(CAUSTICS_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
     }
   }
 
@@ -476,6 +578,9 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
               </div>
             </div>
 
+            {/* Referral - earn bonus tokens (above the download button) */}
+            <ShareSection section="referral" />
+
             {/* Download button */}
             {downloadUrl && (
               <Button
@@ -487,9 +592,9 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
               </Button>
             )}
 
-            {/* Share + referral */}
+            {/* Social share (below the download button) */}
             <div className="pt-2 border-t border-border">
-              <ShareSection />
+              <ShareSection section="social" />
             </div>
           </div>
         ) : (
@@ -649,6 +754,110 @@ function renderEffect(
   ctx.save()
 
   switch (effectId) {
+    case 'launch-torch-light':
+    case 'launch-lantern-glow':
+    case 'launch-campfire':
+    case 'launch-smoke-wisps':
+    case 'launch-running-water':
+    case 'launch-rain':
+    case 'launch-fog':
+    case 'launch-floating-dust':
+    case 'launch-fireflies':
+    case 'launch-arcane-runes':
+    case 'launch-portal':
+    case 'launch-lightning':
+    case 'launch-divine-light':
+    case 'launch-necrotic-corruption':
+    case 'launch-ghost-apparition': {
+      // Launch Effects sprite sheet - 5 cols x 6 rows = 30 frames, baked alpha
+      const spriteUrl = LAUNCH_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = LAUNCH_SPRITE_COLUMNS
+        const totalFrames = LAUNCH_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / LAUNCH_SPRITE_ROWS
+
+        // Advance through all 30 frames, matching editor preview cadence
+        const frameIndex = Math.floor((normalizedTime * 20) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        const intensity = (settings?.intensity as number) ?? 90
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '88')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'caustics-shallow-clear':
+    case 'caustics-deep-blue':
+    case 'caustics-tropical-shallow':
+    case 'caustics-soft-sand':
+    case 'caustics-rocky-bottom':
+    case 'caustics-fast-moving':
+    case 'caustics-slow-gentle':
+    case 'caustics-blue-green':
+    case 'caustics-sunlit-deep':
+    case 'caustics-murky-water':
+    case 'caustics-cave-water':
+    case 'caustics-kelp-forest':
+    case 'caustics-rippling-sand':
+    case 'caustics-wavy-surface':
+    case 'caustics-magic-glow': {
+      // Caustics sprite sheet - 5 cols x 5 rows = 25 frames, screen-blended light
+      const spriteUrl = CAUSTICS_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = CAUSTICS_SPRITE_COLUMNS
+        const totalFrames = CAUSTICS_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / CAUSTICS_SPRITE_ROWS
+
+        const frameIndex = Math.floor((normalizedTime * 18) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        const intensity = (settings?.intensity as number) ?? 80
+        ctx.globalCompositeOperation = 'screen'
+        ctx.globalAlpha = layer.opacity * Math.max(0.3, intensity / 100)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalCompositeOperation = 'source-over'
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback wash if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
     case 'torch-2': {
       // Sprite sheet animation - 60 frames, 64x64 each, 10 columns x 6 rows
       const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png'
@@ -696,6 +905,116 @@ function renderEffect(
         // Fallback to basic glow if sprite not loaded
         const flickerIntensity = 0.7 + 0.3 * Math.sin(normalizedTime * Math.PI * 8)
         const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * flickerIntensity)
+        gradient.addColorStop(0, secondaryColor + 'cc')
+        gradient.addColorStop(0.5, color + '66')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'blue-portal': {
+      // Sprite sheet animation - 16 frames, 128x128 each, 4 columns x 4 rows
+      const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Effect95-NLQsM059PmMoiyKgtrIJzfzdTZPNaP.png'
+      const spriteImg = imageCache.get(spriteUrl)
+
+      if (spriteImg) {
+        const frameWidth = 128
+        const frameHeight = 128
+        const columns = 4
+        const totalFrames = 16
+
+        // Calculate current frame based on time
+        const frameIndex = Math.floor((normalizedTime * 16) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+
+        // Source coordinates in sprite sheet
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Stretch the sprite frame to FILL the entire layer bounds on both axes,
+        // matching the editor preview (background-size: 100% 100%).
+        const drawX = position.x
+        const drawY = position.y
+        const drawWidth = size.width
+        const drawHeight = size.height
+
+        // Draw ambient glow first
+        const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        glowGradient.addColorStop(0, color + '50')
+        glowGradient.addColorStop(0.5, color + '25')
+        glowGradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = glowGradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+
+        // Draw sprite frame with additive blending to simulate screen blend mode
+        ctx.globalCompositeOperation = 'lighter'
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          drawX, drawY, drawWidth, drawHeight
+        )
+        ctx.globalCompositeOperation = 'source-over'
+      } else {
+        // Fallback to basic glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * (0.8 + pulse * 0.2))
+        gradient.addColorStop(0, secondaryColor + 'cc')
+        gradient.addColorStop(0.5, color + '66')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'fire-portal': {
+      // Sprite sheet animation - 16 frames, 128x128 each, 4 columns x 4 rows
+      const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Explosion21-a4r8cvpEimrFAY0R7JQtNKmhl57tll.png'
+      const spriteImg = imageCache.get(spriteUrl)
+
+      if (spriteImg) {
+        const frameWidth = 128
+        const frameHeight = 128
+        const columns = 4
+        const totalFrames = 16
+
+        // Calculate current frame based on time
+        const frameIndex = Math.floor((normalizedTime * 16) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+
+        // Source coordinates in sprite sheet
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Stretch the sprite frame to FILL the entire layer bounds on both axes,
+        // matching the editor preview (background-size: 100% 100%).
+        const drawX = position.x
+        const drawY = position.y
+        const drawWidth = size.width
+        const drawHeight = size.height
+
+        // Draw ambient glow first
+        const glowGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        glowGradient.addColorStop(0, color + '50')
+        glowGradient.addColorStop(0.5, color + '25')
+        glowGradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = glowGradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+
+        // Draw sprite frame with additive blending to simulate screen blend mode
+        ctx.globalCompositeOperation = 'lighter'
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          drawX, drawY, drawWidth, drawHeight
+        )
+        ctx.globalCompositeOperation = 'source-over'
+      } else {
+        // Fallback to basic glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * (0.8 + pulse * 0.2))
         gradient.addColorStop(0, secondaryColor + 'cc')
         gradient.addColorStop(0.5, color + '66')
         gradient.addColorStop(1, 'transparent')

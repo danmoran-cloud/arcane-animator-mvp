@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Waves, Rocket
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -20,7 +20,10 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'cloud': Cloud,
   'mountain': Mountain,
   'sparkles': Sparkles,
+  'circle-dot': CircleDot,
   'cpu': Cpu,
+  'waves': Waves,
+  'rocket': Rocket,
 }
 
 // TOP-DOWN Mini effect preview components
@@ -319,6 +322,38 @@ function MiniPortal() {
         className="absolute w-2 h-2 rounded-full bg-slate-900"
         style={{
           boxShadow: '0 0 4px #8b5cf6',
+        }}
+      />
+    </div>
+  )
+}
+
+// Blue Portal: expanding cyan ring
+function MiniBluePortal() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute w-5 h-5 rounded-full border-2"
+        style={{
+          borderColor: '#22d3ee',
+          boxShadow: '0 0 6px #22d3ee, inset 0 0 4px #a5f3fc',
+          animation: 'miniPortalPulse 1.4s ease-in-out infinite',
+        }}
+      />
+    </div>
+  )
+}
+
+// Fire Portal: glowing orange ring
+function MiniFirePortal() {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <div
+        className="absolute w-5 h-5 rounded-full border-2"
+        style={{
+          borderColor: '#ff8c1a',
+          boxShadow: '0 0 6px #ff8c1a, inset 0 0 4px #ffcc66',
+          animation: 'miniPortalPulse 1.4s ease-in-out infinite',
         }}
       />
     </div>
@@ -977,6 +1012,79 @@ function MiniTorch2() {
   )
 }
 
+// Factory for Launch Effects sprite-sheet thumbnails.
+// Animates through the 5x6 (30-frame) sheet inside the small preview tile.
+function makeMiniLaunch(src: string): React.FC {
+  const columns = 5
+  const rows = 6
+  const totalFrames = 30
+  const keyId = src.replace(/[^a-z0-9]/gi, '')
+  const MiniLaunch: React.FC = () => (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes minilaunch-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = (col / (columns - 1)) * 100
+            const posY = (row / (rows - 1)) * 100
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(2)}% ${posY.toFixed(2)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${src})`,
+          backgroundSize: `${columns * 100}% ${rows * 100}%`,
+          backgroundRepeat: 'no-repeat',
+          animation: `minilaunch-${keyId} 2s steps(1) infinite`,
+        }}
+      />
+    </div>
+  )
+  return MiniLaunch
+}
+
+// Factory for Caustics sprite-sheet thumbnails.
+// Animates through the 5x5 (25-frame) sheet inside the small preview tile.
+function makeMiniCaustics(src: string): React.FC {
+  const columns = 5
+  const rows = 5
+  const totalFrames = 25
+  const keyId = src.replace(/[^a-z0-9]/gi, '')
+  const MiniCaustics: React.FC = () => (
+    <div className="absolute inset-0 overflow-hidden bg-slate-900">
+      <style>{`
+        @keyframes minicaustics-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = (col / (columns - 1)) * 100
+            const posY = (row / (rows - 1)) * 100
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(2)}% ${posY.toFixed(2)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${src})`,
+          backgroundSize: `${columns * 100}% ${rows * 100}%`,
+          backgroundRepeat: 'no-repeat',
+          animation: `minicaustics-${keyId} 2.5s steps(1) infinite`,
+          mixBlendMode: 'screen',
+        }}
+      />
+    </div>
+  )
+  return MiniCaustics
+}
+
 // Map effect IDs to their preview components
 const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   // Core Pack
@@ -1010,11 +1118,45 @@ const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   'divine-light': MiniDivineLight,
   'necrotic-corruption': MiniNecrotic,
   'spirit-apparitions': MiniSpirits,
+  'blue-portal': MiniBluePortal,
+  'fire-portal': MiniFirePortal,
   // Sci-Fi Pack
   'holograms': MiniHologram,
   'energy-shields': MiniEnergyShield,
   'data-streams': MiniDataStream,
   'reactor-core': MiniReactorCore,
+  // Launch Effects Pack - animated sprite-sheet thumbnails
+  'launch-torch-light': makeMiniLaunch('/effects/launch/torch-light.png'),
+  'launch-lantern-glow': makeMiniLaunch('/effects/launch/lantern-glow.png'),
+  'launch-campfire': makeMiniLaunch('/effects/launch/campfire-blaze.png'),
+  'launch-smoke-wisps': makeMiniLaunch('/effects/launch/smoke-wisps.png'),
+  'launch-running-water': makeMiniLaunch('/effects/launch/running-water.png'),
+  'launch-rain': makeMiniLaunch('/effects/launch/rain-shower.png'),
+  'launch-fog': makeMiniLaunch('/effects/launch/rolling-fog.png'),
+  'launch-floating-dust': makeMiniLaunch('/effects/launch/floating-dust.png'),
+  'launch-fireflies': makeMiniLaunch('/effects/launch/fireflies.png'),
+  'launch-arcane-runes': makeMiniLaunch('/effects/launch/arcane-runes.png'),
+  'launch-portal': makeMiniLaunch('/effects/launch/portal-vortex.png'),
+  'launch-lightning': makeMiniLaunch('/effects/launch/lightning-strike.png'),
+  'launch-divine-light': makeMiniLaunch('/effects/launch/divine-light.png'),
+  'launch-necrotic-corruption': makeMiniLaunch('/effects/launch/necrotic-corruption.png'),
+  'launch-ghost-apparition': makeMiniLaunch('/effects/launch/ghost-apparition.png'),
+  // Caustics Pack - animated sprite-sheet thumbnails
+  'caustics-shallow-clear': makeMiniCaustics('/effects/caustics/shallow-clear.png'),
+  'caustics-deep-blue': makeMiniCaustics('/effects/caustics/deep-blue.png'),
+  'caustics-tropical-shallow': makeMiniCaustics('/effects/caustics/tropical-shallow.png'),
+  'caustics-soft-sand': makeMiniCaustics('/effects/caustics/soft-sand.png'),
+  'caustics-rocky-bottom': makeMiniCaustics('/effects/caustics/rocky-bottom.png'),
+  'caustics-fast-moving': makeMiniCaustics('/effects/caustics/fast-moving.png'),
+  'caustics-slow-gentle': makeMiniCaustics('/effects/caustics/slow-gentle.png'),
+  'caustics-blue-green': makeMiniCaustics('/effects/caustics/blue-green.png'),
+  'caustics-sunlit-deep': makeMiniCaustics('/effects/caustics/sunlit-deep.png'),
+  'caustics-murky-water': makeMiniCaustics('/effects/caustics/murky-water.png'),
+  'caustics-cave-water': makeMiniCaustics('/effects/caustics/cave-water.png'),
+  'caustics-kelp-forest': makeMiniCaustics('/effects/caustics/kelp-forest.png'),
+  'caustics-rippling-sand': makeMiniCaustics('/effects/caustics/rippling-sand.png'),
+  'caustics-wavy-surface': makeMiniCaustics('/effects/caustics/wavy-surface.png'),
+  'caustics-magic-glow': makeMiniCaustics('/effects/caustics/magic-glow.png'),
 }
 
 interface EffectsDrawerProps {
@@ -1117,7 +1259,10 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
     atmospheric: false,
     terrain: false,
     fantasy: false,
+    portal: false,
     scifi: false,
+    launch: true,
+    caustics: true,
   })
   
   const togglePack = (pack: EffectPack) => {
@@ -1136,7 +1281,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
         <div className="py-1">
-          {(['core', 'atmospheric', 'terrain', 'fantasy', 'scifi'] as EffectPack[]).map((pack) => (
+          {(['launch', 'caustics', 'core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}

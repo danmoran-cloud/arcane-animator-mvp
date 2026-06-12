@@ -1,6 +1,6 @@
 // Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'scifi'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi' | 'launch' | 'caustics'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
@@ -11,8 +11,18 @@ export type EffectId =
   | 'water-ripples' | 'waterfall' | 'lava-flow' | 'swamp-bubbles' | 'ice-crystals' | 'smoke-vents'
   // Fantasy Pack (6)
   | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
+  // Portal Pack (2)
+  | 'blue-portal' | 'fire-portal'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
+  // Launch Effects Pack (15) - sprite-sheet animations
+  | 'launch-torch-light' | 'launch-lantern-glow' | 'launch-campfire' | 'launch-smoke-wisps' | 'launch-running-water'
+  | 'launch-rain' | 'launch-fog' | 'launch-floating-dust' | 'launch-fireflies' | 'launch-arcane-runes'
+  | 'launch-portal' | 'launch-lightning' | 'launch-divine-light' | 'launch-necrotic-corruption' | 'launch-ghost-apparition'
+  // Caustics Pack (15) - underwater light sprite-sheet animations
+  | 'caustics-shallow-clear' | 'caustics-deep-blue' | 'caustics-tropical-shallow' | 'caustics-soft-sand' | 'caustics-rocky-bottom'
+  | 'caustics-fast-moving' | 'caustics-slow-gentle' | 'caustics-blue-green' | 'caustics-sunlit-deep' | 'caustics-murky-water'
+  | 'caustics-cave-water' | 'caustics-kelp-forest' | 'caustics-rippling-sand' | 'caustics-wavy-surface' | 'caustics-magic-glow'
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
 
@@ -63,11 +73,29 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     color: '#8b5cf6',
     description: 'Magical and mystical effects'
   },
+  portal: { 
+    name: 'Portal', 
+    icon: 'circle-dot', 
+    color: '#22d3ee',
+    description: 'Animated arcane portal gateways'
+  },
   scifi: { 
     name: 'Sci-Fi', 
     icon: 'cpu', 
     color: '#06b6d4',
     description: 'Futuristic technology effects'
+  },
+  launch: { 
+    name: 'Launch Effects', 
+    icon: 'rocket', 
+    color: '#10b981',
+    description: 'Premium animated sprite effects'
+  },
+  caustics: { 
+    name: 'Caustics', 
+    icon: 'waves', 
+    color: '#38bdf8',
+    description: 'Underwater light caustics'
   },
 }
 
@@ -531,6 +559,40 @@ export const effectsLibrary: EffectDefinition[] = [
       scale: 1,
     },
   },
+  {
+    id: 'blue-portal',
+    name: 'Blue Portal',
+    pack: 'portal',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Expanding arcane blue ring portal',
+    defaultSettings: {
+      speed: 50,
+      intensity: 90,
+      density: 50,
+      color: '#22d3ee',
+      secondaryColor: '#a5f3fc',
+      glowIntensity: 90,
+      scale: 1,
+    },
+  },
+  {
+    id: 'fire-portal',
+    name: 'Fire Portal',
+    pack: 'portal',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Erupting fiery portal sprite animation',
+    defaultSettings: {
+      speed: 50,
+      intensity: 90,
+      density: 50,
+      color: '#ff8c1a',
+      secondaryColor: '#ffcc66',
+      glowIntensity: 90,
+      scale: 1,
+    },
+  },
 
   // ===== SCI-FI PACK =====
   {
@@ -598,6 +660,280 @@ export const effectsLibrary: EffectDefinition[] = [
       glowIntensity: 95,
       scale: 1,
     },
+  },
+
+  // ===== LAUNCH EFFECTS PACK - sprite-sheet animations (5x6, 30 frames) =====
+  {
+    id: 'launch-torch-light',
+    name: 'Torch Light',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flickering torch flame',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#ffae42', secondaryColor: '#ff6a00', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-lantern-glow',
+    name: 'Lantern Glow',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Warm hanging lantern light',
+    defaultSettings: { speed: 40, intensity: 80, density: 50, color: '#ffd166', secondaryColor: '#f59e0b', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'launch-campfire',
+    name: 'Campfire',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Crackling campfire blaze',
+    defaultSettings: { speed: 55, intensity: 95, density: 60, color: '#ff7a1a', secondaryColor: '#ffcc00', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-smoke-wisps',
+    name: 'Smoke Wisps',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'wind',
+    description: 'Drifting wisps of smoke',
+    defaultSettings: { speed: 35, intensity: 60, density: 50, color: '#e5e7eb', secondaryColor: '#9ca3af', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'launch-running-water',
+    name: 'Running Water',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'droplets',
+    description: 'Splashing flowing water',
+    defaultSettings: { speed: 60, intensity: 80, density: 60, color: '#7dd3fc', secondaryColor: '#bae6fd', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'launch-rain',
+    name: 'Rain',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'cloud-rain',
+    description: 'Falling rain with splashes',
+    defaultSettings: { speed: 70, intensity: 75, density: 70, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'launch-fog',
+    name: 'Fog',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'cloud',
+    description: 'Billowing fog clouds',
+    defaultSettings: { speed: 30, intensity: 60, density: 60, color: '#f3f4f6', secondaryColor: '#d1d5db', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'launch-floating-dust',
+    name: 'Floating Dust',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Drifting motes of dust',
+    defaultSettings: { speed: 25, intensity: 50, density: 40, color: '#fde68a', secondaryColor: '#fbbf24', glowIntensity: 50, scale: 1 },
+  },
+  {
+    id: 'launch-fireflies',
+    name: 'Fireflies',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sparkle',
+    description: 'Glowing dancing fireflies',
+    defaultSettings: { speed: 45, intensity: 80, density: 40, color: '#fde047', secondaryColor: '#facc15', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-arcane-runes',
+    name: 'Arcane Runes',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Glowing magic rune circles',
+    defaultSettings: { speed: 40, intensity: 85, density: 50, color: '#c084fc', secondaryColor: '#e9d5ff', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-portal',
+    name: 'Portal',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Swirling magic portal rings',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#a855f7', secondaryColor: '#d8b4fe', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-lightning',
+    name: 'Lightning',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'zap',
+    description: 'Crackling lightning bolts',
+    defaultSettings: { speed: 80, intensity: 95, density: 50, color: '#bae6fd', secondaryColor: '#60a5fa', glowIntensity: 95, scale: 1 },
+  },
+  {
+    id: 'launch-divine-light',
+    name: 'Divine Light',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sun',
+    description: 'Radiant beams of holy light',
+    defaultSettings: { speed: 40, intensity: 90, density: 50, color: '#fde68a', secondaryColor: '#fef9c3', glowIntensity: 95, scale: 1 },
+  },
+  {
+    id: 'launch-necrotic-corruption',
+    name: 'Necrotic Corruption',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'skull',
+    description: 'Spreading necrotic energy',
+    defaultSettings: { speed: 45, intensity: 85, density: 60, color: '#84cc16', secondaryColor: '#bef264', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'launch-ghost-apparition',
+    name: 'Ghost Apparition',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'ghost',
+    description: 'Spectral ghostly figures',
+    defaultSettings: { speed: 35, intensity: 70, density: 40, color: '#a5f3fc', secondaryColor: '#cffafe', glowIntensity: 80, scale: 1 },
+  },
+
+  // ===== CAUSTICS PACK - underwater light sprite sheets (5x5, 25 frames) =====
+  {
+    id: 'caustics-shallow-clear',
+    name: 'Shallow Clear Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Crisp light ripples in shallow clear water',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#7dd3fc', secondaryColor: '#e0f2fe', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'caustics-deep-blue',
+    name: 'Deep Blue Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Cool caustics in deep blue water',
+    defaultSettings: { speed: 40, intensity: 75, density: 55, color: '#3b82f6', secondaryColor: '#93c5fd', glowIntensity: 65, scale: 1 },
+  },
+  {
+    id: 'caustics-tropical-shallow',
+    name: 'Tropical Shallow Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Bright turquoise tropical caustics',
+    defaultSettings: { speed: 55, intensity: 85, density: 50, color: '#2dd4bf', secondaryColor: '#a7f3d0', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'caustics-soft-sand',
+    name: 'Soft Sand Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Soft diffuse caustics over sand',
+    defaultSettings: { speed: 45, intensity: 70, density: 50, color: '#bae6fd', secondaryColor: '#f0f9ff', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'caustics-rocky-bottom',
+    name: 'Rocky Bottom Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Caustics scattered over rocky bottom',
+    defaultSettings: { speed: 48, intensity: 78, density: 55, color: '#67e8f9', secondaryColor: '#cffafe', glowIntensity: 65, scale: 1 },
+  },
+  {
+    id: 'caustics-fast-moving',
+    name: 'Fast Moving Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Rapidly shifting light patterns',
+    defaultSettings: { speed: 80, intensity: 88, density: 50, color: '#22d3ee', secondaryColor: '#ecfeff', glowIntensity: 75, scale: 1 },
+  },
+  {
+    id: 'caustics-slow-gentle',
+    name: 'Slow Gentle Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Slow, calming light ripples',
+    defaultSettings: { speed: 25, intensity: 65, density: 45, color: '#5eead4', secondaryColor: '#ccfbf1', glowIntensity: 55, scale: 1 },
+  },
+  {
+    id: 'caustics-blue-green',
+    name: 'Blue Green Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Blended blue-green water caustics',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#14b8a6', secondaryColor: '#99f6e4', glowIntensity: 68, scale: 1 },
+  },
+  {
+    id: 'caustics-sunlit-deep',
+    name: 'Sunlit Deep Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Sun rays piercing deep water',
+    defaultSettings: { speed: 42, intensity: 82, density: 55, color: '#60a5fa', secondaryColor: '#dbeafe', glowIntensity: 72, scale: 1 },
+  },
+  {
+    id: 'caustics-murky-water',
+    name: 'Murky Water Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Hazy caustics in murky green water',
+    defaultSettings: { speed: 38, intensity: 60, density: 60, color: '#84cc16', secondaryColor: '#d9f99d', glowIntensity: 50, scale: 1 },
+  },
+  {
+    id: 'caustics-cave-water',
+    name: 'Cave Water Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Stark caustics in dark cave water',
+    defaultSettings: { speed: 35, intensity: 85, density: 45, color: '#bfdbfe', secondaryColor: '#ffffff', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'caustics-kelp-forest',
+    name: 'Kelp Forest Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Green-tinted caustics through kelp',
+    defaultSettings: { speed: 40, intensity: 72, density: 55, color: '#4ade80', secondaryColor: '#bbf7d0', glowIntensity: 58, scale: 1 },
+  },
+  {
+    id: 'caustics-rippling-sand',
+    name: 'Rippling Sand Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Radiating caustics over rippled sand',
+    defaultSettings: { speed: 52, intensity: 84, density: 50, color: '#a5f3fc', secondaryColor: '#ffffff', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'caustics-wavy-surface',
+    name: 'Wavy Surface Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Caustics from a wavy water surface',
+    defaultSettings: { speed: 58, intensity: 80, density: 52, color: '#38bdf8', secondaryColor: '#e0f2fe', glowIntensity: 68, scale: 1 },
+  },
+  {
+    id: 'caustics-magic-glow',
+    name: 'Magic Glow Caustics',
+    pack: 'caustics',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Glowing magical caustic light',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#22d3ee', secondaryColor: '#cffafe', glowIntensity: 85, scale: 1 },
   },
 ]
 
