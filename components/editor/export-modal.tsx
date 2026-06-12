@@ -87,6 +87,28 @@ const LAUNCH_SPRITE_COLUMNS = 5
 const LAUNCH_SPRITE_ROWS = 6
 const LAUNCH_SPRITE_FRAMES = 30
 
+// Rain Effects sprite sheets (8 columns x 3 rows = 24 frames, baked-in alpha)
+const RAIN_SPRITE_PATHS: Record<string, string> = {
+  'rain-light-drizzle': '/effects/rain/light-drizzle.png',
+  'rain-steady': '/effects/rain/steady-rain.png',
+  'rain-heavy': '/effects/rain/heavy-rain.png',
+  'rain-torrential': '/effects/rain/torrential-rain.png',
+  'rain-wind-blown': '/effects/rain/wind-blown-rain.png',
+  'rain-fine-mist': '/effects/rain/fine-mist-rain.png',
+  'rain-sheet': '/effects/rain/rain-sheet.png',
+  'rain-intermittent': '/effects/rain/intermittent-rain.png',
+  'rain-splatter-spray': '/effects/rain/splatter-spray.png',
+  'rain-ground-mist': '/effects/rain/ground-mist-rain.png',
+  'rain-micro-drizzle': '/effects/rain/micro-drizzle.png',
+  'rain-sideways': '/effects/rain/sideways-rain.png',
+  'rain-fog-mix': '/effects/rain/rain-fog-mix.png',
+  'rain-droplet-impacts': '/effects/rain/droplet-impacts.png',
+  'rain-dynamic-storm': '/effects/rain/dynamic-storm-rain.png',
+}
+const RAIN_SPRITE_COLUMNS = 8
+const RAIN_SPRITE_ROWS = 3
+const RAIN_SPRITE_FRAMES = 24
+
 // Caustics sprite sheets (5 columns x 5 rows = 25 frames, alpha baked in)
 const CAUSTICS_SPRITE_PATHS: Record<string, string> = {
   'caustics-shallow-clear': '/effects/caustics/shallow-clear.png',
@@ -203,6 +225,21 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
 
     // Preload Launch Effects sprite sheets present in the project
     for (const [id, url] of Object.entries(LAUNCH_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
+    }
+
+    // Preload Rain Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(RAIN_SPRITE_PATHS)) {
       const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
       if (used && !imageCache.current.has(url)) {
         const img = new Image()
@@ -754,6 +791,58 @@ function renderEffect(
   ctx.save()
 
   switch (effectId) {
+    case 'rain-light-drizzle':
+    case 'rain-steady':
+    case 'rain-heavy':
+    case 'rain-torrential':
+    case 'rain-wind-blown':
+    case 'rain-fine-mist':
+    case 'rain-sheet':
+    case 'rain-intermittent':
+    case 'rain-splatter-spray':
+    case 'rain-ground-mist':
+    case 'rain-micro-drizzle':
+    case 'rain-sideways':
+    case 'rain-fog-mix':
+    case 'rain-droplet-impacts':
+    case 'rain-dynamic-storm': {
+      // Rain Effects sprite sheet - 8 cols x 3 rows = 24 frames, baked alpha
+      const spriteUrl = RAIN_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = RAIN_SPRITE_COLUMNS
+        const totalFrames = RAIN_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / RAIN_SPRITE_ROWS
+
+        // Advance through all 24 frames; rain runs faster than launch effects
+        const frameIndex = Math.floor((normalizedTime * 36) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        const intensity = (settings?.intensity as number) ?? 75
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
     case 'launch-torch-light':
     case 'launch-lantern-glow':
     case 'launch-campfire':

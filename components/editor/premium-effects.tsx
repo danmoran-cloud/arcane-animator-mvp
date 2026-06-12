@@ -405,6 +405,76 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
   )
 }
 
+// ===== RAIN EFFECTS PACK =====
+// Generic sprite-sheet renderer for the Rain Effects pack.
+// Each sheet is 8 columns x 3 rows = 24 frames, with baked-in alpha transparency.
+const RAIN_SPRITES: Record<string, string> = {
+  'rain-light-drizzle': '/effects/rain/light-drizzle.png',
+  'rain-steady': '/effects/rain/steady-rain.png',
+  'rain-heavy': '/effects/rain/heavy-rain.png',
+  'rain-torrential': '/effects/rain/torrential-rain.png',
+  'rain-wind-blown': '/effects/rain/wind-blown-rain.png',
+  'rain-fine-mist': '/effects/rain/fine-mist-rain.png',
+  'rain-sheet': '/effects/rain/rain-sheet.png',
+  'rain-intermittent': '/effects/rain/intermittent-rain.png',
+  'rain-splatter-spray': '/effects/rain/splatter-spray.png',
+  'rain-ground-mist': '/effects/rain/ground-mist-rain.png',
+  'rain-micro-drizzle': '/effects/rain/micro-drizzle.png',
+  'rain-sideways': '/effects/rain/sideways-rain.png',
+  'rain-fog-mix': '/effects/rain/rain-fog-mix.png',
+  'rain-droplet-impacts': '/effects/rain/droplet-impacts.png',
+  'rain-dynamic-storm': '/effects/rain/dynamic-storm-rain.png',
+}
+
+const RAIN_COLUMNS = 8
+const RAIN_ROWS = 3
+const RAIN_FRAMES = 24
+
+function RainSpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spriteUrl = RAIN_SPRITES[effectId]
+  const columns = RAIN_COLUMNS
+  const rows = RAIN_ROWS
+  const totalFrames = RAIN_FRAMES
+  // Higher speed -> shorter duration. Rain reads best fast: roughly 0.5s..2s.
+  const animationDuration = (100 / (settings.speed || 55)) * 0.8
+  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  if (!spriteUrl) return null
+
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes rain-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
+            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+
+      {/* Animated rain sprite - real alpha, fills the layer bounds */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          animation: `rain-${keyId} ${animationDuration}s steps(1) infinite`,
+          opacity: Math.max(0.35, (settings.intensity ?? 75) / 100),
+        }}
+      />
+    </div>
+  )
+}
+
 // ===== LAUNCH EFFECTS PACK =====
 // Generic sprite-sheet renderer for the Launch Effects pack.
 // Each sheet is 5 columns x 6 rows = 30 frames, with baked-in alpha transparency.
@@ -1447,6 +1517,11 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
     ...effectDef?.defaultSettings,
     ...settings,
   } as EffectSettings
+
+  // Rain Effects pack: generic sprite-sheet renderer driven by effectId
+  if (effectId.startsWith('rain-')) {
+    return <RainSpriteEffect effectId={effectId} settings={mergedSettings} />
+  }
 
   // Launch Effects pack: generic sprite-sheet renderer driven by effectId
   if (effectId.startsWith('launch-')) {
