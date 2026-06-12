@@ -405,6 +405,92 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
   )
 }
 
+// ===== LAUNCH EFFECTS PACK =====
+// Generic sprite-sheet renderer for the Launch Effects pack.
+// Each sheet is 5 columns x 6 rows = 30 frames, with baked-in alpha transparency.
+const LAUNCH_SPRITES: Record<string, string> = {
+  'launch-torch-light': '/effects/launch/torch-light.png',
+  'launch-lantern-glow': '/effects/launch/lantern-glow.png',
+  'launch-campfire': '/effects/launch/campfire-blaze.png',
+  'launch-smoke-wisps': '/effects/launch/smoke-wisps.png',
+  'launch-running-water': '/effects/launch/running-water.png',
+  'launch-rain': '/effects/launch/rain-shower.png',
+  'launch-fog': '/effects/launch/rolling-fog.png',
+  'launch-floating-dust': '/effects/launch/floating-dust.png',
+  'launch-fireflies': '/effects/launch/fireflies.png',
+  'launch-arcane-runes': '/effects/launch/arcane-runes.png',
+  'launch-portal': '/effects/launch/portal-vortex.png',
+  'launch-lightning': '/effects/launch/lightning-strike.png',
+  'launch-divine-light': '/effects/launch/divine-light.png',
+  'launch-necrotic-corruption': '/effects/launch/necrotic-corruption.png',
+  'launch-ghost-apparition': '/effects/launch/ghost-apparition.png',
+}
+
+const LAUNCH_COLUMNS = 5
+const LAUNCH_ROWS = 6
+const LAUNCH_FRAMES = 30
+
+function LaunchSpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spriteUrl = LAUNCH_SPRITES[effectId]
+  const columns = LAUNCH_COLUMNS
+  const rows = LAUNCH_ROWS
+  const totalFrames = LAUNCH_FRAMES
+  // Higher speed -> shorter duration. Range roughly 0.8s..4s.
+  const animationDuration = (100 / (settings.speed || 50)) * 1.5
+  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  if (!spriteUrl) return null
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes launch-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
+            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+        @keyframes launch-glow-${keyId} {
+          0%, 100% { opacity: 0.4; transform: scale(0.95); }
+          50% { opacity: 0.7; transform: scale(1.06); }
+        }
+      `}</style>
+
+      {/* Ambient glow tied to the effect color */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: `radial-gradient(circle, ${settings.color}33 0%, transparent 70%)`,
+          animation: `launch-glow-${keyId} ${Math.max(animationDuration, 1)}s ease-in-out infinite`,
+          opacity: (settings.glowIntensity ?? 60) / 100,
+        }}
+      />
+
+      {/* Animated sprite - real alpha, fills the layer bounds */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          animation: `launch-${keyId} ${animationDuration}s steps(1) infinite`,
+          opacity: Math.max(0.35, (settings.intensity ?? 90) / 100),
+        }}
+      />
+    </div>
+  )
+}
+
 // Campfire effect - TOP DOWN: larger radial glow with flickering light radius
 function CampfireEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
   return (
@@ -1283,6 +1369,11 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
     ...effectDef?.defaultSettings,
     ...settings,
   } as EffectSettings
+
+  // Launch Effects pack: generic sprite-sheet renderer driven by effectId
+  if (effectId.startsWith('launch-')) {
+    return <LaunchSpriteEffect effectId={effectId} settings={mergedSettings} />
+  }
 
   const effectComponents: Record<string, React.FC<{ settings: EffectSettings; width: number; height: number }>> = {
     // Core Pack

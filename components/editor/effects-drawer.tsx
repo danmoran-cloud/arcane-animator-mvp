@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Rocket
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -22,6 +22,7 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'sparkles': Sparkles,
   'circle-dot': CircleDot,
   'cpu': Cpu,
+  'rocket': Rocket,
 }
 
 // TOP-DOWN Mini effect preview components
@@ -1010,6 +1011,42 @@ function MiniTorch2() {
   )
 }
 
+// Factory for Launch Effects sprite-sheet thumbnails.
+// Animates through the 5x6 (30-frame) sheet inside the small preview tile.
+function makeMiniLaunch(src: string): React.FC {
+  const columns = 5
+  const rows = 6
+  const totalFrames = 30
+  const keyId = src.replace(/[^a-z0-9]/gi, '')
+  const MiniLaunch: React.FC = () => (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes minilaunch-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = (col / (columns - 1)) * 100
+            const posY = (row / (rows - 1)) * 100
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(2)}% ${posY.toFixed(2)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${src})`,
+          backgroundSize: `${columns * 100}% ${rows * 100}%`,
+          backgroundRepeat: 'no-repeat',
+          animation: `minilaunch-${keyId} 2s steps(1) infinite`,
+        }}
+      />
+    </div>
+  )
+  return MiniLaunch
+}
+
 // Map effect IDs to their preview components
 const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   // Core Pack
@@ -1050,6 +1087,22 @@ const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   'energy-shields': MiniEnergyShield,
   'data-streams': MiniDataStream,
   'reactor-core': MiniReactorCore,
+  // Launch Effects Pack - first-frame thumbnails of the sprite sheets
+  'launch-torch-light': makeMiniLaunch('/effects/launch/torch-light.png'),
+  'launch-lantern-glow': makeMiniLaunch('/effects/launch/lantern-glow.png'),
+  'launch-campfire': makeMiniLaunch('/effects/launch/campfire-blaze.png'),
+  'launch-smoke-wisps': makeMiniLaunch('/effects/launch/smoke-wisps.png'),
+  'launch-running-water': makeMiniLaunch('/effects/launch/running-water.png'),
+  'launch-rain': makeMiniLaunch('/effects/launch/rain-shower.png'),
+  'launch-fog': makeMiniLaunch('/effects/launch/rolling-fog.png'),
+  'launch-floating-dust': makeMiniLaunch('/effects/launch/floating-dust.png'),
+  'launch-fireflies': makeMiniLaunch('/effects/launch/fireflies.png'),
+  'launch-arcane-runes': makeMiniLaunch('/effects/launch/arcane-runes.png'),
+  'launch-portal': makeMiniLaunch('/effects/launch/portal-vortex.png'),
+  'launch-lightning': makeMiniLaunch('/effects/launch/lightning-strike.png'),
+  'launch-divine-light': makeMiniLaunch('/effects/launch/divine-light.png'),
+  'launch-necrotic-corruption': makeMiniLaunch('/effects/launch/necrotic-corruption.png'),
+  'launch-ghost-apparition': makeMiniLaunch('/effects/launch/ghost-apparition.png'),
 }
 
 interface EffectsDrawerProps {
@@ -1154,6 +1207,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
     fantasy: false,
     portal: false,
     scifi: false,
+    launch: true,
   })
   
   const togglePack = (pack: EffectPack) => {
@@ -1172,7 +1226,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
         <div className="py-1">
-          {(['core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
+          {(['launch', 'core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}

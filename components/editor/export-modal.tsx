@@ -65,6 +65,28 @@ const STATUS_MESSAGES: Record<string, string> = {
   error: 'Export failed',
 }
 
+// Launch Effects sprite sheets (5 columns x 6 rows = 30 frames, baked-in alpha)
+const LAUNCH_SPRITE_PATHS: Record<string, string> = {
+  'launch-torch-light': '/effects/launch/torch-light.png',
+  'launch-lantern-glow': '/effects/launch/lantern-glow.png',
+  'launch-campfire': '/effects/launch/campfire-blaze.png',
+  'launch-smoke-wisps': '/effects/launch/smoke-wisps.png',
+  'launch-running-water': '/effects/launch/running-water.png',
+  'launch-rain': '/effects/launch/rain-shower.png',
+  'launch-fog': '/effects/launch/rolling-fog.png',
+  'launch-floating-dust': '/effects/launch/floating-dust.png',
+  'launch-fireflies': '/effects/launch/fireflies.png',
+  'launch-arcane-runes': '/effects/launch/arcane-runes.png',
+  'launch-portal': '/effects/launch/portal-vortex.png',
+  'launch-lightning': '/effects/launch/lightning-strike.png',
+  'launch-divine-light': '/effects/launch/divine-light.png',
+  'launch-necrotic-corruption': '/effects/launch/necrotic-corruption.png',
+  'launch-ghost-apparition': '/effects/launch/ghost-apparition.png',
+}
+const LAUNCH_SPRITE_COLUMNS = 5
+const LAUNCH_SPRITE_ROWS = 6
+const LAUNCH_SPRITE_FRAMES = 30
+
 export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   const [settings, setSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
   const [progress, setProgress] = useState<ExportProgress>({ status: 'idle', progress: 0 })
@@ -155,6 +177,21 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
         img.src = firePortalSpriteUrl
       })
       imageCache.current.set(firePortalSpriteUrl, img)
+    }
+
+    // Preload Launch Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(LAUNCH_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
     }
   }
 
@@ -680,6 +717,58 @@ function renderEffect(
   ctx.save()
 
   switch (effectId) {
+    case 'launch-torch-light':
+    case 'launch-lantern-glow':
+    case 'launch-campfire':
+    case 'launch-smoke-wisps':
+    case 'launch-running-water':
+    case 'launch-rain':
+    case 'launch-fog':
+    case 'launch-floating-dust':
+    case 'launch-fireflies':
+    case 'launch-arcane-runes':
+    case 'launch-portal':
+    case 'launch-lightning':
+    case 'launch-divine-light':
+    case 'launch-necrotic-corruption':
+    case 'launch-ghost-apparition': {
+      // Launch Effects sprite sheet - 5 cols x 6 rows = 30 frames, baked alpha
+      const spriteUrl = LAUNCH_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = LAUNCH_SPRITE_COLUMNS
+        const totalFrames = LAUNCH_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / LAUNCH_SPRITE_ROWS
+
+        // Advance through all 30 frames, matching editor preview cadence
+        const frameIndex = Math.floor((normalizedTime * 20) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        const intensity = (settings?.intensity as number) ?? 90
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '88')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
     case 'torch-2': {
       // Sprite sheet animation - 60 frames, 64x64 each, 10 columns x 6 rows
       const spriteUrl = 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png'

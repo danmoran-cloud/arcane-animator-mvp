@@ -1,6 +1,6 @@
 // Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi' | 'launch'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
@@ -15,6 +15,10 @@ export type EffectId =
   | 'blue-portal' | 'fire-portal'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
+  // Launch Effects Pack (15) - sprite-sheet animations
+  | 'launch-torch-light' | 'launch-lantern-glow' | 'launch-campfire' | 'launch-smoke-wisps' | 'launch-running-water'
+  | 'launch-rain' | 'launch-fog' | 'launch-floating-dust' | 'launch-fireflies' | 'launch-arcane-runes'
+  | 'launch-portal' | 'launch-lightning' | 'launch-divine-light' | 'launch-necrotic-corruption' | 'launch-ghost-apparition'
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
 
@@ -76,6 +80,12 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     icon: 'cpu', 
     color: '#06b6d4',
     description: 'Futuristic technology effects'
+  },
+  launch: { 
+    name: 'Launch Effects', 
+    icon: 'rocket', 
+    color: '#10b981',
+    description: 'Premium animated sprite effects'
   },
 }
 
@@ -640,6 +650,143 @@ export const effectsLibrary: EffectDefinition[] = [
       glowIntensity: 95,
       scale: 1,
     },
+  },
+
+  // ===== LAUNCH EFFECTS PACK - sprite-sheet animations (5x6, 30 frames) =====
+  {
+    id: 'launch-torch-light',
+    name: 'Torch Light',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flickering torch flame',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#ffae42', secondaryColor: '#ff6a00', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-lantern-glow',
+    name: 'Lantern Glow',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Warm hanging lantern light',
+    defaultSettings: { speed: 40, intensity: 80, density: 50, color: '#ffd166', secondaryColor: '#f59e0b', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'launch-campfire',
+    name: 'Campfire',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Crackling campfire blaze',
+    defaultSettings: { speed: 55, intensity: 95, density: 60, color: '#ff7a1a', secondaryColor: '#ffcc00', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-smoke-wisps',
+    name: 'Smoke Wisps',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'wind',
+    description: 'Drifting wisps of smoke',
+    defaultSettings: { speed: 35, intensity: 60, density: 50, color: '#e5e7eb', secondaryColor: '#9ca3af', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'launch-running-water',
+    name: 'Running Water',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'droplets',
+    description: 'Splashing flowing water',
+    defaultSettings: { speed: 60, intensity: 80, density: 60, color: '#7dd3fc', secondaryColor: '#bae6fd', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'launch-rain',
+    name: 'Rain',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'cloud-rain',
+    description: 'Falling rain with splashes',
+    defaultSettings: { speed: 70, intensity: 75, density: 70, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'launch-fog',
+    name: 'Fog',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'cloud',
+    description: 'Billowing fog clouds',
+    defaultSettings: { speed: 30, intensity: 60, density: 60, color: '#f3f4f6', secondaryColor: '#d1d5db', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'launch-floating-dust',
+    name: 'Floating Dust',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Drifting motes of dust',
+    defaultSettings: { speed: 25, intensity: 50, density: 40, color: '#fde68a', secondaryColor: '#fbbf24', glowIntensity: 50, scale: 1 },
+  },
+  {
+    id: 'launch-fireflies',
+    name: 'Fireflies',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sparkle',
+    description: 'Glowing dancing fireflies',
+    defaultSettings: { speed: 45, intensity: 80, density: 40, color: '#fde047', secondaryColor: '#facc15', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-arcane-runes',
+    name: 'Arcane Runes',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Glowing magic rune circles',
+    defaultSettings: { speed: 40, intensity: 85, density: 50, color: '#c084fc', secondaryColor: '#e9d5ff', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-portal',
+    name: 'Portal',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Swirling magic portal rings',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#a855f7', secondaryColor: '#d8b4fe', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'launch-lightning',
+    name: 'Lightning',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'zap',
+    description: 'Crackling lightning bolts',
+    defaultSettings: { speed: 80, intensity: 95, density: 50, color: '#bae6fd', secondaryColor: '#60a5fa', glowIntensity: 95, scale: 1 },
+  },
+  {
+    id: 'launch-divine-light',
+    name: 'Divine Light',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'sun',
+    description: 'Radiant beams of holy light',
+    defaultSettings: { speed: 40, intensity: 90, density: 50, color: '#fde68a', secondaryColor: '#fef9c3', glowIntensity: 95, scale: 1 },
+  },
+  {
+    id: 'launch-necrotic-corruption',
+    name: 'Necrotic Corruption',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'skull',
+    description: 'Spreading necrotic energy',
+    defaultSettings: { speed: 45, intensity: 85, density: 60, color: '#84cc16', secondaryColor: '#bef264', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'launch-ghost-apparition',
+    name: 'Ghost Apparition',
+    pack: 'launch',
+    renderMode: 'localized',
+    icon: 'ghost',
+    description: 'Spectral ghostly figures',
+    defaultSettings: { speed: 35, intensity: 70, density: 40, color: '#a5f3fc', secondaryColor: '#cffafe', glowIntensity: 80, scale: 1 },
   },
 ]
 
