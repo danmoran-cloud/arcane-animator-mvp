@@ -1217,26 +1217,15 @@ interface EffectsDrawerProps {
 }
 
 function EffectCard({ effect, onAdd }: { effect: EffectDefinition; onAdd: () => void }) {
-  const packColor = EFFECT_PACKS[effect.pack].color
-  const PreviewComponent = effectPreviews[effect.id]
-  
   return (
     <button
       onClick={onAdd}
       className={cn(
-        "group relative w-full flex items-center gap-2 p-2 rounded-md",
+        "group relative w-full flex items-center gap-2 px-2 py-1.5 rounded-md",
         "bg-card/50 hover:bg-card border border-border/50 hover:border-primary/50",
         "transition-all duration-200 text-left"
       )}
     >
-      {/* Animated preview */}
-      <div 
-        className="relative w-8 h-8 rounded flex items-center justify-center overflow-hidden"
-        style={{ backgroundColor: `${packColor}15` }}
-      >
-        {PreviewComponent && <PreviewComponent />}
-      </div>
-      
       {/* Effect name */}
       <span className="flex-1 text-xs font-medium text-foreground truncate">
         {effect.name}
@@ -1335,7 +1324,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
         <div className="py-1">
-          {(['rain', 'launch', 'caustics', 'core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
+          {(['rain', 'launch', 'caustics', 'portal'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}
