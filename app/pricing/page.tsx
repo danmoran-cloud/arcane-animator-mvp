@@ -81,29 +81,63 @@ export default function PricingPage() {
                 <div className="mb-4">
                   <span className="text-4xl font-bold">{formatPrice(pack.priceInCents)}</span>
                 </div>
-                <div className="mb-4">
-                  <span className="text-2xl font-semibold text-primary">{pack.tokens}</span>
-                  <span className="text-muted-foreground ml-1">tokens</span>
-                </div>
-                {pack.bonus > 0 && (
-                  <Badge variant="secondary" className="mb-4">
-                    +{pack.bonus} bonus tokens!
-                  </Badge>
+                {pack.unlimited ? (
+                  <>
+                    <div className="mb-4">
+                      <span className="text-2xl font-semibold text-primary">Unlimited</span>
+                      <span className="text-muted-foreground ml-1">tokens</span>
+                    </div>
+                    {pack.tagline && (
+                      <p className="mb-4 text-sm italic text-muted-foreground text-balance">
+                        {pack.tagline}
+                      </p>
+                    )}
+                    <div className="space-y-2 text-sm text-left">
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Unlimited SD exports</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Unlimited HD exports</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Unlimited 4K exports</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>Never purchase tokens again</span>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-4">
+                      <span className="text-2xl font-semibold text-primary">{pack.tokens}</span>
+                      <span className="text-muted-foreground ml-1">tokens</span>
+                    </div>
+                    {pack.bonus > 0 && (
+                      <Badge variant="secondary" className="mb-4">
+                        +{pack.bonus} bonus tokens!
+                      </Badge>
+                    )}
+                    <div className="space-y-2 text-sm text-left">
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>~{Math.floor(pack.tokens / 1)} SD exports</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>~{Math.floor(pack.tokens / 2)} HD exports</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Check className="w-4 h-4 text-green-500" />
+                        <span>~{Math.floor(pack.tokens / 3)} 4K exports</span>
+                      </div>
+                    </div>
+                  </>
                 )}
-                <div className="space-y-2 text-sm text-left">
-                  <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span>~{Math.floor(pack.tokens / 1)} SD exports</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span>~{Math.floor(pack.tokens / 2)} HD exports</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500" />
-                    <span>~{Math.floor(pack.tokens / 3)} 4K exports</span>
-                  </div>
-                </div>
               </CardContent>
               <CardFooter>
                 <Button 

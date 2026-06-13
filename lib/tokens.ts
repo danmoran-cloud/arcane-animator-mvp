@@ -7,6 +7,8 @@ export interface TokenPack {
   priceInCents: number
   popular?: boolean
   savings?: string
+  unlimited?: boolean
+  tagline?: string
 }
 
 export const TOKEN_PACKS: TokenPack[] = [
@@ -34,9 +36,10 @@ export const TOKEN_PACKS: TokenPack[] = [
   {
     id: 'noble',
     name: "Noble's Pack",
-    tokens: 150,
-    priceInCents: 3999, // $39.99
-    savings: 'Save 46%',
+    tokens: 9999999, // sentinel "unlimited" balance for fulfillment; UI shows "Unlimited"
+    priceInCents: 2999, // $29.99
+    unlimited: true,
+    tagline: 'Boundless creation, forevermore — never purchase tokens again.',
   },
 ]
 
