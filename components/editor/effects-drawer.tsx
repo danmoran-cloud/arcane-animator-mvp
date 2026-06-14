@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Waves, Rocket
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Waves, Rocket, CloudRain, Skull
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -24,6 +24,8 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'cpu': Cpu,
   'waves': Waves,
   'rocket': Rocket,
+  'cloud-rain': CloudRain,
+  'skull': Skull,
 }
 
 // TOP-DOWN Mini effect preview components
@@ -1048,6 +1050,42 @@ function makeMiniLaunch(src: string): React.FC {
   return MiniLaunch
 }
 
+// Factory for Rain Effects sprite-sheet thumbnails.
+// Animates through the 8x3 (24-frame) sheet inside the small preview tile.
+function makeMiniRain(src: string): React.FC {
+  const columns = 8
+  const rows = 3
+  const totalFrames = 24
+  const keyId = src.replace(/[^a-z0-9]/gi, '')
+  const MiniRain: React.FC = () => (
+    <div className="absolute inset-0 overflow-hidden">
+      <style>{`
+        @keyframes minirain-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = (col / (columns - 1)) * 100
+            const posY = (row / (rows - 1)) * 100
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(2)}% ${posY.toFixed(2)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+      `}</style>
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${src})`,
+          backgroundSize: `${columns * 100}% ${rows * 100}%`,
+          backgroundRepeat: 'no-repeat',
+          animation: `minirain-${keyId} 1.2s steps(1) infinite`,
+        }}
+      />
+    </div>
+  )
+  return MiniRain
+}
+
 // Factory for Caustics sprite-sheet thumbnails.
 // Animates through the 5x5 (25-frame) sheet inside the small preview tile.
 function makeMiniCaustics(src: string): React.FC {
@@ -1157,6 +1195,22 @@ const effectPreviews: Partial<Record<EffectId, React.FC>> = {
   'caustics-rippling-sand': makeMiniCaustics('/effects/caustics/rippling-sand.png'),
   'caustics-wavy-surface': makeMiniCaustics('/effects/caustics/wavy-surface.png'),
   'caustics-magic-glow': makeMiniCaustics('/effects/caustics/magic-glow.png'),
+  // Rain Effects Pack - animated sprite-sheet thumbnails
+  'rain-light-drizzle': makeMiniRain('/effects/rain/light-drizzle.png'),
+  'rain-steady': makeMiniRain('/effects/rain/steady-rain.png'),
+  'rain-heavy': makeMiniRain('/effects/rain/heavy-rain.png'),
+  'rain-torrential': makeMiniRain('/effects/rain/torrential-rain.png'),
+  'rain-wind-blown': makeMiniRain('/effects/rain/wind-blown-rain.png'),
+  'rain-fine-mist': makeMiniRain('/effects/rain/fine-mist-rain.png'),
+  'rain-sheet': makeMiniRain('/effects/rain/rain-sheet.png'),
+  'rain-intermittent': makeMiniRain('/effects/rain/intermittent-rain.png'),
+  'rain-splatter-spray': makeMiniRain('/effects/rain/splatter-spray.png'),
+  'rain-ground-mist': makeMiniRain('/effects/rain/ground-mist-rain.png'),
+  'rain-micro-drizzle': makeMiniRain('/effects/rain/micro-drizzle.png'),
+  'rain-sideways': makeMiniRain('/effects/rain/sideways-rain.png'),
+  'rain-fog-mix': makeMiniRain('/effects/rain/rain-fog-mix.png'),
+  'rain-droplet-impacts': makeMiniRain('/effects/rain/droplet-impacts.png'),
+  'rain-dynamic-storm': makeMiniRain('/effects/rain/dynamic-storm-rain.png'),
 }
 
 interface EffectsDrawerProps {
@@ -1164,26 +1218,15 @@ interface EffectsDrawerProps {
 }
 
 function EffectCard({ effect, onAdd }: { effect: EffectDefinition; onAdd: () => void }) {
-  const packColor = EFFECT_PACKS[effect.pack].color
-  const PreviewComponent = effectPreviews[effect.id]
-  
   return (
     <button
       onClick={onAdd}
       className={cn(
-        "group relative w-full flex items-center gap-2 p-2 rounded-md",
+        "group relative w-full flex items-center gap-2 px-2 py-1.5 rounded-md",
         "bg-card/50 hover:bg-card border border-border/50 hover:border-primary/50",
         "transition-all duration-200 text-left"
       )}
     >
-      {/* Animated preview */}
-      <div 
-        className="relative w-8 h-8 rounded flex items-center justify-center overflow-hidden"
-        style={{ backgroundColor: `${packColor}15` }}
-      >
-        {PreviewComponent && <PreviewComponent />}
-      </div>
-      
       {/* Effect name */}
       <span className="flex-1 text-xs font-medium text-foreground truncate">
         {effect.name}
@@ -1263,6 +1306,8 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
     scifi: false,
     launch: true,
     caustics: true,
+    rain: true,
+    cemetery: true,
   })
   
   const togglePack = (pack: EffectPack) => {
@@ -1281,7 +1326,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
         <div className="py-1">
-          {(['launch', 'caustics', 'core', 'atmospheric', 'terrain', 'fantasy', 'portal', 'scifi'] as EffectPack[]).map((pack) => (
+          {(['cemetery', 'rain', 'launch', 'caustics', 'portal'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}

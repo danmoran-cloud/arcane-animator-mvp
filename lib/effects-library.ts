@@ -1,6 +1,6 @@
 // Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi' | 'launch' | 'caustics'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi' | 'launch' | 'caustics' | 'rain' | 'cemetery'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
@@ -23,6 +23,14 @@ export type EffectId =
   | 'caustics-shallow-clear' | 'caustics-deep-blue' | 'caustics-tropical-shallow' | 'caustics-soft-sand' | 'caustics-rocky-bottom'
   | 'caustics-fast-moving' | 'caustics-slow-gentle' | 'caustics-blue-green' | 'caustics-sunlit-deep' | 'caustics-murky-water'
   | 'caustics-cave-water' | 'caustics-kelp-forest' | 'caustics-rippling-sand' | 'caustics-wavy-surface' | 'caustics-magic-glow'
+  // Rain Effects Pack (15) - rain sprite-sheet animations
+  | 'rain-light-drizzle' | 'rain-steady' | 'rain-heavy' | 'rain-torrential' | 'rain-wind-blown'
+  | 'rain-fine-mist' | 'rain-sheet' | 'rain-intermittent' | 'rain-splatter-spray' | 'rain-ground-mist'
+  | 'rain-micro-drizzle' | 'rain-sideways' | 'rain-fog-mix' | 'rain-droplet-impacts' | 'rain-dynamic-storm'
+  // Cemetery Effects Pack (15) - spooky sprite-sheet animations
+  | 'cemetery-graveyard-fog' | 'cemetery-will-o-wisps' | 'cemetery-soul-spirits' | 'cemetery-necrotic-aura' | 'cemetery-blood-petals'
+  | 'cemetery-haunted-lantern' | 'cemetery-cracked-stone-rise' | 'cemetery-skeletal-remains' | 'cemetery-dark-ritual-circle' | 'cemetery-coffin-burst'
+  | 'cemetery-ethereal-mist-swirl' | 'cemetery-moonbeam-trees' | 'cemetery-draining-life-vortex' | 'cemetery-candle-flame' | 'cemetery-bats-in-flight'
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
 
@@ -96,6 +104,18 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     icon: 'waves', 
     color: '#38bdf8',
     description: 'Underwater light caustics'
+  },
+  rain: { 
+    name: 'Rain Effects', 
+    icon: 'cloud-rain', 
+    color: '#60a5fa',
+    description: 'Animated rain sprite effects'
+  },
+  cemetery: { 
+    name: 'Cemetery Effects', 
+    icon: 'skull', 
+    color: '#22c55e',
+    description: 'Spooky graveyard sprite effects'
   },
 }
 
@@ -934,6 +954,280 @@ export const effectsLibrary: EffectDefinition[] = [
     icon: 'waves',
     description: 'Glowing magical caustic light',
     defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#22d3ee', secondaryColor: '#cffafe', glowIntensity: 85, scale: 1 },
+  },
+
+  // ===== RAIN EFFECTS PACK - rain sprite sheets (8x3, 24 frames) =====
+  {
+    id: 'rain-light-drizzle',
+    name: 'Light Drizzle',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-drizzle',
+    description: 'Fine, sparse droplets. Slow fall',
+    defaultSettings: { speed: 35, intensity: 50, density: 30, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'rain-steady',
+    name: 'Steady Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Consistent, even rainfall',
+    defaultSettings: { speed: 55, intensity: 70, density: 55, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
+  },
+  {
+    id: 'rain-heavy',
+    name: 'Heavy Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Thicker drops, heavier density',
+    defaultSettings: { speed: 70, intensity: 85, density: 75, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'rain-torrential',
+    name: 'Torrential Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Extreme downpour. High impact',
+    defaultSettings: { speed: 85, intensity: 95, density: 95, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 50, scale: 1 },
+  },
+  {
+    id: 'rain-wind-blown',
+    name: 'Wind Blown Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain-wind',
+    description: 'Rain driven by strong wind',
+    defaultSettings: { speed: 75, intensity: 75, density: 60, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
+  },
+  {
+    id: 'rain-fine-mist',
+    name: 'Fine Mist Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-fog',
+    description: 'Ultra-fine droplets and haze',
+    defaultSettings: { speed: 30, intensity: 45, density: 40, color: '#eff6ff', secondaryColor: '#ffffff', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'rain-sheet',
+    name: 'Rain Sheet (Curtain)',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Vertical sheets of rain',
+    defaultSettings: { speed: 65, intensity: 90, density: 85, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 45, scale: 1 },
+  },
+  {
+    id: 'rain-intermittent',
+    name: 'Intermittent Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Uneven rainfall with natural gaps',
+    defaultSettings: { speed: 55, intensity: 65, density: 50, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
+  },
+  {
+    id: 'rain-splatter-spray',
+    name: 'Splatter Spray',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'droplets',
+    description: 'Fine outward splashes and spray',
+    defaultSettings: { speed: 60, intensity: 70, density: 55, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'rain-ground-mist',
+    name: 'Ground Mist Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-fog',
+    description: 'Rain that creates rising ground mist',
+    defaultSettings: { speed: 50, intensity: 65, density: 50, color: '#e0f2fe', secondaryColor: '#f1f5f9', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'rain-micro-drizzle',
+    name: 'Micro Drizzle',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-drizzle',
+    description: 'Very small droplets and specks',
+    defaultSettings: { speed: 30, intensity: 40, density: 25, color: '#eff6ff', secondaryColor: '#ffffff', glowIntensity: 25, scale: 1 },
+  },
+  {
+    id: 'rain-sideways',
+    name: 'Sideways Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain-wind',
+    description: 'Strong horizontal angle rain',
+    defaultSettings: { speed: 80, intensity: 80, density: 65, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
+  },
+  {
+    id: 'rain-fog-mix',
+    name: 'Rain & Fog Mix',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-fog',
+    description: 'Rain blended with diffuse fog',
+    defaultSettings: { speed: 50, intensity: 70, density: 55, color: '#e0f2fe', secondaryColor: '#f1f5f9', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'rain-droplet-impacts',
+    name: 'Droplet Impacts',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'droplets',
+    description: 'Droplets hitting surfaces',
+    defaultSettings: { speed: 55, intensity: 75, density: 50, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 45, scale: 1 },
+  },
+  {
+    id: 'rain-dynamic-storm',
+    name: 'Dynamic Storm Rain',
+    pack: 'rain',
+    renderMode: 'atmospheric',
+    icon: 'cloud-lightning',
+    description: 'Variable density, speed and size',
+    defaultSettings: { speed: 85, intensity: 90, density: 80, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 50, scale: 1 },
+  },
+
+  // ===== CEMETERY EFFECTS PACK - spooky sprite sheets (5x6, 30 frames) =====
+  {
+    id: 'cemetery-graveyard-fog',
+    name: 'Graveyard Fog',
+    pack: 'cemetery',
+    renderMode: 'atmospheric',
+    icon: 'cloud-fog',
+    description: 'Low-lying drifting graveyard fog',
+    defaultSettings: { speed: 25, intensity: 65, density: 60, color: '#cbd5e1', secondaryColor: '#f1f5f9', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'cemetery-will-o-wisps',
+    name: "Ghostly Will-o'-Wisps",
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flickering spirit fire orbs',
+    defaultSettings: { speed: 45, intensity: 85, density: 40, color: '#2dd4bf', secondaryColor: '#99f6e4', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'cemetery-soul-spirits',
+    name: 'Soul Spirits',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'ghost',
+    description: 'Drifting ghostly soul figures',
+    defaultSettings: { speed: 35, intensity: 75, density: 40, color: '#5eead4', secondaryColor: '#ccfbf1', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'cemetery-necrotic-aura',
+    name: 'Necrotic Aura',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'skull',
+    description: 'Swirling dark decaying energy',
+    defaultSettings: { speed: 45, intensity: 85, density: 60, color: '#7e22ce', secondaryColor: '#a855f7', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'cemetery-blood-petals',
+    name: 'Blood Petals',
+    pack: 'cemetery',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Scattering crimson petals',
+    defaultSettings: { speed: 40, intensity: 70, density: 50, color: '#dc2626', secondaryColor: '#ef4444', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'cemetery-haunted-lantern',
+    name: 'Haunted Lantern Light',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Eerie green lantern flame',
+    defaultSettings: { speed: 40, intensity: 80, density: 40, color: '#4ade80', secondaryColor: '#bbf7d0', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'cemetery-cracked-stone-rise',
+    name: 'Cracked Stone Rise',
+    pack: 'cemetery',
+    renderMode: 'terrain',
+    icon: 'mountain',
+    description: 'Tombstone rising from the ground',
+    defaultSettings: { speed: 40, intensity: 70, density: 50, color: '#94a3b8', secondaryColor: '#cbd5e1', glowIntensity: 20, scale: 1 },
+  },
+  {
+    id: 'cemetery-skeletal-remains',
+    name: 'Skeletal Remains Shift',
+    pack: 'cemetery',
+    renderMode: 'terrain',
+    icon: 'skull',
+    description: 'Bones clattering and assembling',
+    defaultSettings: { speed: 45, intensity: 70, density: 50, color: '#e7e5e4', secondaryColor: '#d6d3d1', glowIntensity: 20, scale: 1 },
+  },
+  {
+    id: 'cemetery-dark-ritual-circle',
+    name: 'Dark Ritual Circle',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Glowing red occult summoning circle',
+    defaultSettings: { speed: 35, intensity: 90, density: 50, color: '#ef4444', secondaryColor: '#fca5a5', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'cemetery-coffin-burst',
+    name: 'Coffin Burst',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Coffin bursting open with debris',
+    defaultSettings: { speed: 55, intensity: 85, density: 55, color: '#a16207', secondaryColor: '#facc15', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'cemetery-ethereal-mist-swirl',
+    name: 'Ethereal Mist Swirl',
+    pack: 'cemetery',
+    renderMode: 'atmospheric',
+    icon: 'cloud-fog',
+    description: 'Spiraling spectral mist vortex',
+    defaultSettings: { speed: 35, intensity: 65, density: 55, color: '#c4b5fd', secondaryColor: '#ede9fe', glowIntensity: 50, scale: 1 },
+  },
+  {
+    id: 'cemetery-moonbeam-trees',
+    name: 'Moonbeam Through Trees',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'sun',
+    description: 'Pale volumetric moonlight rays',
+    defaultSettings: { speed: 25, intensity: 70, density: 40, color: '#bfdbfe', secondaryColor: '#eff6ff', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'cemetery-draining-life-vortex',
+    name: 'Draining Life Vortex',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Swirling green life-drain vortex',
+    defaultSettings: { speed: 55, intensity: 90, density: 55, color: '#84cc16', secondaryColor: '#bef264', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'cemetery-candle-flame',
+    name: 'Candle Flame Flicker',
+    pack: 'cemetery',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flickering candle flames',
+    defaultSettings: { speed: 45, intensity: 75, density: 40, color: '#fcd34d', secondaryColor: '#fbbf24', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'cemetery-bats-in-flight',
+    name: 'Bats in Flight',
+    pack: 'cemetery',
+    renderMode: 'atmospheric',
+    icon: 'ghost',
+    description: 'Silhouetted bats flying past',
+    defaultSettings: { speed: 60, intensity: 80, density: 50, color: '#1e293b', secondaryColor: '#475569', glowIntensity: 10, scale: 1 },
   },
 ]
 

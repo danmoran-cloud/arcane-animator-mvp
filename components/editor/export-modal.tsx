@@ -87,6 +87,50 @@ const LAUNCH_SPRITE_COLUMNS = 5
 const LAUNCH_SPRITE_ROWS = 6
 const LAUNCH_SPRITE_FRAMES = 30
 
+// Rain Effects sprite sheets (8 columns x 3 rows = 24 frames, baked-in alpha)
+const RAIN_SPRITE_PATHS: Record<string, string> = {
+  'rain-light-drizzle': '/effects/rain/light-drizzle.png',
+  'rain-steady': '/effects/rain/steady-rain.png',
+  'rain-heavy': '/effects/rain/heavy-rain.png',
+  'rain-torrential': '/effects/rain/torrential-rain.png',
+  'rain-wind-blown': '/effects/rain/wind-blown-rain.png',
+  'rain-fine-mist': '/effects/rain/fine-mist-rain.png',
+  'rain-sheet': '/effects/rain/rain-sheet.png',
+  'rain-intermittent': '/effects/rain/intermittent-rain.png',
+  'rain-splatter-spray': '/effects/rain/splatter-spray.png',
+  'rain-ground-mist': '/effects/rain/ground-mist-rain.png',
+  'rain-micro-drizzle': '/effects/rain/micro-drizzle.png',
+  'rain-sideways': '/effects/rain/sideways-rain.png',
+  'rain-fog-mix': '/effects/rain/rain-fog-mix.png',
+  'rain-droplet-impacts': '/effects/rain/droplet-impacts.png',
+  'rain-dynamic-storm': '/effects/rain/dynamic-storm-rain.png',
+}
+const RAIN_SPRITE_COLUMNS = 8
+const RAIN_SPRITE_ROWS = 3
+const RAIN_SPRITE_FRAMES = 24
+
+// Cemetery Effects sprite sheets (5 columns x 6 rows = 30 frames, baked-in alpha)
+const CEMETERY_SPRITE_PATHS: Record<string, string> = {
+  'cemetery-graveyard-fog': '/effects/cemetery/graveyard-fog.png',
+  'cemetery-will-o-wisps': '/effects/cemetery/ghostly-will-o-wisps.png',
+  'cemetery-soul-spirits': '/effects/cemetery/soul-spirits.png',
+  'cemetery-necrotic-aura': '/effects/cemetery/necrotic-aura.png',
+  'cemetery-blood-petals': '/effects/cemetery/blood-petals.png',
+  'cemetery-haunted-lantern': '/effects/cemetery/haunted-lantern-light.png',
+  'cemetery-cracked-stone-rise': '/effects/cemetery/cracked-stone-rise.png',
+  'cemetery-skeletal-remains': '/effects/cemetery/skeletal-remains-shift.png',
+  'cemetery-dark-ritual-circle': '/effects/cemetery/dark-ritual-circle.png',
+  'cemetery-coffin-burst': '/effects/cemetery/coffin-burst.png',
+  'cemetery-ethereal-mist-swirl': '/effects/cemetery/ethereal-mist-swirl.png',
+  'cemetery-moonbeam-trees': '/effects/cemetery/moonbeam-through-trees.png',
+  'cemetery-draining-life-vortex': '/effects/cemetery/draining-life-vortex.png',
+  'cemetery-candle-flame': '/effects/cemetery/candle-flame-flicker.png',
+  'cemetery-bats-in-flight': '/effects/cemetery/bats-in-flight.png',
+}
+const CEMETERY_SPRITE_COLUMNS = 5
+const CEMETERY_SPRITE_ROWS = 6
+const CEMETERY_SPRITE_FRAMES = 30
+
 // Caustics sprite sheets (5 columns x 5 rows = 25 frames, alpha baked in)
 const CAUSTICS_SPRITE_PATHS: Record<string, string> = {
   'caustics-shallow-clear': '/effects/caustics/shallow-clear.png',
@@ -203,6 +247,36 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
 
     // Preload Launch Effects sprite sheets present in the project
     for (const [id, url] of Object.entries(LAUNCH_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
+    }
+
+    // Preload Rain Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(RAIN_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
+    }
+
+    // Preload Cemetery Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(CEMETERY_SPRITE_PATHS)) {
       const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
       if (used && !imageCache.current.has(url)) {
         const img = new Image()
@@ -754,6 +828,120 @@ function renderEffect(
   ctx.save()
 
   switch (effectId) {
+    case 'cemetery-graveyard-fog':
+    case 'cemetery-will-o-wisps':
+    case 'cemetery-soul-spirits':
+    case 'cemetery-necrotic-aura':
+    case 'cemetery-blood-petals':
+    case 'cemetery-haunted-lantern':
+    case 'cemetery-cracked-stone-rise':
+    case 'cemetery-skeletal-remains':
+    case 'cemetery-dark-ritual-circle':
+    case 'cemetery-coffin-burst':
+    case 'cemetery-ethereal-mist-swirl':
+    case 'cemetery-moonbeam-trees':
+    case 'cemetery-draining-life-vortex':
+    case 'cemetery-candle-flame':
+    case 'cemetery-bats-in-flight': {
+      // Cemetery Effects sprite sheet - 5 cols x 6 rows = 30 frames, baked alpha
+      const spriteUrl = CEMETERY_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = CEMETERY_SPRITE_COLUMNS
+        const totalFrames = CEMETERY_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / CEMETERY_SPRITE_ROWS
+
+        const frameIndex = Math.floor((normalizedTime * totalFrames) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Ambient glow behind the sprite, tied to the effect color
+        const glowIntensity = (settings?.glowIntensity as number) ?? 60
+        if (glowIntensity > 0) {
+          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+          gradient.addColorStop(0, color + '33')
+          gradient.addColorStop(1, 'transparent')
+          ctx.globalAlpha = layer.opacity * (glowIntensity / 100)
+          ctx.fillStyle = gradient
+          ctx.fillRect(position.x, position.y, size.width, size.height)
+        }
+
+        const intensity = (settings?.intensity as number) ?? 80
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'rain-light-drizzle':
+    case 'rain-steady':
+    case 'rain-heavy':
+    case 'rain-torrential':
+    case 'rain-wind-blown':
+    case 'rain-fine-mist':
+    case 'rain-sheet':
+    case 'rain-intermittent':
+    case 'rain-splatter-spray':
+    case 'rain-ground-mist':
+    case 'rain-micro-drizzle':
+    case 'rain-sideways':
+    case 'rain-fog-mix':
+    case 'rain-droplet-impacts':
+    case 'rain-dynamic-storm': {
+      // Rain Effects sprite sheet - 8 cols x 3 rows = 24 frames, baked alpha
+      const spriteUrl = RAIN_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = RAIN_SPRITE_COLUMNS
+        const totalFrames = RAIN_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / RAIN_SPRITE_ROWS
+
+        // Advance through all 24 frames; rain runs faster than launch effects
+        const frameIndex = Math.floor((normalizedTime * 36) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        const intensity = (settings?.intensity as number) ?? 75
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
     case 'launch-torch-light':
     case 'launch-lantern-glow':
     case 'launch-campfire':
