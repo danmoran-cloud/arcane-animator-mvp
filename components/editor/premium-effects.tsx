@@ -1604,6 +1604,11 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
     ...settings,
   } as EffectSettings
 
+  // Cemetery Effects pack: generic sprite-sheet renderer driven by effectId
+  if (effectId.startsWith('cemetery-')) {
+    return <CemeterySpriteEffect effectId={effectId} settings={mergedSettings} />
+  }
+
   // Rain Effects pack: generic sprite-sheet renderer driven by effectId
   if (effectId.startsWith('rain-')) {
     return <RainSpriteEffect effectId={effectId} settings={mergedSettings} />
