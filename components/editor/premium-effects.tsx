@@ -405,6 +405,92 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
   )
 }
 
+// ===== CEMETERY EFFECTS PACK =====
+// Generic sprite-sheet renderer for the Cemetery Effects pack.
+// Each sheet is 5 columns x 6 rows = 30 frames, with baked-in alpha transparency.
+const CEMETERY_SPRITES: Record<string, string> = {
+  'cemetery-graveyard-fog': '/effects/cemetery/graveyard-fog.png',
+  'cemetery-will-o-wisps': '/effects/cemetery/ghostly-will-o-wisps.png',
+  'cemetery-soul-spirits': '/effects/cemetery/soul-spirits.png',
+  'cemetery-necrotic-aura': '/effects/cemetery/necrotic-aura.png',
+  'cemetery-blood-petals': '/effects/cemetery/blood-petals.png',
+  'cemetery-haunted-lantern': '/effects/cemetery/haunted-lantern-light.png',
+  'cemetery-cracked-stone-rise': '/effects/cemetery/cracked-stone-rise.png',
+  'cemetery-skeletal-remains': '/effects/cemetery/skeletal-remains-shift.png',
+  'cemetery-dark-ritual-circle': '/effects/cemetery/dark-ritual-circle.png',
+  'cemetery-coffin-burst': '/effects/cemetery/coffin-burst.png',
+  'cemetery-ethereal-mist-swirl': '/effects/cemetery/ethereal-mist-swirl.png',
+  'cemetery-moonbeam-trees': '/effects/cemetery/moonbeam-through-trees.png',
+  'cemetery-draining-life-vortex': '/effects/cemetery/draining-life-vortex.png',
+  'cemetery-candle-flame': '/effects/cemetery/candle-flame-flicker.png',
+  'cemetery-bats-in-flight': '/effects/cemetery/bats-in-flight.png',
+}
+
+const CEMETERY_COLUMNS = 5
+const CEMETERY_ROWS = 6
+const CEMETERY_FRAMES = 30
+
+function CemeterySpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spriteUrl = CEMETERY_SPRITES[effectId]
+  const columns = CEMETERY_COLUMNS
+  const rows = CEMETERY_ROWS
+  const totalFrames = CEMETERY_FRAMES
+  // Higher speed -> shorter duration. Range roughly 0.8s..4s.
+  const animationDuration = (100 / (settings.speed || 45)) * 1.5
+  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  if (!spriteUrl) return null
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes cemetery-${keyId} {
+          ${Array.from({ length: totalFrames }, (_, i) => {
+            const col = i % columns
+            const row = Math.floor(i / columns)
+            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
+            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
+            const percent = (i / totalFrames) * 100
+            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
+          }).join('\n          ')}
+          100% { background-position: 0% 0%; }
+        }
+        @keyframes cemetery-glow-${keyId} {
+          0%, 100% { opacity: 0.4; transform: scale(0.95); }
+          50% { opacity: 0.7; transform: scale(1.06); }
+        }
+      `}</style>
+
+      {/* Ambient glow tied to the effect color */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: `radial-gradient(circle, ${settings.color}33 0%, transparent 70%)`,
+          animation: `cemetery-glow-${keyId} ${Math.max(animationDuration, 1)}s ease-in-out infinite`,
+          opacity: (settings.glowIntensity ?? 60) / 100,
+        }}
+      />
+
+      {/* Animated sprite - real alpha, fills the layer bounds */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          animation: `cemetery-${keyId} ${animationDuration}s steps(1) infinite`,
+          opacity: Math.max(0.35, (settings.intensity ?? 80) / 100),
+        }}
+      />
+    </div>
+  )
+}
+
 // ===== RAIN EFFECTS PACK =====
 // Generic sprite-sheet renderer for the Rain Effects pack.
 // Each sheet is 8 columns x 3 rows = 24 frames, with baked-in alpha transparency.
