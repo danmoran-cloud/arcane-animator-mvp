@@ -1,7 +1,29 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { getEffectById, type EffectSettings } from '@/lib/effects-library'
+
+// Drives sprite sheet animation via setInterval instead of CSS keyframes.
+// CSS background-position keyframes with steps(1) cause visual jumping in some
+// browsers due to interpolation artifacts. JS-driven frame advance is reliable.
+function useSpriteFrame(totalFrames: number, fps: number): number {
+  const [frame, setFrame] = useState(0)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFrame(f => (f + 1) % totalFrames)
+    }, 1000 / Math.max(fps, 1))
+    return () => clearInterval(interval)
+  }, [totalFrames, fps])
+  return frame
+}
+
+function spritePosition(frame: number, columns: number, rows: number) {
+  const col = frame % columns
+  const row = Math.floor(frame / columns)
+  const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
+  const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
+  return `${posX.toFixed(3)}% ${posY.toFixed(3)}%`
+}
 
 interface PremiumEffectRendererProps {
   effectId: string
@@ -190,48 +212,33 @@ function Torch2Effect({ settings, width, height }: { settings: EffectSettings; w
   const columns = 10
   const rows = 6
   const totalFrames = 60
-  const animationDuration = (100 / (settings.speed || 50)) * 2 // seconds
-
-  // Percentage-based sprite sheet rendering so the active frame always FILLS
-  // the layer bounds on both axes (X and Y stretch independently with the box).
-  // For an N-frame sheet, background-size is (columns*100%) x (rows*100%) which
-  // sizes each frame to exactly the container, and background-position uses the
-  // percentage form col/(columns-1) x row/(rows-1).
+  const fps = (settings.speed || 50) / 100 * 24
+  const glowDuration = (100 / (settings.speed || 50)) * 2
+  const frame = useSpriteFrame(totalFrames, fps)
   const bgSize = `${columns * 100}% ${rows * 100}%`
 
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
       <style>{`
-        @keyframes torch2-sprite {
-          0% { background-position: 0% 0%; }
-          ${Array.from({ length: totalFrames }, (_, i) => {
-            const col = i % columns
-            const row = Math.floor(i / columns)
-            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
-            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
-            const percent = ((i + 1) / totalFrames) * 100
-            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
-          }).join('\n          ')}
-        }
         @keyframes torch2-glow {
           0%, 100% { opacity: 0.6; transform: scale(1); }
           50% { opacity: 0.8; transform: scale(1.05); }
         }
       `}</style>
-      
+
       {/* Ambient glow beneath */}
-      <div 
+      <div
         className="absolute rounded-full"
         style={{
           width: '100%',
           height: '100%',
           background: `radial-gradient(circle, ${settings.color}40 0%, transparent 70%)`,
-          animation: `torch2-glow ${animationDuration / 2}s ease-in-out infinite`,
+          animation: `torch2-glow ${glowDuration / 2}s ease-in-out infinite`,
         }}
       />
-      
-      {/* Animated flame sprite - fills the entire layer bounds (object-fit: fill equivalent) */}
-      <div 
+
+      {/* Animated flame sprite */}
+      <div
         className="absolute inset-0"
         style={{
           width: '100%',
@@ -239,20 +246,20 @@ function Torch2Effect({ settings, width, height }: { settings: EffectSettings; w
           backgroundImage: `url(${spriteUrl})`,
           backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
-          animation: `torch2-sprite ${animationDuration}s steps(1) infinite`,
-          mixBlendMode: 'screen', // Makes black background transparent
+          backgroundPosition: spritePosition(frame, columns, rows),
+          mixBlendMode: 'screen',
           imageRendering: 'pixelated',
         }}
       />
       
       {/* Additional glow around flame */}
-      <div 
+      <div
         className="absolute rounded-full"
         style={{
           width: '50%',
           height: '50%',
           background: `radial-gradient(circle, ${settings.color}50 0%, transparent 70%)`,
-          animation: `torch2-glow ${animationDuration / 3}s ease-in-out infinite`,
+          animation: `torch2-glow ${glowDuration / 3}s ease-in-out infinite`,
         }}
       />
     </div>
@@ -266,27 +273,14 @@ function BluePortalEffect({ settings, width, height }: { settings: EffectSetting
   const columns = 4
   const rows = 4
   const totalFrames = 16
-  const animationDuration = (100 / (settings.speed || 50)) * 2 // seconds
-
-  // Percentage-based sprite sheet rendering so the active frame always FILLS
-  // the layer bounds on both axes. background-size is (columns*100%) x (rows*100%)
-  // and background-position uses the percentage form col/(columns-1) x row/(rows-1).
+  const fps = (settings.speed || 50) / 100 * 16
+  const glowDuration = (100 / (settings.speed || 50)) * 2
+  const frame = useSpriteFrame(totalFrames, fps)
   const bgSize = `${columns * 100}% ${rows * 100}%`
 
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
       <style>{`
-        @keyframes blueportal-sprite {
-          0% { background-position: 0% 0%; }
-          ${Array.from({ length: totalFrames }, (_, i) => {
-            const col = i % columns
-            const row = Math.floor(i / columns)
-            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
-            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
-            const percent = ((i + 1) / totalFrames) * 100
-            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
-          }).join('\n          ')}
-        }
         @keyframes blueportal-glow {
           0%, 100% { opacity: 0.5; transform: scale(0.95); }
           50% { opacity: 0.85; transform: scale(1.08); }
@@ -300,11 +294,11 @@ function BluePortalEffect({ settings, width, height }: { settings: EffectSetting
           width: '100%',
           height: '100%',
           background: `radial-gradient(circle, ${settings.color}45 0%, transparent 70%)`,
-          animation: `blueportal-glow ${animationDuration / 2}s ease-in-out infinite`,
+          animation: `blueportal-glow ${glowDuration / 2}s ease-in-out infinite`,
         }}
       />
 
-      {/* Animated portal sprite - fills the entire layer bounds */}
+      {/* Animated portal sprite */}
       <div
         className="absolute inset-0"
         style={{
@@ -313,8 +307,8 @@ function BluePortalEffect({ settings, width, height }: { settings: EffectSetting
           backgroundImage: `url(${spriteUrl})`,
           backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
-          animation: `blueportal-sprite ${animationDuration}s steps(1) infinite`,
-          mixBlendMode: 'screen', // Makes black background transparent
+          backgroundPosition: spritePosition(frame, columns, rows),
+          mixBlendMode: 'screen',
         }}
       />
 
@@ -325,7 +319,7 @@ function BluePortalEffect({ settings, width, height }: { settings: EffectSetting
           width: '45%',
           height: '45%',
           background: `radial-gradient(circle, ${settings.secondaryColor || '#a5f3fc'}55 0%, transparent 70%)`,
-          animation: `blueportal-glow ${animationDuration / 3}s ease-in-out infinite`,
+          animation: `blueportal-glow ${glowDuration / 3}s ease-in-out infinite`,
         }}
       />
     </div>
@@ -339,27 +333,14 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
   const columns = 4
   const rows = 4
   const totalFrames = 16
-  const animationDuration = (100 / (settings.speed || 50)) * 2 // seconds
-
-  // Percentage-based sprite sheet rendering so the active frame always FILLS
-  // the layer bounds on both axes. background-size is (columns*100%) x (rows*100%)
-  // and background-position uses the percentage form col/(columns-1) x row/(rows-1).
+  const fps = (settings.speed || 50) / 100 * 16
+  const glowDuration = (100 / (settings.speed || 50)) * 2
+  const frame = useSpriteFrame(totalFrames, fps)
   const bgSize = `${columns * 100}% ${rows * 100}%`
 
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
       <style>{`
-        @keyframes fireportal-sprite {
-          0% { background-position: 0% 0%; }
-          ${Array.from({ length: totalFrames }, (_, i) => {
-            const col = i % columns
-            const row = Math.floor(i / columns)
-            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
-            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
-            const percent = ((i + 1) / totalFrames) * 100
-            return `${percent.toFixed(2)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
-          }).join('\n          ')}
-        }
         @keyframes fireportal-glow {
           0%, 100% { opacity: 0.5; transform: scale(0.95); }
           50% { opacity: 0.85; transform: scale(1.08); }
@@ -373,11 +354,11 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
           width: '100%',
           height: '100%',
           background: `radial-gradient(circle, ${settings.color}45 0%, transparent 70%)`,
-          animation: `fireportal-glow ${animationDuration / 2}s ease-in-out infinite`,
+          animation: `fireportal-glow ${glowDuration / 2}s ease-in-out infinite`,
         }}
       />
 
-      {/* Animated portal sprite - fills the entire layer bounds */}
+      {/* Animated portal sprite */}
       <div
         className="absolute inset-0"
         style={{
@@ -386,8 +367,8 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
           backgroundImage: `url(${spriteUrl})`,
           backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
-          animation: `fireportal-sprite ${animationDuration}s steps(1) infinite`,
-          mixBlendMode: 'screen', // Makes black background transparent
+          backgroundPosition: spritePosition(frame, columns, rows),
+          mixBlendMode: 'screen',
         }}
       />
 
@@ -398,7 +379,235 @@ function FirePortalEffect({ settings, width, height }: { settings: EffectSetting
           width: '45%',
           height: '45%',
           background: `radial-gradient(circle, ${settings.secondaryColor || '#ffcc66'}55 0%, transparent 70%)`,
-          animation: `fireportal-glow ${animationDuration / 3}s ease-in-out infinite`,
+          animation: `fireportal-glow ${glowDuration / 3}s ease-in-out infinite`,
+        }}
+      />
+    </div>
+  )
+}
+
+// ===== MAGIC EFFECTS PACK =====
+// Generic sprite-sheet renderer for the Magic Effects pack (magic circles).
+// Each sheet is 5 columns x 5 rows = 25 frames, with baked-in alpha transparency.
+const MAGIC_SPRITES: Record<string, string> = {
+  'magic-golden-arcane': '/effects/magic/golden-arcane-circle.png',
+  'magic-cyan-heptagram': '/effects/magic/cyan-heptagram.png',
+  'magic-purple-hexagram': '/effects/magic/purple-hexagram.png',
+  'magic-verdant-summoning': '/effects/magic/verdant-summoning-circle.png',
+  'magic-infernal-flame': '/effects/magic/infernal-flame-circle.png',
+  'magic-radiant-ward': '/effects/magic/radiant-ward-circle.png',
+  'magic-magenta-hex': '/effects/magic/magenta-hex-circle.png',
+  'magic-golden-rune': '/effects/magic/golden-rune-circle.png',
+  'magic-azure-conjuration': '/effects/magic/azure-conjuration-circle.png',
+  'magic-violet-enchantment': '/effects/magic/violet-enchantment-circle.png',
+  'magic-emerald-nature': '/effects/magic/emerald-nature-circle.png',
+  'magic-spiral-vortex': '/effects/magic/spiral-vortex-circle.png',
+  'magic-crimson-pentagram': '/effects/magic/crimson-pentagram.png',
+  'magic-amber-alchemy': '/effects/magic/amber-alchemy-circle.png',
+  'magic-frost-sigil': '/effects/magic/frost-sigil-circle.png',
+}
+
+const MAGIC_COLUMNS = 5
+const MAGIC_ROWS = 5
+const MAGIC_FRAMES = 25
+
+function MagicSpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spriteUrl = MAGIC_SPRITES[effectId]
+  const columns = MAGIC_COLUMNS
+  const rows = MAGIC_ROWS
+  const totalFrames = MAGIC_FRAMES
+  const fps = (settings.speed || 45) / 100 * 16
+  const glowDuration = (100 / (settings.speed || 45)) * 1.5
+  const frame = useSpriteFrame(totalFrames, fps)
+  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  if (!spriteUrl) return null
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes magic-glow-${keyId} {
+          0%, 100% { opacity: 0.45; transform: scale(0.96); }
+          50% { opacity: 0.75; transform: scale(1.05); }
+        }
+      `}</style>
+
+      {/* Ambient glow tied to the effect color */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: `radial-gradient(circle, ${settings.color}33 0%, transparent 70%)`,
+          animation: `magic-glow-${keyId} ${Math.max(glowDuration, 1)}s ease-in-out infinite`,
+          opacity: (settings.glowIntensity ?? 60) / 100,
+        }}
+      />
+
+      {/* Animated sprite */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: spritePosition(frame, columns, rows),
+          opacity: Math.max(0.35, (settings.intensity ?? 80) / 100),
+        }}
+      />
+    </div>
+  )
+}
+
+// ===== LIGHT SOURCE EFFECTS PACK =====
+// Generic sprite-sheet renderer for the Light Source Effects pack.
+// Each sheet is 5 columns x 6 rows = 30 frames, with baked-in alpha transparency.
+const LIGHTSOURCE_SPRITES: Record<string, string> = {
+  'lightsource-wall-torch': '/effects/light-source/wall-torch.png',
+  'lightsource-ornate-lantern': '/effects/light-source/ornate-lantern.png',
+  'lightsource-iron-lantern': '/effects/light-source/iron-lantern.png',
+  'lightsource-hanging-lantern': '/effects/light-source/hanging-lantern.png',
+  'lightsource-carriage-lantern': '/effects/light-source/carriage-lantern.png',
+  'lightsource-campfire': '/effects/light-source/campfire.png',
+  'lightsource-sparkler-burst': '/effects/light-source/sparkler-burst.png',
+  'lightsource-candle': '/effects/light-source/candle.png',
+  'lightsource-glowing-orb': '/effects/light-source/glowing-orb.png',
+  'lightsource-fire-brazier': '/effects/light-source/fire-brazier.png',
+  'lightsource-rune-light-circle': '/effects/light-source/rune-light-circle.png',
+  'lightsource-pendant-light': '/effects/light-source/pendant-light.png',
+  'lightsource-radiant-starburst': '/effects/light-source/radiant-starburst.png',
+  'lightsource-soft-star-glow': '/effects/light-source/soft-star-glow.png',
+  'lightsource-sparkle-starburst': '/effects/light-source/sparkle-starburst.png',
+}
+
+const LIGHTSOURCE_COLUMNS = 5
+const LIGHTSOURCE_ROWS = 6
+const LIGHTSOURCE_FRAMES = 30
+
+function LightSourceSpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spriteUrl = LIGHTSOURCE_SPRITES[effectId]
+  const columns = LIGHTSOURCE_COLUMNS
+  const rows = LIGHTSOURCE_ROWS
+  const totalFrames = LIGHTSOURCE_FRAMES
+  const fps = (settings.speed || 45) / 100 * 16
+  const glowDuration = (100 / (settings.speed || 45)) * 1.5
+  const frame = useSpriteFrame(totalFrames, fps)
+  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  if (!spriteUrl) return null
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes lightsource-glow-${keyId} {
+          0%, 100% { opacity: 0.45; transform: scale(0.96); }
+          50% { opacity: 0.8; transform: scale(1.06); }
+        }
+      `}</style>
+
+      {/* Ambient glow tied to the effect color */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: `radial-gradient(circle, ${settings.color}40 0%, transparent 70%)`,
+          animation: `lightsource-glow-${keyId} ${Math.max(glowDuration, 1)}s ease-in-out infinite`,
+          opacity: (settings.glowIntensity ?? 80) / 100,
+        }}
+      />
+
+      {/* Animated sprite */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: spritePosition(frame, columns, rows),
+          opacity: Math.max(0.35, (settings.intensity ?? 80) / 100),
+        }}
+      />
+    </div>
+  )
+}
+
+// ===== SUBTERRANEAN EFFECTS PACK =====
+// Generic sprite-sheet renderer for the Subterranean Effects pack.
+// Each sheet is 5 columns x 6 rows = 30 frames, with baked-in alpha transparency.
+const SUBTERRANEAN_SPRITES: Record<string, string> = {
+  'subterranean-cave-drips': '/effects/subterranean/cave-drips.png',
+  'subterranean-stalactite-seep': '/effects/subterranean/stalactite-seep.png',
+  'subterranean-underground-stream': '/effects/subterranean/underground-stream.png',
+  'subterranean-cave-mist': '/effects/subterranean/cave-mist.png',
+  'subterranean-crystal-sparkles': '/effects/subterranean/crystal-sparkles.png',
+  'subterranean-crystal-pulse': '/effects/subterranean/crystal-pulse.png',
+  'subterranean-bioluminescent-spores': '/effects/subterranean/bioluminescent-spores.png',
+  'subterranean-glowing-mushroom-aura': '/effects/subterranean/glowing-mushroom-aura.png',
+  'subterranean-bat-swarm': '/effects/subterranean/bat-swarm-silhouettes.png',
+  'subterranean-dustfall': '/effects/subterranean/dustfall.png',
+  'subterranean-pebble-collapse': '/effects/subterranean/pebble-collapse.png',
+  'subterranean-steam-vent': '/effects/subterranean/steam-vent.png',
+  'subterranean-cave-fireflies': '/effects/subterranean/cave-fireflies.png',
+  'subterranean-arcane-cave-energy': '/effects/subterranean/arcane-cave-energy.png',
+  'subterranean-ambient': '/effects/subterranean/subterranean-ambient.png',
+}
+
+const SUBTERRANEAN_COLUMNS = 5
+const SUBTERRANEAN_ROWS = 6
+const SUBTERRANEAN_FRAMES = 30
+
+function SubterraneanSpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spriteUrl = SUBTERRANEAN_SPRITES[effectId]
+  const columns = SUBTERRANEAN_COLUMNS
+  const rows = SUBTERRANEAN_ROWS
+  const totalFrames = SUBTERRANEAN_FRAMES
+  const fps = (settings.speed || 45) / 100 * 16
+  const glowDuration = (100 / (settings.speed || 45)) * 1.5
+  const frame = useSpriteFrame(totalFrames, fps)
+  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const bgSize = `${columns * 100}% ${rows * 100}%`
+
+  if (!spriteUrl) return null
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+      <style>{`
+        @keyframes subterranean-glow-${keyId} {
+          0%, 100% { opacity: 0.4; transform: scale(0.95); }
+          50% { opacity: 0.7; transform: scale(1.06); }
+        }
+      `}</style>
+
+      {/* Ambient glow tied to the effect color */}
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: '90%',
+          height: '90%',
+          background: `radial-gradient(circle, ${settings.color}33 0%, transparent 70%)`,
+          animation: `subterranean-glow-${keyId} ${Math.max(glowDuration, 1)}s ease-in-out infinite`,
+          opacity: (settings.glowIntensity ?? 60) / 100,
+        }}
+      />
+
+      {/* Animated sprite */}
+      <div
+        className="absolute inset-0"
+        style={{
+          width: '100%',
+          height: '100%',
+          backgroundImage: `url(${spriteUrl})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: spritePosition(frame, columns, rows),
+          opacity: Math.max(0.35, (settings.intensity ?? 80) / 100),
         }}
       />
     </div>
@@ -435,8 +644,9 @@ function CemeterySpriteEffect({ effectId, settings }: { effectId: string; settin
   const columns = CEMETERY_COLUMNS
   const rows = CEMETERY_ROWS
   const totalFrames = CEMETERY_FRAMES
-  // Higher speed -> shorter duration. Range roughly 0.8s..4s.
-  const animationDuration = (100 / (settings.speed || 45)) * 1.5
+  const fps = (settings.speed || 45) / 100 * 16
+  const glowDuration = (100 / (settings.speed || 45)) * 1.5
+  const frame = useSpriteFrame(totalFrames, fps)
   const keyId = effectId.replace(/[^a-z0-9]/gi, '')
   const bgSize = `${columns * 100}% ${rows * 100}%`
 
@@ -445,17 +655,6 @@ function CemeterySpriteEffect({ effectId, settings }: { effectId: string; settin
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
       <style>{`
-        @keyframes cemetery-${keyId} {
-          ${Array.from({ length: totalFrames }, (_, i) => {
-            const col = i % columns
-            const row = Math.floor(i / columns)
-            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
-            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
-            const percent = (i / totalFrames) * 100
-            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
-          }).join('\n          ')}
-          100% { background-position: 0% 0%; }
-        }
         @keyframes cemetery-glow-${keyId} {
           0%, 100% { opacity: 0.4; transform: scale(0.95); }
           50% { opacity: 0.7; transform: scale(1.06); }
@@ -469,12 +668,12 @@ function CemeterySpriteEffect({ effectId, settings }: { effectId: string; settin
           width: '90%',
           height: '90%',
           background: `radial-gradient(circle, ${settings.color}33 0%, transparent 70%)`,
-          animation: `cemetery-glow-${keyId} ${Math.max(animationDuration, 1)}s ease-in-out infinite`,
+          animation: `cemetery-glow-${keyId} ${Math.max(glowDuration, 1)}s ease-in-out infinite`,
           opacity: (settings.glowIntensity ?? 60) / 100,
         }}
       />
 
-      {/* Animated sprite - real alpha, fills the layer bounds */}
+      {/* Animated sprite */}
       <div
         className="absolute inset-0"
         style={{
@@ -483,7 +682,7 @@ function CemeterySpriteEffect({ effectId, settings }: { effectId: string; settin
           backgroundImage: `url(${spriteUrl})`,
           backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
-          animation: `cemetery-${keyId} ${animationDuration}s steps(1) infinite`,
+          backgroundPosition: spritePosition(frame, columns, rows),
           opacity: Math.max(0.35, (settings.intensity ?? 80) / 100),
         }}
       />
@@ -521,30 +720,15 @@ function RainSpriteEffect({ effectId, settings }: { effectId: string; settings: 
   const columns = RAIN_COLUMNS
   const rows = RAIN_ROWS
   const totalFrames = RAIN_FRAMES
-  // Higher speed -> shorter duration. Rain reads best fast: roughly 0.5s..2s.
-  const animationDuration = (100 / (settings.speed || 55)) * 0.8
-  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const fps = (settings.speed || 55) / 100 * 20
+  const frame = useSpriteFrame(totalFrames, fps)
   const bgSize = `${columns * 100}% ${rows * 100}%`
 
   if (!spriteUrl) return null
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <style>{`
-        @keyframes rain-${keyId} {
-          ${Array.from({ length: totalFrames }, (_, i) => {
-            const col = i % columns
-            const row = Math.floor(i / columns)
-            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
-            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
-            const percent = (i / totalFrames) * 100
-            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
-          }).join('\n          ')}
-          100% { background-position: 0% 0%; }
-        }
-      `}</style>
-
-      {/* Animated rain sprite - real alpha, fills the layer bounds */}
+      {/* Animated rain sprite */}
       <div
         className="absolute inset-0"
         style={{
@@ -553,7 +737,7 @@ function RainSpriteEffect({ effectId, settings }: { effectId: string; settings: 
           backgroundImage: `url(${spriteUrl})`,
           backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
-          animation: `rain-${keyId} ${animationDuration}s steps(1) infinite`,
+          backgroundPosition: spritePosition(frame, columns, rows),
           opacity: Math.max(0.35, (settings.intensity ?? 75) / 100),
         }}
       />
@@ -591,8 +775,9 @@ function LaunchSpriteEffect({ effectId, settings }: { effectId: string; settings
   const columns = LAUNCH_COLUMNS
   const rows = LAUNCH_ROWS
   const totalFrames = LAUNCH_FRAMES
-  // Higher speed -> shorter duration. Range roughly 0.8s..4s.
-  const animationDuration = (100 / (settings.speed || 50)) * 1.5
+  const fps = (settings.speed || 50) / 100 * 16
+  const glowDuration = (100 / (settings.speed || 50)) * 1.5
+  const frame = useSpriteFrame(totalFrames, fps)
   const keyId = effectId.replace(/[^a-z0-9]/gi, '')
   const bgSize = `${columns * 100}% ${rows * 100}%`
 
@@ -601,17 +786,6 @@ function LaunchSpriteEffect({ effectId, settings }: { effectId: string; settings
   return (
     <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
       <style>{`
-        @keyframes launch-${keyId} {
-          ${Array.from({ length: totalFrames }, (_, i) => {
-            const col = i % columns
-            const row = Math.floor(i / columns)
-            const posX = columns > 1 ? (col / (columns - 1)) * 100 : 0
-            const posY = rows > 1 ? (row / (rows - 1)) * 100 : 0
-            const percent = (i / totalFrames) * 100
-            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
-          }).join('\n          ')}
-          100% { background-position: 0% 0%; }
-        }
         @keyframes launch-glow-${keyId} {
           0%, 100% { opacity: 0.4; transform: scale(0.95); }
           50% { opacity: 0.7; transform: scale(1.06); }
@@ -625,12 +799,12 @@ function LaunchSpriteEffect({ effectId, settings }: { effectId: string; settings
           width: '90%',
           height: '90%',
           background: `radial-gradient(circle, ${settings.color}33 0%, transparent 70%)`,
-          animation: `launch-glow-${keyId} ${Math.max(animationDuration, 1)}s ease-in-out infinite`,
+          animation: `launch-glow-${keyId} ${Math.max(glowDuration, 1)}s ease-in-out infinite`,
           opacity: (settings.glowIntensity ?? 60) / 100,
         }}
       />
 
-      {/* Animated sprite - real alpha, fills the layer bounds */}
+      {/* Animated sprite */}
       <div
         className="absolute inset-0"
         style={{
@@ -639,7 +813,7 @@ function LaunchSpriteEffect({ effectId, settings }: { effectId: string; settings
           backgroundImage: `url(${spriteUrl})`,
           backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
-          animation: `launch-${keyId} ${animationDuration}s steps(1) infinite`,
+          backgroundPosition: spritePosition(frame, columns, rows),
           opacity: Math.max(0.35, (settings.intensity ?? 90) / 100),
         }}
       />
@@ -677,30 +851,15 @@ function CausticsSpriteEffect({ effectId, settings }: { effectId: string; settin
   const columns = CAUSTICS_COLUMNS
   const rows = CAUSTICS_ROWS
   const totalFrames = CAUSTICS_FRAMES
-  // Higher speed -> shorter duration (roughly 1s..5s)
-  const animationDuration = (100 / (settings.speed || 50)) * 2.2
-  const keyId = effectId.replace(/[^a-z0-9]/gi, '')
+  const fps = (settings.speed || 50) / 100 * 12
+  const frame = useSpriteFrame(totalFrames, fps)
   const bgSize = `${columns * 100}% ${rows * 100}%`
 
   if (!spriteUrl) return null
 
   return (
     <div className="absolute inset-0 overflow-hidden">
-      <style>{`
-        @keyframes caustics-${keyId} {
-          ${Array.from({ length: totalFrames }, (_, i) => {
-            const col = i % columns
-            const row = Math.floor(i / columns)
-            const posX = (col / (columns - 1)) * 100
-            const posY = (row / (rows - 1)) * 100
-            const percent = (i / totalFrames) * 100
-            return `${percent.toFixed(3)}% { background-position: ${posX.toFixed(3)}% ${posY.toFixed(3)}%; }`
-          }).join('\n          ')}
-          100% { background-position: 0% 0%; }
-        }
-      `}</style>
-
-      {/* Optional tint wash tied to the effect color, multiplied under the caustics */}
+      {/* Optional tint wash tied to the effect color */}
       <div
         className="absolute inset-0"
         style={{
@@ -709,14 +868,14 @@ function CausticsSpriteEffect({ effectId, settings }: { effectId: string; settin
         }}
       />
 
-      {/* Animated caustics sprite - fills the layer bounds, screen-blended for light */}
+      {/* Animated caustics sprite */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage: `url(${spriteUrl})`,
           backgroundSize: bgSize,
           backgroundRepeat: 'no-repeat',
-          animation: `caustics-${keyId} ${animationDuration}s steps(1) infinite`,
+          backgroundPosition: spritePosition(frame, columns, rows),
           opacity: Math.max(0.3, (settings.intensity ?? 80) / 100),
           mixBlendMode: 'screen',
         }}
@@ -1596,6 +1755,39 @@ function SmokeVentsEffect({ settings }: { settings: EffectSettings; width: numbe
   )
 }
 
+// ===== NEW EFFECTS PACK =====
+// Auto-managed by scripts/add-effect.mjs — do not edit these markers.
+type NewSpriteSpec = { url: string; cols: number; rows: number; frames: number; blend: 'screen' | 'normal' }
+// NEW_SPRITES_START
+const NEW_SPRITES: Record<string, NewSpriteSpec> = {
+  'new-fire-torch': { url: '/effects/new/new-fire-torch.png', cols: 10, rows: 6, frames: 60, blend: 'screen' },
+  'new-smoke': { url: '/effects/new/new-smoke.png', cols: 10, rows: 6, frames: 60, blend: 'normal' },
+  // NEW_SPRITES_END
+}
+
+function NewSpriteEffect({ effectId, settings }: { effectId: string; settings: EffectSettings }) {
+  const spec = NEW_SPRITES[effectId]
+  const fps = (settings.speed || 50) / 100 * 20
+  const frame = useSpriteFrame(spec?.frames ?? 1, fps)
+  if (!spec) return null
+  const bgSize = `${spec.cols * 100}% ${spec.rows * 100}%`
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `url(${spec.url})`,
+          backgroundSize: bgSize,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: spritePosition(frame, spec.cols, spec.rows),
+          opacity: Math.max(0.35, (settings.intensity ?? 80) / 100),
+          mixBlendMode: spec.blend,
+        }}
+      />
+    </div>
+  )
+}
+
 // Main renderer component
 export function PremiumEffectRenderer({ effectId, settings, width, height }: PremiumEffectRendererProps) {
   const effectDef = getEffectById(effectId)
@@ -1603,6 +1795,21 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
     ...effectDef?.defaultSettings,
     ...settings,
   } as EffectSettings
+
+  // Magic Effects pack: generic sprite-sheet renderer for magic-circle effects
+  if (effectId.startsWith('magic-')) {
+    return <MagicSpriteEffect effectId={effectId} settings={mergedSettings} />
+  }
+
+  // Light Source Effects pack: generic sprite-sheet renderer driven by effectId
+  if (effectId.startsWith('lightsource-')) {
+    return <LightSourceSpriteEffect effectId={effectId} settings={mergedSettings} />
+  }
+
+  // Subterranean Effects pack: generic sprite-sheet renderer driven by effectId
+  if (effectId.startsWith('subterranean-')) {
+    return <SubterraneanSpriteEffect effectId={effectId} settings={mergedSettings} />
+  }
 
   // Cemetery Effects pack: generic sprite-sheet renderer driven by effectId
   if (effectId.startsWith('cemetery-')) {
@@ -1669,6 +1876,10 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
   
   if (EffectComponent) {
     return <EffectComponent settings={mergedSettings} width={width} height={height} />
+  }
+
+  if (NEW_SPRITES[effectId]) {
+    return <NewSpriteEffect effectId={effectId} settings={mergedSettings} />
   }
 
   return <GenericEffect settings={mergedSettings} effectId={effectId} />

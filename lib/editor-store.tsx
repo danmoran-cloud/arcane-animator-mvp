@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useReducer, type ReactNode } from 'react'
+import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
 import { v4 as uuidv4 } from 'uuid'
 import type { 
   Project, 
@@ -23,6 +23,7 @@ type EditorAction =
   | { type: 'MOVE_LAYER'; layerId: string; deltaX: number; deltaY: number }
   | { type: 'SELECT_LAYER'; layerId: string | null }
   | { type: 'DUPLICATE_LAYER'; layerId: string }
+  | { type: 'MOVE_LAYER_ORDER'; layerId: string; direction: 'forward' | 'backward' }
   | { type: 'SET_ZOOM'; zoom: number }
   | { type: 'SET_PAN_OFFSET'; offset: Position }
   | { type: 'TOGGLE_GRID' }
@@ -175,7 +176,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       const duplicatedLayer: Layer = {
         ...layerToDuplicate,
         id: uuidv4(),
-        name: `${layerToDuplicate.name} (Copy)`,
+        name: layerToDuplicate.name,
         position: {
           x: layerToDuplicate.position.x + 20,
           y: layerToDuplicate.position.y + 20,
@@ -192,6 +193,28 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         selectedLayerId: duplicatedLayer.id,
       }
     
+    case 'MOVE_LAYER_ORDER': {
+      if (!state.project) return state
+      // Work on a stack ordered back-to-front (ascending zIndex).
+      const sorted = [...state.project.layers].sort((a, b) => a.zIndex - b.zIndex)
+      const idx = sorted.findIndex(l => l.id === action.layerId)
+      if (idx === -1) return state
+      // 'forward' moves toward the front (higher zIndex), 'backward' toward the back.
+      const swapWith = action.direction === 'forward' ? idx + 1 : idx - 1
+      if (swapWith < 0 || swapWith >= sorted.length) return state
+      ;[sorted[idx], sorted[swapWith]] = [sorted[swapWith], sorted[idx]]
+      // Reassign contiguous zIndex values so order stays consistent.
+      const layers = sorted.map((l, i) => ({ ...l, zIndex: i }))
+      return {
+        ...state,
+        project: {
+          ...state.project,
+          layers,
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    }
+
     case 'SET_ZOOM':
       return {
         ...state,
@@ -268,14 +291,46 @@ interface EditorContextType {
   moveLayer: (layerId: string, deltaX: number, deltaY: number) => void
   removeLayer: (layerId: string) => void
   duplicateLayer: (layerId: string) => void
+  moveLayerOrder: (layerId: string, direction: 'forward' | 'backward') => void
 }
 
 const EditorContext = createContext<EditorContextType | null>(null)
 
 const STORAGE_KEY = 'arcane-animator-projects'
+// Auto-saved working draft of the current (possibly unsaved) project. This
+// survives page reloads and the login redirect so in-progress work — created
+// before the user signs in — is never lost.
+const DRAFT_KEY = 'arcane-animator-draft'
 
 export function EditorProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(editorReducer, initialState)
+
+  // Restore the working draft on first mount (e.g. after a login redirect or
+  // an accidental refresh) so the user picks up exactly where they left off.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const draft = localStorage.getItem(DRAFT_KEY)
+    if (draft) {
+      try {
+        const project = JSON.parse(draft) as Project
+        dispatch({ type: 'LOAD_PROJECT', project })
+      } catch {
+        localStorage.removeItem(DRAFT_KEY)
+      }
+    }
+  }, [])
+
+  // Persist the current project to the draft slot whenever it changes.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !state.project) return
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(state.project))
+    } catch {
+      // localStorage quota can be exceeded by large base64 map images — fail
+      // quietly so editing is never interrupted by an autosave error.
+      console.warn('Could not auto-save draft (storage quota may be exceeded).')
+    }
+  }, [state.project])
 
   const createProject = (name: string) => {
     dispatch({ type: 'CREATE_PROJECT', name })
@@ -383,6 +438,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'DUPLICATE_LAYER', layerId })
   }
 
+  const moveLayerOrder = (layerId: string, direction: 'forward' | 'backward') => {
+    dispatch({ type: 'MOVE_LAYER_ORDER', layerId, direction })
+  }
+
   return (
     <EditorContext.Provider
       value={{
@@ -399,6 +458,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         moveLayer,
         removeLayer,
         duplicateLayer,
+        moveLayerOrder,
       }}
     >
       {children}

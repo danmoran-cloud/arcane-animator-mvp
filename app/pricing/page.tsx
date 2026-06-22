@@ -7,15 +7,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge'
 import { TOKEN_PACKS, formatPrice } from '@/lib/tokens'
 import { createTokenPurchaseCheckout } from '@/app/actions/stripe'
-import { Coins, Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
+import { Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
 
 const packIcons: Record<string, React.ReactNode> = {
-  starter: <Coins className="w-8 h-8" />,
-  popular: <Zap className="w-8 h-8" />,
-  pro: <Sparkles className="w-8 h-8" />,
-  studio: <Crown className="w-8 h-8" />,
+  adventurer: <Zap className="w-8 h-8" />,
+  hero: <Sparkles className="w-8 h-8" />,
+  noble: <Crown className="w-8 h-8" />,
 }
 
 export default function PricingPage() {
@@ -59,7 +58,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
           {TOKEN_PACKS.map((pack) => (
             <Card 
               key={pack.id} 

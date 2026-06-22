@@ -109,6 +109,72 @@ const RAIN_SPRITE_COLUMNS = 8
 const RAIN_SPRITE_ROWS = 3
 const RAIN_SPRITE_FRAMES = 24
 
+// Magic Effects sprite sheets (5 columns x 5 rows = 25 frames, baked-in alpha)
+const MAGIC_SPRITE_PATHS: Record<string, string> = {
+  'magic-golden-arcane': '/effects/magic/golden-arcane-circle.png',
+  'magic-cyan-heptagram': '/effects/magic/cyan-heptagram.png',
+  'magic-purple-hexagram': '/effects/magic/purple-hexagram.png',
+  'magic-verdant-summoning': '/effects/magic/verdant-summoning-circle.png',
+  'magic-infernal-flame': '/effects/magic/infernal-flame-circle.png',
+  'magic-radiant-ward': '/effects/magic/radiant-ward-circle.png',
+  'magic-magenta-hex': '/effects/magic/magenta-hex-circle.png',
+  'magic-golden-rune': '/effects/magic/golden-rune-circle.png',
+  'magic-azure-conjuration': '/effects/magic/azure-conjuration-circle.png',
+  'magic-violet-enchantment': '/effects/magic/violet-enchantment-circle.png',
+  'magic-emerald-nature': '/effects/magic/emerald-nature-circle.png',
+  'magic-spiral-vortex': '/effects/magic/spiral-vortex-circle.png',
+  'magic-crimson-pentagram': '/effects/magic/crimson-pentagram.png',
+  'magic-amber-alchemy': '/effects/magic/amber-alchemy-circle.png',
+  'magic-frost-sigil': '/effects/magic/frost-sigil-circle.png',
+}
+const MAGIC_SPRITE_COLUMNS = 5
+const MAGIC_SPRITE_ROWS = 5
+const MAGIC_SPRITE_FRAMES = 25
+
+// Light Source Effects sprite sheets (5 columns x 6 rows = 30 frames, baked-in alpha)
+const LIGHTSOURCE_SPRITE_PATHS: Record<string, string> = {
+  'lightsource-wall-torch': '/effects/light-source/wall-torch.png',
+  'lightsource-ornate-lantern': '/effects/light-source/ornate-lantern.png',
+  'lightsource-iron-lantern': '/effects/light-source/iron-lantern.png',
+  'lightsource-hanging-lantern': '/effects/light-source/hanging-lantern.png',
+  'lightsource-carriage-lantern': '/effects/light-source/carriage-lantern.png',
+  'lightsource-campfire': '/effects/light-source/campfire.png',
+  'lightsource-sparkler-burst': '/effects/light-source/sparkler-burst.png',
+  'lightsource-candle': '/effects/light-source/candle.png',
+  'lightsource-glowing-orb': '/effects/light-source/glowing-orb.png',
+  'lightsource-fire-brazier': '/effects/light-source/fire-brazier.png',
+  'lightsource-rune-light-circle': '/effects/light-source/rune-light-circle.png',
+  'lightsource-pendant-light': '/effects/light-source/pendant-light.png',
+  'lightsource-radiant-starburst': '/effects/light-source/radiant-starburst.png',
+  'lightsource-soft-star-glow': '/effects/light-source/soft-star-glow.png',
+  'lightsource-sparkle-starburst': '/effects/light-source/sparkle-starburst.png',
+}
+const LIGHTSOURCE_SPRITE_COLUMNS = 5
+const LIGHTSOURCE_SPRITE_ROWS = 6
+const LIGHTSOURCE_SPRITE_FRAMES = 30
+
+// Subterranean Effects sprite sheets (5 columns x 6 rows = 30 frames, baked-in alpha)
+const SUBTERRANEAN_SPRITE_PATHS: Record<string, string> = {
+  'subterranean-cave-drips': '/effects/subterranean/cave-drips.png',
+  'subterranean-stalactite-seep': '/effects/subterranean/stalactite-seep.png',
+  'subterranean-underground-stream': '/effects/subterranean/underground-stream.png',
+  'subterranean-cave-mist': '/effects/subterranean/cave-mist.png',
+  'subterranean-crystal-sparkles': '/effects/subterranean/crystal-sparkles.png',
+  'subterranean-crystal-pulse': '/effects/subterranean/crystal-pulse.png',
+  'subterranean-bioluminescent-spores': '/effects/subterranean/bioluminescent-spores.png',
+  'subterranean-glowing-mushroom-aura': '/effects/subterranean/glowing-mushroom-aura.png',
+  'subterranean-bat-swarm': '/effects/subterranean/bat-swarm-silhouettes.png',
+  'subterranean-dustfall': '/effects/subterranean/dustfall.png',
+  'subterranean-pebble-collapse': '/effects/subterranean/pebble-collapse.png',
+  'subterranean-steam-vent': '/effects/subterranean/steam-vent.png',
+  'subterranean-cave-fireflies': '/effects/subterranean/cave-fireflies.png',
+  'subterranean-arcane-cave-energy': '/effects/subterranean/arcane-cave-energy.png',
+  'subterranean-ambient': '/effects/subterranean/subterranean-ambient.png',
+}
+const SUBTERRANEAN_SPRITE_COLUMNS = 5
+const SUBTERRANEAN_SPRITE_ROWS = 6
+const SUBTERRANEAN_SPRITE_FRAMES = 30
+
 // Cemetery Effects sprite sheets (5 columns x 6 rows = 30 frames, baked-in alpha)
 const CEMETERY_SPRITE_PATHS: Record<string, string> = {
   'cemetery-graveyard-fog': '/effects/cemetery/graveyard-fog.png',
@@ -152,6 +218,14 @@ const CAUSTICS_SPRITE_PATHS: Record<string, string> = {
 const CAUSTICS_SPRITE_COLUMNS = 5
 const CAUSTICS_SPRITE_ROWS = 5
 const CAUSTICS_SPRITE_FRAMES = 25
+
+// New Effects sprite sheets (10 columns x 6 rows = 60 frames) — managed by scripts/add-effect.mjs
+// NEW_EXPORT_SPRITES_START
+const NEW_SPRITE_PATHS: Record<string, { url: string; cols: number; rows: number; frames: number; blend: 'screen' | 'normal' }> = {
+  'new-fire-torch': { url: '/effects/new/new-fire-torch.png', cols: 10, rows: 6, frames: 60, blend: 'screen' },
+  'new-smoke': { url: '/effects/new/new-smoke.png', cols: 10, rows: 6, frames: 60, blend: 'normal' },
+  // NEW_EXPORT_SPRITES_END
+}
 
 export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   const [settings, setSettings] = useState<ExportSettings>(DEFAULT_EXPORT_SETTINGS)
@@ -275,6 +349,51 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       }
     }
 
+    // Preload Magic Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(MAGIC_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
+    }
+
+    // Preload Light Source Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(LIGHTSOURCE_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
+    }
+
+    // Preload Subterranean Effects sprite sheets present in the project
+    for (const [id, url] of Object.entries(SUBTERRANEAN_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = url
+        })
+        imageCache.current.set(url, img)
+      }
+    }
+
     // Preload Cemetery Effects sprite sheets present in the project
     for (const [id, url] of Object.entries(CEMETERY_SPRITE_PATHS)) {
       const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
@@ -302,6 +421,21 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
           img.src = url
         })
         imageCache.current.set(url, img)
+      }
+    }
+
+    // Preload New Effects sprite sheets present in the project
+    for (const [id, spec] of Object.entries(NEW_SPRITE_PATHS)) {
+      const used = layers.some(l => l.type === 'effect' && (l as ExpandedEffectLayer).effectId === id)
+      if (used && !imageCache.current.has(spec.url)) {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        await new Promise<void>((resolve) => {
+          img.onload = () => resolve()
+          img.onerror = () => resolve()
+          img.src = spec.url
+        })
+        imageCache.current.set(spec.url, img)
       }
     }
   }
@@ -466,20 +600,11 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                 <Film className="w-4 h-4 text-muted-foreground" />
                 Format
               </Label>
-              <Select
-                value={settings.format}
-                onValueChange={(v) => setSettings(s => ({ ...s, format: v as ExportFormat }))}
-              >
-                <SelectTrigger className="bg-muted/50 border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="webm">WebM (Recommended)</SelectItem>
-                  <SelectItem value="mp4" disabled>MP4 (Coming Soon)</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex h-10 items-center rounded-md border border-border bg-muted/50 px-3 text-sm text-foreground">
+                WebM
+              </div>
               <p className="text-xs text-muted-foreground">
-                WebM is supported by Foundry VTT, Roll20, and most browsers
+                WebM is supported by Foundry VTT, Roll20, D&D Beyond Maps, and most browsers
               </p>
             </div>
 
@@ -827,7 +952,221 @@ function renderEffect(
 
   ctx.save()
 
+  // New Effects pack — generic sprite-sheet renderer (managed by scripts/add-effect.mjs).
+  // Handled before the switch so script-added effects export without per-effect cases.
+  const newSpec = NEW_SPRITE_PATHS[effectId]
+  if (newSpec) {
+    const spriteImg = imageCache.get(newSpec.url)
+    if (spriteImg) {
+      const frameWidth = spriteImg.width / newSpec.cols
+      const frameHeight = spriteImg.height / newSpec.rows
+      const frameIndex = Math.floor((normalizedTime * newSpec.frames) % newSpec.frames)
+      const col = frameIndex % newSpec.cols
+      const row = Math.floor(frameIndex / newSpec.cols)
+      const sx = col * frameWidth
+      const sy = row * frameHeight
+      const intensity = (settings?.intensity as number) ?? 80
+      ctx.globalCompositeOperation = newSpec.blend === 'screen' ? 'screen' : 'source-over'
+      ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+      ctx.drawImage(
+        spriteImg,
+        sx, sy, frameWidth, frameHeight,
+        position.x, position.y, size.width, size.height
+      )
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.globalAlpha = layer.opacity
+    }
+    ctx.restore()
+    return
+  }
+
   switch (effectId) {
+    case 'magic-golden-arcane':
+    case 'magic-cyan-heptagram':
+    case 'magic-purple-hexagram':
+    case 'magic-verdant-summoning':
+    case 'magic-infernal-flame':
+    case 'magic-radiant-ward':
+    case 'magic-magenta-hex':
+    case 'magic-golden-rune':
+    case 'magic-azure-conjuration':
+    case 'magic-violet-enchantment':
+    case 'magic-emerald-nature':
+    case 'magic-spiral-vortex':
+    case 'magic-crimson-pentagram':
+    case 'magic-amber-alchemy':
+    case 'magic-frost-sigil': {
+      // Magic Effects sprite sheet - 5 cols x 5 rows = 25 frames, baked alpha
+      const spriteUrl = MAGIC_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = MAGIC_SPRITE_COLUMNS
+        const totalFrames = MAGIC_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / MAGIC_SPRITE_ROWS
+
+        const frameIndex = Math.floor((normalizedTime * totalFrames) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Ambient glow behind the sprite, tied to the effect color
+        const glowIntensity = (settings?.glowIntensity as number) ?? 60
+        if (glowIntensity > 0) {
+          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+          gradient.addColorStop(0, color + '33')
+          gradient.addColorStop(1, 'transparent')
+          ctx.globalAlpha = layer.opacity * (glowIntensity / 100)
+          ctx.fillStyle = gradient
+          ctx.fillRect(position.x, position.y, size.width, size.height)
+        }
+
+        const intensity = (settings?.intensity as number) ?? 80
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'lightsource-wall-torch':
+    case 'lightsource-ornate-lantern':
+    case 'lightsource-iron-lantern':
+    case 'lightsource-hanging-lantern':
+    case 'lightsource-carriage-lantern':
+    case 'lightsource-campfire':
+    case 'lightsource-sparkler-burst':
+    case 'lightsource-candle':
+    case 'lightsource-glowing-orb':
+    case 'lightsource-fire-brazier':
+    case 'lightsource-rune-light-circle':
+    case 'lightsource-pendant-light':
+    case 'lightsource-radiant-starburst':
+    case 'lightsource-soft-star-glow':
+    case 'lightsource-sparkle-starburst': {
+      // Light Source Effects sprite sheet - 5 cols x 6 rows = 30 frames, baked alpha
+      const spriteUrl = LIGHTSOURCE_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = LIGHTSOURCE_SPRITE_COLUMNS
+        const totalFrames = LIGHTSOURCE_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / LIGHTSOURCE_SPRITE_ROWS
+
+        const frameIndex = Math.floor((normalizedTime * totalFrames) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Ambient glow behind the sprite, tied to the effect color
+        const glowIntensity = (settings?.glowIntensity as number) ?? 80
+        if (glowIntensity > 0) {
+          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+          gradient.addColorStop(0, color + '40')
+          gradient.addColorStop(1, 'transparent')
+          ctx.globalAlpha = layer.opacity * (glowIntensity / 100)
+          ctx.fillStyle = gradient
+          ctx.fillRect(position.x, position.y, size.width, size.height)
+        }
+
+        const intensity = (settings?.intensity as number) ?? 80
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
+    case 'subterranean-cave-drips':
+    case 'subterranean-stalactite-seep':
+    case 'subterranean-underground-stream':
+    case 'subterranean-cave-mist':
+    case 'subterranean-crystal-sparkles':
+    case 'subterranean-crystal-pulse':
+    case 'subterranean-bioluminescent-spores':
+    case 'subterranean-glowing-mushroom-aura':
+    case 'subterranean-bat-swarm':
+    case 'subterranean-dustfall':
+    case 'subterranean-pebble-collapse':
+    case 'subterranean-steam-vent':
+    case 'subterranean-cave-fireflies':
+    case 'subterranean-arcane-cave-energy':
+    case 'subterranean-ambient': {
+      // Subterranean Effects sprite sheet - 5 cols x 6 rows = 30 frames, baked alpha
+      const spriteUrl = SUBTERRANEAN_SPRITE_PATHS[effectId]
+      const spriteImg = spriteUrl ? imageCache.get(spriteUrl) : undefined
+
+      if (spriteImg) {
+        const columns = SUBTERRANEAN_SPRITE_COLUMNS
+        const totalFrames = SUBTERRANEAN_SPRITE_FRAMES
+        const frameWidth = spriteImg.width / columns
+        const frameHeight = spriteImg.height / SUBTERRANEAN_SPRITE_ROWS
+
+        const frameIndex = Math.floor((normalizedTime * totalFrames) % totalFrames)
+        const col = frameIndex % columns
+        const row = Math.floor(frameIndex / columns)
+        const sx = col * frameWidth
+        const sy = row * frameHeight
+
+        // Ambient glow behind the sprite, tied to the effect color
+        const glowIntensity = (settings?.glowIntensity as number) ?? 60
+        if (glowIntensity > 0) {
+          const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+          gradient.addColorStop(0, color + '33')
+          gradient.addColorStop(1, 'transparent')
+          ctx.globalAlpha = layer.opacity * (glowIntensity / 100)
+          ctx.fillStyle = gradient
+          ctx.fillRect(position.x, position.y, size.width, size.height)
+        }
+
+        const intensity = (settings?.intensity as number) ?? 80
+        ctx.globalAlpha = layer.opacity * Math.max(0.35, intensity / 100)
+        // Stretch the frame to fill the layer bounds (matches preview)
+        ctx.drawImage(
+          spriteImg,
+          sx, sy, frameWidth, frameHeight,
+          position.x, position.y, size.width, size.height
+        )
+        ctx.globalAlpha = layer.opacity
+      } else {
+        // Fallback glow if sprite not loaded
+        const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
+        gradient.addColorStop(0, color + '44')
+        gradient.addColorStop(1, 'transparent')
+        ctx.fillStyle = gradient
+        ctx.fillRect(position.x, position.y, size.width, size.height)
+      }
+      break
+    }
+
     case 'cemetery-graveyard-fog':
     case 'cemetery-will-o-wisps':
     case 'cemetery-soul-spirits':

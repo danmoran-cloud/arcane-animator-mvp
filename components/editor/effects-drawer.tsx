@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Waves, Rocket, CloudRain, Skull
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Waves, Rocket, CloudRain, Skull, Gem, Droplets, CloudFog, Sparkle, Lamp
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -26,6 +26,11 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'rocket': Rocket,
   'cloud-rain': CloudRain,
   'skull': Skull,
+  'gem': Gem,
+  'droplets': Droplets,
+  'cloud-fog': CloudFog,
+  'sparkle': Sparkle,
+  'lamp': Lamp,
 }
 
 // TOP-DOWN Mini effect preview components
@@ -1302,12 +1307,16 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
     atmospheric: false,
     terrain: false,
     fantasy: false,
-    portal: false,
+    magic: false,
     scifi: false,
-    launch: true,
-    caustics: true,
-    rain: true,
-    cemetery: true,
+    launch: false,
+    caustics: false,
+    rain: false,
+    cemetery: false,
+    subterranean: false,
+    lightsource: false,
+    'lightsource-revised': false,
+    new: false,
   })
   
   const togglePack = (pack: EffectPack) => {
@@ -1324,9 +1333,9 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       </div>
       
       {/* Effects list */}
-      <ScrollArea className="flex-1 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
+      <div className="flex-1 overflow-y-auto">
         <div className="py-1">
-          {(['cemetery', 'rain', 'launch', 'caustics', 'portal'] as EffectPack[]).map((pack) => (
+          {(['new', 'lightsource', 'lightsource-revised', 'magic', 'subterranean', 'cemetery', 'rain', 'launch', 'caustics'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}
@@ -1336,7 +1345,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
             />
           ))}
         </div>
-      </ScrollArea>
+      </div>
       
       {/* Footer hint */}
       <div className="px-3 py-2 border-t border-sidebar-border">

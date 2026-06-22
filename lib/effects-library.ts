@@ -1,6 +1,6 @@
 // Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'portal' | 'scifi' | 'launch' | 'caustics' | 'rain' | 'cemetery'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'magic' | 'scifi' | 'launch' | 'caustics' | 'rain' | 'cemetery' | 'subterranean' | 'lightsource' | 'lightsource-revised' | 'new'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
@@ -11,8 +11,11 @@ export type EffectId =
   | 'water-ripples' | 'waterfall' | 'lava-flow' | 'swamp-bubbles' | 'ice-crystals' | 'smoke-vents'
   // Fantasy Pack (6)
   | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
-  // Portal Pack (2)
+  // Magic Effects Pack (17) - portal gateways + magic-circle sprite-sheet animations
   | 'blue-portal' | 'fire-portal'
+  | 'magic-golden-arcane' | 'magic-cyan-heptagram' | 'magic-purple-hexagram' | 'magic-verdant-summoning' | 'magic-infernal-flame'
+  | 'magic-radiant-ward' | 'magic-magenta-hex' | 'magic-golden-rune' | 'magic-azure-conjuration' | 'magic-violet-enchantment'
+  | 'magic-emerald-nature' | 'magic-spiral-vortex' | 'magic-crimson-pentagram' | 'magic-amber-alchemy' | 'magic-frost-sigil'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
   // Launch Effects Pack (15) - sprite-sheet animations
@@ -31,6 +34,22 @@ export type EffectId =
   | 'cemetery-graveyard-fog' | 'cemetery-will-o-wisps' | 'cemetery-soul-spirits' | 'cemetery-necrotic-aura' | 'cemetery-blood-petals'
   | 'cemetery-haunted-lantern' | 'cemetery-cracked-stone-rise' | 'cemetery-skeletal-remains' | 'cemetery-dark-ritual-circle' | 'cemetery-coffin-burst'
   | 'cemetery-ethereal-mist-swirl' | 'cemetery-moonbeam-trees' | 'cemetery-draining-life-vortex' | 'cemetery-candle-flame' | 'cemetery-bats-in-flight'
+  // Subterranean Effects Pack (15) - cave sprite-sheet animations
+  | 'subterranean-cave-drips' | 'subterranean-stalactite-seep' | 'subterranean-underground-stream' | 'subterranean-cave-mist' | 'subterranean-crystal-sparkles'
+  | 'subterranean-crystal-pulse' | 'subterranean-bioluminescent-spores' | 'subterranean-glowing-mushroom-aura' | 'subterranean-bat-swarm' | 'subterranean-dustfall'
+  | 'subterranean-pebble-collapse' | 'subterranean-steam-vent' | 'subterranean-cave-fireflies' | 'subterranean-arcane-cave-energy' | 'subterranean-ambient'
+  // Light Source Effects Pack (15) - illumination sprite-sheet animations
+  | 'lightsource-wall-torch' | 'lightsource-ornate-lantern' | 'lightsource-iron-lantern' | 'lightsource-hanging-lantern' | 'lightsource-carriage-lantern'
+  | 'lightsource-campfire' | 'lightsource-sparkler-burst' | 'lightsource-candle' | 'lightsource-glowing-orb' | 'lightsource-fire-brazier'
+  | 'lightsource-rune-light-circle' | 'lightsource-pendant-light' | 'lightsource-radiant-starburst' | 'lightsource-soft-star-glow' | 'lightsource-sparkle-starburst'
+  // Light Source Revised Effects Pack (15) - sprite sheets sliced from source grid
+  | 'lsr-torch' | 'lsr-fire-glow' | 'lsr-fire-bowl' | 'lsr-carriage-lantern' | 'lsr-hanging-lantern'
+  | 'lsr-candle' | 'lsr-glowing-orb' | 'lsr-campfire' | 'lsr-sparkles' | 'lsr-fire-brazier'
+  | 'lsr-blue-flame' | 'lsr-green-flame' | 'lsr-starburst' | 'lsr-arcane-circle' | 'lsr-smoke'
+  // NEW EFFECTS PACK — auto-generated, do not edit this line
+  | 'new-fire-torch'
+  | 'new-smoke'
+  // NEW_EFFECT_IDS
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
 
@@ -81,11 +100,11 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     color: '#8b5cf6',
     description: 'Magical and mystical effects'
   },
-  portal: { 
-    name: 'Portal', 
-    icon: 'circle-dot', 
-    color: '#22d3ee',
-    description: 'Animated arcane portal gateways'
+  magic: { 
+    name: 'Magic Effects', 
+    icon: 'sparkles', 
+    color: '#a855f7',
+    description: 'Magic circles, sigils, and arcane portals'
   },
   scifi: { 
     name: 'Sci-Fi', 
@@ -100,7 +119,7 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     description: 'Premium animated sprite effects'
   },
   caustics: { 
-    name: 'Caustics', 
+    name: 'Water Effects', 
     icon: 'waves', 
     color: '#38bdf8',
     description: 'Underwater light caustics'
@@ -116,6 +135,30 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     icon: 'skull', 
     color: '#22c55e',
     description: 'Spooky graveyard sprite effects'
+  },
+  subterranean: { 
+    name: 'Subterranean Effects', 
+    icon: 'gem', 
+    color: '#22d3ee',
+    description: 'Cave and underground sprite effects'
+  },
+  lightsource: { 
+    name: 'Light Source Effects', 
+    icon: 'lamp', 
+    color: '#fbbf24',
+    description: 'Torches, lanterns, and glowing light sprites'
+  },
+  'lightsource-revised': {
+    name: 'Light Source Revised Effects',
+    icon: 'lamp',
+    color: '#f97316',
+    description: 'Revised torches, lanterns, flames, and glowing light sprites'
+  },
+  new: {
+    name: 'New Effects',
+    icon: 'plus',
+    color: '#6366f1',
+    description: 'Newly imported sprite sheet effects'
   },
 }
 
@@ -582,7 +625,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'blue-portal',
     name: 'Blue Portal',
-    pack: 'portal',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Expanding arcane blue ring portal',
@@ -599,7 +642,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'fire-portal',
     name: 'Fire Portal',
-    pack: 'portal',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Erupting fiery portal sprite animation',
@@ -1229,6 +1272,572 @@ export const effectsLibrary: EffectDefinition[] = [
     description: 'Silhouetted bats flying past',
     defaultSettings: { speed: 60, intensity: 80, density: 50, color: '#1e293b', secondaryColor: '#475569', glowIntensity: 10, scale: 1 },
   },
+
+  // ===== SUBTERRANEAN EFFECTS PACK - cave sprite sheets (5x6, 30 frames) =====
+  {
+    id: 'subterranean-cave-drips',
+    name: 'Cave Drips',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'droplets',
+    description: 'Dripping water with ripple splashes',
+    defaultSettings: { speed: 40, intensity: 75, density: 40, color: '#bae6fd', secondaryColor: '#e0f2fe', glowIntensity: 40, scale: 1 },
+  },
+  {
+    id: 'subterranean-stalactite-seep',
+    name: 'Stalactite Seep',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'droplets',
+    description: 'Water seeping down stalactites',
+    defaultSettings: { speed: 30, intensity: 65, density: 40, color: '#a5f3fc', secondaryColor: '#cffafe', glowIntensity: 35, scale: 1 },
+  },
+  {
+    id: 'subterranean-underground-stream',
+    name: 'Underground Stream',
+    pack: 'subterranean',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Flowing subterranean water',
+    defaultSettings: { speed: 55, intensity: 75, density: 55, color: '#7dd3fc', secondaryColor: '#bae6fd', glowIntensity: 45, scale: 1 },
+  },
+  {
+    id: 'subterranean-cave-mist',
+    name: 'Cave Mist',
+    pack: 'subterranean',
+    renderMode: 'atmospheric',
+    icon: 'cloud-fog',
+    description: 'Drifting damp cave haze',
+    defaultSettings: { speed: 25, intensity: 60, density: 60, color: '#e2e8f0', secondaryColor: '#f1f5f9', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'subterranean-crystal-sparkles',
+    name: 'Crystal Sparkles',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Twinkling crystal glints',
+    defaultSettings: { speed: 45, intensity: 80, density: 45, color: '#bfdbfe', secondaryColor: '#ffffff', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'subterranean-crystal-pulse',
+    name: 'Crystal Pulse',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'gem',
+    description: 'Pulsing glowing crystal',
+    defaultSettings: { speed: 40, intensity: 90, density: 45, color: '#c084fc', secondaryColor: '#e9d5ff', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'subterranean-bioluminescent-spores',
+    name: 'Bioluminescent Spores',
+    pack: 'subterranean',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Floating glowing spores',
+    defaultSettings: { speed: 30, intensity: 75, density: 50, color: '#2dd4bf', secondaryColor: '#99f6e4', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'subterranean-glowing-mushroom-aura',
+    name: 'Glowing Mushroom Aura',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Pulsing cave mushroom glow',
+    defaultSettings: { speed: 35, intensity: 80, density: 45, color: '#22d3ee', secondaryColor: '#a5f3fc', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'subterranean-bat-swarm',
+    name: 'Bat Swarm Silhouettes',
+    pack: 'subterranean',
+    renderMode: 'atmospheric',
+    icon: 'ghost',
+    description: 'Swarming bat silhouettes',
+    defaultSettings: { speed: 65, intensity: 80, density: 55, color: '#1e293b', secondaryColor: '#475569', glowIntensity: 10, scale: 1 },
+  },
+  {
+    id: 'subterranean-dustfall',
+    name: 'Dustfall',
+    pack: 'subterranean',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Falling glowing dust motes',
+    defaultSettings: { speed: 35, intensity: 65, density: 55, color: '#fcd34d', secondaryColor: '#fde68a', glowIntensity: 55, scale: 1 },
+  },
+  {
+    id: 'subterranean-pebble-collapse',
+    name: 'Pebble Collapse',
+    pack: 'subterranean',
+    renderMode: 'terrain',
+    icon: 'mountain',
+    description: 'Tumbling falling pebbles',
+    defaultSettings: { speed: 55, intensity: 70, density: 50, color: '#a8a29e', secondaryColor: '#d6d3d1', glowIntensity: 15, scale: 1 },
+  },
+  {
+    id: 'subterranean-steam-vent',
+    name: 'Steam Vent',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'cloud',
+    description: 'Rising billowing steam',
+    defaultSettings: { speed: 45, intensity: 70, density: 55, color: '#f1f5f9', secondaryColor: '#ffffff', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'subterranean-cave-fireflies',
+    name: 'Cave Fireflies',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'sparkle',
+    description: 'Glowing drifting fireflies',
+    defaultSettings: { speed: 45, intensity: 80, density: 40, color: '#fde047', secondaryColor: '#facc15', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'subterranean-arcane-cave-energy',
+    name: 'Arcane Cave Energy',
+    pack: 'subterranean',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Crackling arcane energy arcs',
+    defaultSettings: { speed: 55, intensity: 90, density: 50, color: '#a855f7', secondaryColor: '#d8b4fe', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'subterranean-ambient',
+    name: 'Subterranean Ambient',
+    pack: 'subterranean',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Mixed ambient cave particles',
+    defaultSettings: { speed: 30, intensity: 65, density: 55, color: '#93c5fd', secondaryColor: '#fde68a', glowIntensity: 60, scale: 1 },
+  },
+
+  // ===== MAGIC EFFECTS PACK - magic-circle sprite sheets (5x5, 25 frames) =====
+  {
+    id: 'magic-golden-arcane',
+    name: 'Golden Arcane Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Rotating golden arcane summoning circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#f59e0b', secondaryColor: '#fcd34d', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-cyan-heptagram',
+    name: 'Cyan Heptagram',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Seven-pointed cyan magic circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#22d3ee', secondaryColor: '#a5f3fc', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-purple-hexagram',
+    name: 'Purple Hexagram',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Six-pointed violet magic circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#a855f7', secondaryColor: '#d8b4fe', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-verdant-summoning',
+    name: 'Verdant Summoning Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Swirling green summoning circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#22c55e', secondaryColor: '#86efac', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-infernal-flame',
+    name: 'Infernal Flame Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Burning fiery summoning circle',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#f97316', secondaryColor: '#fca5a5', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'magic-radiant-ward',
+    name: 'Radiant Ward Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Bright holy ward magic circle',
+    defaultSettings: { speed: 40, intensity: 85, density: 50, color: '#f8fafc', secondaryColor: '#e2e8f0', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'magic-magenta-hex',
+    name: 'Magenta Hex Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Sparkling magenta magic circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#d946ef', secondaryColor: '#f0abfc', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-golden-rune',
+    name: 'Golden Rune Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Glowing golden rune-dot circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#fde047', secondaryColor: '#fef08a', glowIntensity: 88, scale: 1 },
+  },
+  {
+    id: 'magic-azure-conjuration',
+    name: 'Azure Conjuration Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Flowing azure conjuration circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#3b82f6', secondaryColor: '#93c5fd', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-violet-enchantment',
+    name: 'Violet Enchantment Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Crackling violet enchantment circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#8b5cf6', secondaryColor: '#c4b5fd', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-emerald-nature',
+    name: 'Emerald Nature Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Light-green nature magic circle',
+    defaultSettings: { speed: 40, intensity: 80, density: 50, color: '#4ade80', secondaryColor: '#bbf7d0', glowIntensity: 82, scale: 1 },
+  },
+  {
+    id: 'magic-spiral-vortex',
+    name: 'Spiral Vortex Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Swirling magical spiral vortex',
+    defaultSettings: { speed: 55, intensity: 85, density: 50, color: '#f1f5f9', secondaryColor: '#86efac', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'magic-crimson-pentagram',
+    name: 'Crimson Pentagram',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Ominous red pentagram circle',
+    defaultSettings: { speed: 45, intensity: 88, density: 50, color: '#dc2626', secondaryColor: '#fca5a5', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-amber-alchemy',
+    name: 'Amber Alchemy Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Geometric amber alchemy circle',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#f59e0b', secondaryColor: '#fbbf24', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'magic-frost-sigil',
+    name: 'Frost Sigil Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Crystalline icy frost magic circle',
+    defaultSettings: { speed: 40, intensity: 85, density: 50, color: '#38bdf8', secondaryColor: '#bae6fd', glowIntensity: 88, scale: 1 },
+  },
+
+  // ===== LIGHT SOURCE EFFECTS PACK - illumination sprite sheets (5x6, 30 frames) =====
+  {
+    id: 'lightsource-wall-torch',
+    name: 'Wall Torch',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flickering wall-mounted torch',
+    defaultSettings: { speed: 50, intensity: 85, density: 40, color: '#f59e0b', secondaryColor: '#fbbf24', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lightsource-ornate-lantern',
+    name: 'Ornate Lantern',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Decorative glowing lantern',
+    defaultSettings: { speed: 40, intensity: 80, density: 40, color: '#f59e0b', secondaryColor: '#fcd34d', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'lightsource-iron-lantern',
+    name: 'Iron Lantern',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Simple iron-framed lantern',
+    defaultSettings: { speed: 40, intensity: 75, density: 40, color: '#f59e0b', secondaryColor: '#fcd34d', glowIntensity: 75, scale: 1 },
+  },
+  {
+    id: 'lightsource-hanging-lantern',
+    name: 'Hanging Lantern',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Swaying suspended lantern',
+    defaultSettings: { speed: 40, intensity: 80, density: 40, color: '#f59e0b', secondaryColor: '#fcd34d', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'lightsource-carriage-lantern',
+    name: 'Carriage Lantern',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Tall bright carriage lantern',
+    defaultSettings: { speed: 45, intensity: 85, density: 40, color: '#f59e0b', secondaryColor: '#fcd34d', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lightsource-campfire',
+    name: 'Campfire',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Crackling log campfire',
+    defaultSettings: { speed: 55, intensity: 88, density: 50, color: '#f97316', secondaryColor: '#fbbf24', glowIntensity: 88, scale: 1 },
+  },
+  {
+    id: 'lightsource-sparkler-burst',
+    name: 'Sparkler Burst',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Radiating spark burst',
+    defaultSettings: { speed: 60, intensity: 85, density: 55, color: '#fbbf24', secondaryColor: '#fde68a', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lightsource-candle',
+    name: 'Candle',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Single flickering candle',
+    defaultSettings: { speed: 45, intensity: 70, density: 35, color: '#f59e0b', secondaryColor: '#fef08a', glowIntensity: 75, scale: 1 },
+  },
+  {
+    id: 'lightsource-glowing-orb',
+    name: 'Glowing Orb',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'sparkle',
+    description: 'Pulsing orb of warm light',
+    defaultSettings: { speed: 35, intensity: 85, density: 40, color: '#facc15', secondaryColor: '#fde68a', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'lightsource-fire-brazier',
+    name: 'Fire Brazier',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flaming metal fire bowl',
+    defaultSettings: { speed: 55, intensity: 88, density: 50, color: '#f97316', secondaryColor: '#fca5a5', glowIntensity: 88, scale: 1 },
+  },
+  {
+    id: 'lightsource-rune-light-circle',
+    name: 'Rune Light Circle',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Glowing runic light ring',
+    defaultSettings: { speed: 40, intensity: 82, density: 40, color: '#fde047', secondaryColor: '#fef08a', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lightsource-pendant-light',
+    name: 'Pendant Light',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Hanging swaying light orb',
+    defaultSettings: { speed: 40, intensity: 82, density: 40, color: '#facc15', secondaryColor: '#fde68a', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lightsource-radiant-starburst',
+    name: 'Radiant Starburst',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Bright twinkling star burst',
+    defaultSettings: { speed: 45, intensity: 88, density: 45, color: '#fde047', secondaryColor: '#fffbeb', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'lightsource-soft-star-glow',
+    name: 'Soft Star Glow',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'sparkle',
+    description: 'Diffuse soft glowing star',
+    defaultSettings: { speed: 35, intensity: 75, density: 40, color: '#fde68a', secondaryColor: '#fef9c3', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lightsource-sparkle-starburst',
+    name: 'Sparkle Starburst',
+    pack: 'lightsource',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Glittering sparkle star burst',
+    defaultSettings: { speed: 50, intensity: 85, density: 50, color: '#fbbf24', secondaryColor: '#fde68a', glowIntensity: 88, scale: 1 },
+  },
+  // ----- Light Source Revised Effects Pack (15) -----
+  {
+    id: 'lsr-torch',
+    name: 'Torch',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flickering wall torch flame',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#f97316', secondaryColor: '#fbbf24', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'lsr-fire-glow',
+    name: 'Fire Glow',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Soft glowing fire light',
+    defaultSettings: { speed: 45, intensity: 78, density: 50, color: '#fb923c', secondaryColor: '#fde68a', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lsr-fire-bowl',
+    name: 'Fire Bowl',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Burning fire bowl',
+    defaultSettings: { speed: 48, intensity: 82, density: 50, color: '#f97316', secondaryColor: '#fbbf24', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'lsr-carriage-lantern',
+    name: 'Carriage Lantern',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Ornate carriage lantern light',
+    defaultSettings: { speed: 35, intensity: 70, density: 40, color: '#fbbf24', secondaryColor: '#fde68a', glowIntensity: 78, scale: 1 },
+  },
+  {
+    id: 'lsr-hanging-lantern',
+    name: 'Hanging Lantern',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'lamp',
+    description: 'Glowing hanging lantern',
+    defaultSettings: { speed: 35, intensity: 70, density: 40, color: '#fbbf24', secondaryColor: '#fde68a', glowIntensity: 78, scale: 1 },
+  },
+  {
+    id: 'lsr-candle',
+    name: 'Candle',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Flickering candle flame',
+    defaultSettings: { speed: 40, intensity: 65, density: 40, color: '#fde68a', secondaryColor: '#fef9c3', glowIntensity: 72, scale: 1 },
+  },
+  {
+    id: 'lsr-glowing-orb',
+    name: 'Glowing Orb',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Pulsing glowing orb of light',
+    defaultSettings: { speed: 40, intensity: 80, density: 50, color: '#fbbf24', secondaryColor: '#fef3c7', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'lsr-campfire',
+    name: 'Campfire',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Crackling campfire',
+    defaultSettings: { speed: 50, intensity: 85, density: 55, color: '#f97316', secondaryColor: '#fbbf24', glowIntensity: 82, scale: 1 },
+  },
+  {
+    id: 'lsr-sparkles',
+    name: 'Sparkles',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Drifting ember sparkles',
+    defaultSettings: { speed: 55, intensity: 75, density: 60, color: '#fbbf24', secondaryColor: '#fde68a', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'lsr-fire-brazier',
+    name: 'Fire Brazier',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Blazing fire brazier',
+    defaultSettings: { speed: 50, intensity: 85, density: 55, color: '#f97316', secondaryColor: '#fbbf24', glowIntensity: 82, scale: 1 },
+  },
+  {
+    id: 'lsr-blue-flame',
+    name: 'Blue Flame',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Ethereal blue flame',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#38bdf8', secondaryColor: '#bae6fd', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lsr-green-flame',
+    name: 'Green Flame',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Eerie green flame',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#4ade80', secondaryColor: '#bbf7d0', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'lsr-starburst',
+    name: 'Starburst',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Radiant twinkling starburst',
+    defaultSettings: { speed: 50, intensity: 88, density: 50, color: '#fde68a', secondaryColor: '#fef9c3', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'lsr-arcane-circle',
+    name: 'Arcane Circle',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Rotating arcane rune circle',
+    defaultSettings: { speed: 40, intensity: 80, density: 50, color: '#a855f7', secondaryColor: '#d8b4fe', glowIntensity: 88, scale: 1 },
+  },
+  {
+    id: 'lsr-smoke',
+    name: 'Smoke',
+    pack: 'lightsource-revised',
+    renderMode: 'localized',
+    icon: 'cloud',
+    description: 'Rising plume of smoke',
+    defaultSettings: { speed: 35, intensity: 60, density: 50, color: '#9ca3af', secondaryColor: '#d1d5db', glowIntensity: 30, scale: 1 },
+  },
+  {
+    id: 'new-fire-torch',
+    name: 'Fire Torch',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Fire Torch sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff6600', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'new-smoke',
+    name: 'Smoke',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'Smoke sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#9ca3af', glowIntensity: 60, scale: 1 },
+  },
+  // NEW_EFFECT_DEFS
 ]
 
 // Helper functions

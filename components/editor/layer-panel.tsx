@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { 
   Eye, EyeOff, Lock, Unlock, Link, Unlink, GripVertical, Trash2, Copy,
+  ChevronUp, ChevronDown,
   Flame, Cloud, Snowflake, Droplets, Waves, Zap, Wind,
   Sparkles, CircleDot, Gem, Sun, Skull, Ghost,
   Monitor, Lightbulb, Shield, Binary, Atom, Plane, Image, Map
@@ -63,21 +64,29 @@ function getLayerColor(layer: Layer): string {
 interface LayerRowProps {
   layer: Layer
   isSelected: boolean
+  isFirst: boolean
+  isLast: boolean
   onSelect: () => void
   onToggleVisibility: () => void
   onToggleLock: () => void
   onDelete: () => void
   onDuplicate: () => void
+  onMoveForward: () => void
+  onMoveBackward: () => void
 }
 
-function LayerRow({ 
-  layer, 
-  isSelected, 
-  onSelect, 
-  onToggleVisibility, 
+function LayerRow({
+  layer,
+  isSelected,
+  isFirst,
+  isLast,
+  onSelect,
+  onToggleVisibility,
   onToggleLock,
   onDelete,
-  onDuplicate
+  onDuplicate,
+  onMoveForward,
+  onMoveBackward
 }: LayerRowProps) {
   const IconComponent = getLayerIcon(layer)
   const color = getLayerColor(layer)
@@ -136,8 +145,24 @@ function LayerRow({
         {layer.name}
       </span>
       
-      {/* Quick actions on hover */}
-      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+      {/* Quick actions */}
+      <div className="flex items-center gap-0.5">
+        <button
+          onClick={(e) => { e.stopPropagation(); onMoveForward() }}
+          disabled={isFirst}
+          className="p-0.5 hover:bg-muted rounded disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Move forward (toward front)"
+        >
+          <ChevronUp className="w-3 h-3 text-muted-foreground" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onMoveBackward() }}
+          disabled={isLast}
+          className="p-0.5 hover:bg-muted rounded disabled:opacity-30 disabled:cursor-not-allowed"
+          title="Move backward (toward back)"
+        >
+          <ChevronDown className="w-3 h-3 text-muted-foreground" />
+        </button>
         <button
           onClick={(e) => { e.stopPropagation(); onDuplicate() }}
           className="p-0.5 hover:bg-muted rounded"
@@ -389,7 +414,7 @@ function Inspector({ layer }: { layer: Layer | null }) {
 }
 
 export function LayerPanel() {
-  const { state, selectLayer, updateLayer, removeLayer, duplicateLayer } = useEditor()
+  const { state, selectLayer, updateLayer, removeLayer, duplicateLayer, moveLayerOrder } = useEditor()
   const layers = state.project?.layers ?? []
   const selectedLayer = layers.find(l => l.id === state.selectedLayerId) ?? null
   
@@ -416,16 +441,20 @@ export function LayerPanel() {
             </div>
           ) : (
             <div className="py-1">
-              {sortedLayers.map((layer) => (
+              {sortedLayers.map((layer, index) => (
                 <LayerRow
                   key={layer.id}
                   layer={layer}
                   isSelected={layer.id === state.selectedLayerId}
+                  isFirst={index === 0}
+                  isLast={index === sortedLayers.length - 1}
                   onSelect={() => selectLayer(layer.id)}
                   onToggleVisibility={() => updateLayer(layer.id, { visible: !layer.visible })}
                   onToggleLock={() => updateLayer(layer.id, { locked: !layer.locked })}
                   onDelete={() => removeLayer(layer.id)}
                   onDuplicate={() => duplicateLayer(layer.id)}
+                  onMoveForward={() => moveLayerOrder(layer.id, 'forward')}
+                  onMoveBackward={() => moveLayerOrder(layer.id, 'backward')}
                 />
               ))}
             </div>

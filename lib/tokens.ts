@@ -13,31 +13,24 @@ export interface TokenPack {
 
 export const TOKEN_PACKS: TokenPack[] = [
   {
-    id: 'commoner',
-    name: "Commoner's Pack",
-    tokens: 10,
-    priceInCents: 499, // $4.99
-  },
-  {
     id: 'adventurer',
     name: "Adventurer's Pack",
-    tokens: 25,
-    priceInCents: 999, // $9.99
-    popular: true,
-    savings: 'Save 20%',
+    tokens: 15,
+    priceInCents: 299, // $2.99
   },
   {
     id: 'hero',
     name: "Hero's Pack",
     tokens: 60,
-    priceInCents: 1999, // $19.99
-    savings: 'Save 33%',
+    priceInCents: 999, // $9.99
+    popular: true,
+    savings: 'Best Value',
   },
   {
     id: 'noble',
     name: "Noble's Pack",
     tokens: 9999999, // sentinel "unlimited" balance for fulfillment; UI shows "Unlimited"
-    priceInCents: 2999, // $29.99
+    priceInCents: 1999, // $19.99
     unlimited: true,
     tagline: 'Boundless creation, forevermore — never purchase tokens again.',
   },

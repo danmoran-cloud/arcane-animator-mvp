@@ -7,6 +7,7 @@ import { PremiumEffectRenderer } from './premium-effects'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
+import { Logo } from '@/components/logo'
 import { cn } from '@/lib/utils'
 import { 
   ZoomIn, 
@@ -15,7 +16,6 @@ import {
   Grid3X3, 
   Hexagon,
   Upload,
-  Compass,
   Sparkles,
   RotateCw,
   Minus,
@@ -49,12 +49,12 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
       <FloatingParticles />
       
       <div className="relative mb-8">
-        <div className="w-32 h-32 rounded-full border-2 border-primary/20 flex items-center justify-center magical-pulse">
-          <div className="w-24 h-24 rounded-full border border-primary/30 flex items-center justify-center">
-            <Compass className="w-12 h-12 text-primary/50" />
-          </div>
+        <div className="w-40 h-40 rounded-full border-2 border-primary/20 flex items-center justify-center magical-pulse">
+          <Logo size={96} showWordmark={false} />
         </div>
       </div>
+
+      <Logo size={28} withTagline href={undefined} className="mb-6" />
 
       <h3 className="font-serif text-xl text-primary mb-2">
         Upload a map to begin
@@ -361,7 +361,7 @@ function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gri
 }
 
 export function MapCanvas() {
-  const { state, dispatch, addMapLayer, selectLayer, updateLayer, moveLayer } = useEditor()
+  const { state, dispatch, createProject, addMapLayer, selectLayer, updateLayer, moveLayer } = useEditor()
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -837,8 +837,16 @@ export function MapCanvas() {
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <FloatingParticles />
-            <Sparkles className="w-16 h-16 text-primary/30 magical-pulse mb-6" />
-            <h3 className="font-serif text-lg text-muted-foreground mb-2">Create or load a project</h3>
+            <div className="magical-pulse mb-6">
+              <Logo size={88} withTagline href={undefined} className="flex-col gap-3 text-center" />
+            </div>
+            <button
+              type="button"
+              onClick={() => createProject('Untitled Map')}
+              className="font-serif text-lg text-primary underline-offset-4 hover:underline transition-colors mb-2"
+            >
+              Create a Project
+            </button>
           </div>
         )}
 
