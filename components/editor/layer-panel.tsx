@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { 
-  Eye, EyeOff, Lock, Unlock, Link, Unlink, GripVertical, Trash2, Copy,
+  Eye, EyeOff, Lock, Unlock, Link, Unlink, Trash2, Copy,
   ChevronUp, ChevronDown,
   Flame, Cloud, Snowflake, Droplets, Waves, Zap, Wind,
   Sparkles, CircleDot, Gem, Sun, Skull, Ghost,
@@ -95,19 +95,16 @@ function LayerRow({
     <div
       onClick={onSelect}
       className={cn(
-        "group flex items-center gap-1.5 px-2 py-1.5 cursor-pointer transition-all",
+        "group flex items-center gap-1 px-2 py-1.5 cursor-pointer transition-all whitespace-nowrap w-max min-w-full",
         "border-l-2 border-transparent",
         isSelected && "bg-accent/20 border-l-accent",
         !isSelected && "hover:bg-muted/50"
       )}
     >
-      {/* Drag handle */}
-      <GripVertical className="w-3 h-3 text-muted-foreground/50 cursor-grab" />
-      
       {/* Visibility */}
       <button
         onClick={(e) => { e.stopPropagation(); onToggleVisibility() }}
-        className="p-0.5 hover:bg-muted rounded"
+        className="p-0.5 hover:bg-muted rounded shrink-0"
       >
         {layer.visible ? (
           <Eye className="w-3 h-3 text-muted-foreground" />
@@ -115,11 +112,11 @@ function LayerRow({
           <EyeOff className="w-3 h-3 text-muted-foreground/50" />
         )}
       </button>
-      
+
       {/* Link - linked layers move together */}
       <button
         onClick={(e) => { e.stopPropagation(); onToggleLock() }}
-        className="p-0.5 hover:bg-muted rounded"
+        className="p-0.5 hover:bg-muted rounded shrink-0"
         title={layer.locked ? "Linked (moves with other linked layers)" : "Not linked"}
       >
         {layer.locked ? (
@@ -128,56 +125,54 @@ function LayerRow({
           <Unlink className="w-3 h-3 text-muted-foreground/50" />
         )}
       </button>
-      
+
+      {/* Actions: reorder, duplicate, delete — kept to the left of the name */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onMoveForward() }}
+        disabled={isFirst}
+        className="p-0.5 hover:bg-muted rounded shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+        title="Move forward (toward front)"
+      >
+        <ChevronUp className="w-3 h-3 text-muted-foreground" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); onMoveBackward() }}
+        disabled={isLast}
+        className="p-0.5 hover:bg-muted rounded shrink-0 disabled:opacity-30 disabled:cursor-not-allowed"
+        title="Move backward (toward back)"
+      >
+        <ChevronDown className="w-3 h-3 text-muted-foreground" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); onDuplicate() }}
+        className="p-0.5 hover:bg-muted rounded shrink-0"
+        title="Duplicate"
+      >
+        <Copy className="w-3 h-3 text-muted-foreground" />
+      </button>
+      <button
+        onClick={(e) => { e.stopPropagation(); onDelete() }}
+        className="p-0.5 hover:bg-destructive/20 rounded shrink-0"
+        title="Delete"
+      >
+        <Trash2 className="w-3 h-3 text-destructive" />
+      </button>
+
       {/* Icon */}
-      <div 
-        className="w-5 h-5 rounded flex items-center justify-center"
+      <div
+        className="w-5 h-5 rounded flex items-center justify-center shrink-0"
         style={{ backgroundColor: `${color}20` }}
       >
         <IconComponent className="w-3 h-3" style={{ color }} />
       </div>
-      
-      {/* Name */}
+
+      {/* Name - full text (box scrolls horizontally for long names) */}
       <span className={cn(
-        "flex-1 text-xs truncate",
+        "text-xs pr-2",
         layer.visible ? "text-foreground" : "text-muted-foreground"
       )}>
         {layer.name}
       </span>
-      
-      {/* Quick actions */}
-      <div className="flex items-center gap-0.5">
-        <button
-          onClick={(e) => { e.stopPropagation(); onMoveForward() }}
-          disabled={isFirst}
-          className="p-0.5 hover:bg-muted rounded disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Move forward (toward front)"
-        >
-          <ChevronUp className="w-3 h-3 text-muted-foreground" />
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); onMoveBackward() }}
-          disabled={isLast}
-          className="p-0.5 hover:bg-muted rounded disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Move backward (toward back)"
-        >
-          <ChevronDown className="w-3 h-3 text-muted-foreground" />
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); onDuplicate() }}
-          className="p-0.5 hover:bg-muted rounded"
-          title="Duplicate"
-        >
-          <Copy className="w-3 h-3 text-muted-foreground" />
-        </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); onDelete() }}
-          className="p-0.5 hover:bg-destructive/20 rounded"
-          title="Delete"
-        >
-          <Trash2 className="w-3 h-3 text-destructive" />
-        </button>
-      </div>
     </div>
   )
 }
@@ -430,9 +425,9 @@ export function LayerPanel() {
         </h2>
       </div>
       
-      {/* Layer stack - scrollable with visible scrollbar */}
+      {/* Layer stack - scrolls vertically (long lists) and horizontally (long names) */}
       <div className="border-b border-sidebar-border flex-shrink-0 max-h-[40%]">
-        <ScrollArea className="h-full max-h-48 [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
+        <div className="max-h-48 overflow-auto">
           {sortedLayers.length === 0 ? (
             <div className="p-4 text-center">
               <p className="text-xs text-muted-foreground">
@@ -459,9 +454,9 @@ export function LayerPanel() {
               ))}
             </div>
           )}
-        </ScrollArea>
+        </div>
       </div>
-      
+
       {/* Inspector header */}
       <div className="px-3 py-2 border-b border-sidebar-border bg-muted/30 flex-shrink-0">
         <h3 className="font-serif text-xs font-semibold text-sidebar-foreground tracking-wide">

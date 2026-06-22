@@ -16,6 +16,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { 
   Save,
   FolderOpen,
@@ -39,6 +49,7 @@ export function TopNavBar() {
   const [loadingProjects, setLoadingProjects] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [quota, setQuota] = useState<{ used: number; limit: number; unlimited: boolean } | null>(null)
+  const [projectToDelete, setProjectToDelete] = useState<ProjectSummary | null>(null)
 
   const handleCreateProject = () => {
     if (newProjectName.trim()) {
@@ -71,8 +82,10 @@ export function TopNavBar() {
     }
   }
 
-  const handleDeleteProject = async (id: string, name: string) => {
-    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+  const handleConfirmDelete = async () => {
+    if (!projectToDelete) return
+    const { id, name } = projectToDelete
+    setProjectToDelete(null)
     const result = await deleteProject(id)
     if (result.success) {
       setSavedProjects(prev => prev.filter(p => p.id !== id))
@@ -234,7 +247,7 @@ export function TopNavBar() {
                         </div>
                       </button>
                       <button
-                        onClick={() => handleDeleteProject(project.id, project.name)}
+                        onClick={() => setProjectToDelete(project)}
                         title="Delete project"
                         className="p-3 text-muted-foreground hover:text-destructive transition-colors"
                       >
@@ -247,6 +260,29 @@ export function TopNavBar() {
             </ScrollArea>
           </DialogContent>
         </Dialog>
+
+        {/* Delete confirmation (styled, in-app) */}
+        <AlertDialog open={projectToDelete !== null} onOpenChange={(open) => !open && setProjectToDelete(null)}>
+          <AlertDialogContent className="bg-card border-border">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-serif text-primary">Delete project?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {projectToDelete
+                  ? `"${projectToDelete.name}" will be permanently deleted. This cannot be undone.`
+                  : ''}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Export */}
         <Button 
