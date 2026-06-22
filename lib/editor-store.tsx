@@ -12,10 +12,18 @@ import type {
   GridType
 } from './types'
 import type { EffectDefinition } from './effects-library'
+import { createClient } from './supabase/client'
+import {
+  saveProject as saveProjectAction,
+  listProjects as listProjectsAction,
+  loadProject as loadProjectAction,
+  type ProjectSummary,
+} from '@/app/actions/projects'
 
 type EditorAction =
   | { type: 'CREATE_PROJECT'; name: string }
   | { type: 'LOAD_PROJECT'; project: Project }
+  | { type: 'REPLACE_PROJECT'; project: Project }
   | { type: 'UPDATE_PROJECT_NAME'; name: string }
   | { type: 'ADD_LAYER'; layer: Layer }
   | { type: 'REMOVE_LAYER'; layerId: string }
@@ -77,6 +85,10 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         panOffset: { x: 0, y: 0 },
       }
     
+    case 'REPLACE_PROJECT':
+      // Swap the project in place without resetting view state (zoom/pan/selection).
+      return { ...state, project: action.project }
+
     case 'UPDATE_PROJECT_NAME':
       if (!state.project) return state
       return {
@@ -281,9 +293,9 @@ interface EditorContextType {
   state: EditorState
   dispatch: React.Dispatch<EditorAction>
   createProject: (name: string) => void
-  saveProject: () => void
-  loadProject: (projectId: string) => void
-  getSavedProjects: () => { id: string; name: string; updatedAt: string }[]
+  saveProject: () => Promise<{ success: boolean; error?: string }>
+  loadProject: (projectId: string) => Promise<boolean>
+  getSavedProjects: () => Promise<ProjectSummary[]>
   addMapLayer: (src: string, name: string) => void
   addEffectLayer: (effect: EffectDefinition) => void
   selectLayer: (layerId: string | null) => void
@@ -296,7 +308,6 @@ interface EditorContextType {
 
 const EditorContext = createContext<EditorContextType | null>(null)
 
-const STORAGE_KEY = 'arcane-animator-projects'
 // Auto-saved working draft of the current (possibly unsaved) project. This
 // survives page reloads and the login redirect so in-progress work — created
 // before the user signs in — is never lost.
@@ -336,28 +347,62 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'CREATE_PROJECT', name })
   }
 
-  const saveProject = () => {
-    if (!state.project) return
-    const savedProjects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-    savedProjects[state.project.id] = state.project
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(savedProjects))
+  // Upload any base64/data-URL map or asset images to Supabase Storage and
+  // return a project whose layer `src`s are public URLs. This keeps the saved
+  // project small (data URLs can be multiple MB) and avoids the 1MB server
+  // action body limit. Already-uploaded URLs are left untouched.
+  const uploadMapImages = async (project: Project, userId: string): Promise<Project> => {
+    const supabase = createClient()
+    const layers = await Promise.all(
+      project.layers.map(async (layer) => {
+        const src = (layer as { src?: string }).src
+        if ((layer.type === 'map' || layer.type === 'asset') && typeof src === 'string' && src.startsWith('data:')) {
+          try {
+            const blob = await (await fetch(src)).blob()
+            const ext = (blob.type.split('/')[1] || 'png').replace('+xml', '')
+            const path = `${userId}/${project.id}/${layer.id}.${ext}`
+            const { error } = await supabase.storage
+              .from('maps')
+              .upload(path, blob, { upsert: true, contentType: blob.type })
+            if (error) return layer
+            const { data } = supabase.storage.from('maps').getPublicUrl(path)
+            return { ...layer, src: data.publicUrl }
+          } catch {
+            return layer
+          }
+        }
+        return layer
+      })
+    )
+    return { ...project, layers }
   }
 
-  const loadProject = (projectId: string) => {
-    const savedProjects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-    const project = savedProjects[projectId]
+  const saveProject = async (): Promise<{ success: boolean; error?: string }> => {
+    if (!state.project) return { success: false, error: 'No project to save.' }
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { success: false, error: 'Please sign in to save your project.' }
+
+    // Replace embedded base64 images with uploaded URLs, then sync that back
+    // into state so we don't re-upload on the next save.
+    const project = await uploadMapImages(state.project, user.id)
+    dispatch({ type: 'REPLACE_PROJECT', project })
+
+    return saveProjectAction(project)
+  }
+
+  const loadProject = async (projectId: string): Promise<boolean> => {
+    const project = await loadProjectAction(projectId)
     if (project) {
       dispatch({ type: 'LOAD_PROJECT', project })
+      return true
     }
+    return false
   }
 
-  const getSavedProjects = () => {
-    if (typeof window === 'undefined') return []
-    const savedProjects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
-    return Object.values(savedProjects).map((p: unknown) => {
-      const project = p as Project
-      return { id: project.id, name: project.name, updatedAt: project.updatedAt }
-    }).sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+  const getSavedProjects = async (): Promise<ProjectSummary[]> => {
+    return listProjectsAction()
   }
 
   const addMapLayer = (src: string, name: string, width?: number, height?: number) => {

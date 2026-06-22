@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Cinzel, Manrope, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const cinzel = Cinzel({ 
@@ -42,6 +43,7 @@ export default function RootLayout({
     <html lang="en" className={`${cinzel.variable} ${manrope.variable} ${geistMono.variable} bg-background`}>
       <body className="font-sans antialiased min-h-screen">
         {children}
+        <Toaster />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

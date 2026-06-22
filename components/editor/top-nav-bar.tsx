@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useEditor } from '@/lib/editor-store'
+import { deleteProject, getSaveQuota, type ProjectSummary } from '@/app/actions/projects'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -15,10 +17,11 @@ import {
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
-  Save, 
-  FolderOpen, 
-  Download, 
+  Save,
+  FolderOpen,
+  Download,
   Plus,
+  Trash2,
 } from 'lucide-react'
 import { ExportModal } from './export-modal'
 import { UserMenu } from './user-menu'
@@ -32,8 +35,10 @@ export function TopNavBar() {
   const [isExportOpen, setIsExportOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [tempName, setTempName] = useState('')
-
-  const savedProjects = getSavedProjects()
+  const [savedProjects, setSavedProjects] = useState<ProjectSummary[]>([])
+  const [loadingProjects, setLoadingProjects] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  const [quota, setQuota] = useState<{ used: number; limit: number; unlimited: boolean } | null>(null)
 
   const handleCreateProject = () => {
     if (newProjectName.trim()) {
@@ -43,8 +48,39 @@ export function TopNavBar() {
     }
   }
 
-  const handleSave = () => {
-    saveProject()
+  const handleSave = async () => {
+    setIsSaving(true)
+    const result = await saveProject()
+    setIsSaving(false)
+    if (result.success) {
+      toast.success('Project saved')
+    } else {
+      toast.error(result.error ?? 'Could not save project')
+    }
+  }
+
+  // Load the user's saved projects from the cloud when the Load dialog opens.
+  const handleLoadDialogChange = async (open: boolean) => {
+    setIsLoadProjectOpen(open)
+    if (open) {
+      setLoadingProjects(true)
+      const [projects, q] = await Promise.all([getSavedProjects(), getSaveQuota()])
+      setSavedProjects(projects)
+      setQuota(q)
+      setLoadingProjects(false)
+    }
+  }
+
+  const handleDeleteProject = async (id: string, name: string) => {
+    if (!confirm(`Delete "${name}"? This cannot be undone.`)) return
+    const result = await deleteProject(id)
+    if (result.success) {
+      setSavedProjects(prev => prev.filter(p => p.id !== id))
+      setQuota(prev => prev ? { ...prev, used: Math.max(0, prev.used - 1) } : prev)
+      toast.success(`Deleted "${name}"`)
+    } else {
+      toast.error(result.error ?? 'Could not delete project')
+    }
   }
 
   const handleStartEditName = () => {
@@ -135,19 +171,19 @@ export function TopNavBar() {
         </Dialog>
 
         {/* Save */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={handleSave}
-          disabled={!state.project}
+          disabled={!state.project || isSaving}
           className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary"
         >
           <Save className="w-3.5 h-3.5" />
-          Save
+          {isSaving ? 'Saving…' : 'Save'}
         </Button>
 
         {/* Load */}
-        <Dialog open={isLoadProjectOpen} onOpenChange={setIsLoadProjectOpen}>
+        <Dialog open={isLoadProjectOpen} onOpenChange={handleLoadDialogChange}>
           <DialogTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs hover:bg-primary/10 hover:text-primary">
               <FolderOpen className="w-3.5 h-3.5" />
@@ -156,30 +192,55 @@ export function TopNavBar() {
           </DialogTrigger>
           <DialogContent className="bg-card border-border sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="font-serif text-primary">Load Project</DialogTitle>
+              <DialogTitle className="font-serif text-primary flex items-center justify-between gap-2">
+                <span>Load Project</span>
+                {quota && (
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {quota.unlimited ? 'Unlimited saves' : `${quota.used} / ${quota.limit} saved`}
+                  </span>
+                )}
+              </DialogTitle>
               <DialogDescription>Continue your previous work</DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-[300px] py-4">
-              {savedProjects.length === 0 ? (
+              {loadingProjects ? (
+                <div className="text-center text-muted-foreground py-8">
+                  <p className="text-sm">Loading…</p>
+                </div>
+              ) : savedProjects.length === 0 ? (
                 <div className="text-center text-muted-foreground py-8">
                   <p className="text-sm">No saved projects</p>
+                  <p className="text-xs mt-1">Sign in and save a project to see it here.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
                   {savedProjects.map((project) => (
-                    <button
+                    <div
                       key={project.id}
-                      onClick={() => {
-                        loadProject(project.id)
-                        setIsLoadProjectOpen(false)
-                      }}
-                      className="w-full p-3 rounded border border-border hover:border-primary/50 hover:bg-muted/30 transition-all text-left"
+                      className="group flex items-center rounded border border-border hover:border-primary/50 hover:bg-muted/30 transition-all"
                     >
-                      <div className="text-sm font-medium">{project.name}</div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        {new Date(project.updatedAt).toLocaleDateString()}
-                      </div>
-                    </button>
+                      <button
+                        onClick={async () => {
+                          const ok = await loadProject(project.id)
+                          setIsLoadProjectOpen(false)
+                          if (ok) toast.success(`Loaded "${project.name}"`)
+                          else toast.error('Could not load project')
+                        }}
+                        className="flex-1 p-3 text-left"
+                      >
+                        <div className="text-sm font-medium">{project.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {new Date(project.updatedAt).toLocaleDateString()}
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProject(project.id, project.name)}
+                        title="Delete project"
+                        className="p-3 text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   ))}
                 </div>
               )}
