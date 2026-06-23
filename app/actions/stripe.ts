@@ -1,11 +1,26 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { TOKEN_PACKS } from '@/lib/tokens'
 import { createClient } from '@/lib/supabase/server'
 
-function getAppUrl() {
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+// Resolve the site's origin for building Stripe redirect URLs.
+// Prefer an explicit override, otherwise derive it from the incoming request
+// so it always matches the serving domain (production, preview, or local)
+// without depending on a build-time-inlined NEXT_PUBLIC_ value.
+async function getAppUrl(): Promise<string> {
+  const configured = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL
+  if (configured) return configured.replace(/\/$/, '')
+
+  const h = await headers()
+  const host = h.get('x-forwarded-host') ?? h.get('host')
+  if (host) {
+    const proto = h.get('x-forwarded-proto') ?? 'https'
+    return `${proto}://${host}`
+  }
+
+  return 'http://localhost:3000'
 }
 
 export async function createTokenPurchaseCheckout(packId: string) {
@@ -22,6 +37,7 @@ export async function createTokenPurchaseCheckout(packId: string) {
   }
 
   try {
+    const appUrl = await getAppUrl()
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       payment_method_types: ['card'],
@@ -46,8 +62,8 @@ export async function createTokenPurchaseCheckout(packId: string) {
         pack_name: pack.name,
         tokens: pack.tokens.toString(),
       },
-      success_url: `${getAppUrl()}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${getAppUrl()}/checkout/cancel`,
+      success_url: `${appUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${appUrl}/checkout/cancel`,
     })
 
     if (!session.url) {
