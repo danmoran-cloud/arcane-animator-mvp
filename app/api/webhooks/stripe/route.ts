@@ -1,7 +1,7 @@
 'use server'
 
 import { stripe } from '@/lib/stripe'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { TOKEN_PACKS } from '@/lib/tokens'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
@@ -31,13 +31,14 @@ export async function POST(req: Request) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
-    
-    // Get the pack info from metadata
-    const packId = session.metadata?.packId
-    const userId = session.metadata?.userId
-    
+
+    // Get the pack info from metadata. These keys MUST match what
+    // app/actions/stripe.ts writes when creating the checkout session.
+    const packId = session.metadata?.pack_id
+    const userId = session.metadata?.user_id
+
     if (!packId || !userId) {
-      console.error('[v0] Missing packId or userId in session metadata')
+      console.error('[v0] Missing pack_id or user_id in session metadata')
       return NextResponse.json({ error: 'Missing metadata' }, { status: 400 })
     }
 
@@ -47,7 +48,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid pack' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    // Service-role client: the webhook has no user session, and RLS would
+    // otherwise reject these writes. Authenticity is guaranteed by the
+    // signature check above.
+    const supabase = createAdminClient()
+
+    // Idempotency: Stripe may deliver the same event more than once. If we've
+    // already recorded this checkout session, acknowledge and stop so tokens
+    // are never credited twice.
+    const { data: existingPurchase } = await supabase
+      .from('token_purchases')
+      .select('id')
+      .eq('stripe_checkout_session_id', session.id)
+      .maybeSingle()
+
+    if (existingPurchase) {
+      console.log(`[v0] Checkout session ${session.id} already processed; skipping`)
+      return NextResponse.json({ received: true, alreadyProcessed: true })
+    }
 
     // Record the purchase
     const { error: purchaseError } = await supabase
@@ -65,6 +83,9 @@ export async function POST(req: Request) {
 
     if (purchaseError) {
       console.error('[v0] Error recording purchase:', purchaseError)
+      // Abort before crediting tokens: without the purchase row the
+      // idempotency guard can't protect against a retry double-credit.
+      return NextResponse.json({ error: 'Failed to record purchase' }, { status: 500 })
     }
 
     // Increment the user's token balance using the database function

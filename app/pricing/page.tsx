@@ -74,7 +74,7 @@ export default function PricingPage() {
                   {packIcons[pack.id]}
                 </div>
                 <CardTitle className="text-xl">{pack.name}</CardTitle>
-                <CardDescription>{pack.description}</CardDescription>
+                {pack.savings && <CardDescription>{pack.savings}</CardDescription>}
               </CardHeader>
               <CardContent className="text-center flex-1">
                 <div className="mb-4">
@@ -116,11 +116,6 @@ export default function PricingPage() {
                       <span className="text-2xl font-semibold text-primary">{pack.tokens}</span>
                       <span className="text-muted-foreground ml-1">tokens</span>
                     </div>
-                    {pack.bonus > 0 && (
-                      <Badge variant="secondary" className="mb-4">
-                        +{pack.bonus} bonus tokens!
-                      </Badge>
-                    )}
                     <div className="space-y-2 text-sm text-left">
                       <div className="flex items-center gap-2">
                         <Check className="w-4 h-4 text-green-500" />

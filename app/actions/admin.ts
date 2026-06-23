@@ -1,7 +1,77 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+
+interface AdminUser {
+  id: string
+  email: string | null
+  display_name: string | null
+  token_balance: number
+}
+
+// Verify the caller is a signed-in admin. Returns the user on success, or an
+// error string. Privileged writes that follow should use createAdminClient().
+async function requireAdmin(): Promise<{ error: string } | { userId: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.is_admin) return { error: 'Unauthorized' }
+  return { userId: user.id }
+}
+
+export async function findUserByEmail(
+  email: string,
+): Promise<{ user?: AdminUser; error?: string }> {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  // Service role: admins need to read profiles other than their own.
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('profiles')
+    .select('id, email, display_name, token_balance')
+    .ilike('email', email.trim())
+    .limit(1)
+    .maybeSingle()
+
+  if (error) return { error: error.message }
+  if (!data) return { error: 'No user found with that email' }
+  return { user: data as AdminUser }
+}
+
+export async function setUserTokenBalance(
+  userId: string,
+  newBalance: number,
+): Promise<{ success?: boolean; user?: AdminUser; error?: string }> {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  if (!Number.isFinite(newBalance) || newBalance < 0) {
+    return { error: 'Balance must be a non-negative number' }
+  }
+
+  // Service role: RLS blocks editing another user's profile via the auth client.
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('profiles')
+    .update({ token_balance: Math.floor(newBalance) })
+    .eq('id', userId)
+    .select('id, email, display_name, token_balance')
+    .single()
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin')
+  return { success: true, user: data as AdminUser }
+}
 
 export async function createCoupon(data: {
   code: string

@@ -17,6 +17,7 @@ import {
   Share2
 } from 'lucide-react'
 import { CreateCouponForm } from './create-coupon-form'
+import { ManageUserTokensForm } from './manage-user-tokens-form'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -254,6 +255,20 @@ export default async function AdminPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* User Token Management */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Coins className="w-5 h-5" />
+              User Token Management
+            </CardTitle>
+            <CardDescription>Look up a user by email and set their token balance</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ManageUserTokensForm />
+          </CardContent>
+        </Card>
 
         {/* Coupons Section */}
         <Card className="mt-6">
