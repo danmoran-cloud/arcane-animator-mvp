@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { calculateExportCost } from '@/lib/tokens'
+import { calculateExportCost, isFreeExportEligible, BASE_TOKEN_COST } from '@/lib/tokens'
 import type { ExportResolution } from '@/lib/export-types'
 
 export interface ExportAuthResult {
@@ -9,18 +9,22 @@ export interface ExportAuthResult {
   userId?: string
   tokenBalance?: number
   cost?: number
-  hasFreeExport?: boolean
+  // Whether the user's once-daily free allowance is still unused today.
+  dailyFreeAvailable?: boolean
+  // Whether the free allowance applies to THIS export (eligible tier + unused).
+  freeApplied?: boolean
   error?: string
 }
 
 export async function checkExportAuthorization(
   resolution: ExportResolution,
-  durationSeconds: number
+  durationSeconds: number,
+  frameRate: number
 ): Promise<ExportAuthResult> {
   const supabase = await createClient()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
-  
+
   if (!user) {
     return { authorized: false, error: 'Please sign in to export' }
   }
@@ -35,18 +39,20 @@ export async function checkExportAuthorization(
     return { authorized: false, error: 'Profile not found' }
   }
 
-  const cost = calculateExportCost(resolution, durationSeconds)
+  const cost = calculateExportCost(resolution, durationSeconds, frameRate)
   const today = new Date().toISOString().split('T')[0]
-  const hasFreeExport = !profile.free_export_date || profile.free_export_date !== today
+  const dailyFreeAvailable = !profile.free_export_date || profile.free_export_date !== today
+  const freeApplied =
+    dailyFreeAvailable && isFreeExportEligible(resolution, durationSeconds, frameRate)
 
-  // Free export for SD resolution only
-  if (hasFreeExport && resolution === 'sd') {
+  if (freeApplied) {
     return {
       authorized: true,
       userId: user.id,
       tokenBalance: profile.token_balance,
       cost: 0,
-      hasFreeExport: true,
+      dailyFreeAvailable,
+      freeApplied: true,
     }
   }
 
@@ -57,7 +63,8 @@ export async function checkExportAuthorization(
       userId: user.id,
       tokenBalance: profile.token_balance,
       cost,
-      hasFreeExport: false,
+      dailyFreeAvailable,
+      freeApplied: false,
     }
   }
 
@@ -66,7 +73,8 @@ export async function checkExportAuthorization(
     userId: user.id,
     tokenBalance: profile.token_balance,
     cost,
-    hasFreeExport: false,
+    dailyFreeAvailable,
+    freeApplied: false,
     error: `Not enough tokens. You need ${cost} tokens but have ${profile.token_balance}.`,
   }
 }
@@ -92,13 +100,15 @@ export async function recordExport(
   userId: string,
   resolution: ExportResolution,
   durationSeconds: number,
+  frameRate: number,
   useFreeExport: boolean
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
-  
-  const cost = calculateExportCost(resolution, durationSeconds)
-  const baseCost = resolution === 'sd' ? 1 : resolution === 'hd' ? 2 : 3
-  const durationCost = Math.ceil(durationSeconds / 10)
+
+  const cost = calculateExportCost(resolution, durationSeconds, frameRate)
+  const baseCost = BASE_TOKEN_COST[resolution] ?? BASE_TOKEN_COST.sd
+  // Everything beyond the base (duration steps + 60fps surcharge).
+  const durationCost = cost - baseCost
 
   if (useFreeExport) {
     // Use free export - update the date

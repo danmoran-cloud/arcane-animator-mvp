@@ -2,18 +2,43 @@
 
 export type ExportFormat = 'webm' | 'mp4'
 
-export type ExportResolution = 'sd' | 'hd' | '4k'
+export type ExportResolution = 'sd' | 'hd'
 
 export interface ResolutionConfig {
   label: string
-  width: number
-  height: number
+  /**
+   * Target size for the longest edge, in pixels. Actual export dimensions are
+   * derived from the project's aspect ratio (see getExportDimensions) so the map
+   * fills the frame edge-to-edge instead of being letterboxed into a fixed 16:9.
+   */
+  longEdge: number
 }
 
 export const RESOLUTION_CONFIGS: Record<ExportResolution, ResolutionConfig> = {
-  sd: { label: 'SD (1280x720)', width: 1280, height: 720 },
-  hd: { label: 'HD (1920x1080)', width: 1920, height: 1080 },
-  '4k': { label: '4K (3840x2160)', width: 3840, height: 2160 },
+  sd: { label: 'SD', longEdge: 1280 },
+  hd: { label: 'HD', longEdge: 1920 },
+}
+
+/**
+ * Derive even-numbered export dimensions that preserve the project's aspect
+ * ratio, scaling so the longest edge matches the chosen quality tier. Even
+ * dimensions keep the VP8/VP9 encoders happy.
+ */
+export function getExportDimensions(
+  longEdge: number,
+  canvas: { width: number; height: number },
+): { width: number; height: number } {
+  const aspect = canvas.width / canvas.height
+  let width: number
+  let height: number
+  if (aspect >= 1) {
+    width = longEdge
+    height = Math.round(longEdge / aspect)
+  } else {
+    height = longEdge
+    width = Math.round(longEdge * aspect)
+  }
+  return { width: width - (width % 2), height: height - (height % 2) }
 }
 
 export type ExportDuration = 5 | 10 | 15 | 30

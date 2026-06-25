@@ -102,10 +102,6 @@ export default function PricingPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Check className="w-4 h-4 text-green-500" />
-                        <span>Unlimited 4K exports</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
                         <span>Never purchase tokens again</span>
                       </div>
                     </div>
@@ -124,10 +120,6 @@ export default function PricingPage() {
                       <div className="flex items-center gap-2">
                         <Check className="w-4 h-4 text-green-500" />
                         <span>~{Math.floor(pack.tokens / 2)} HD exports</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>~{Math.floor(pack.tokens / 3)} 4K exports</span>
                       </div>
                     </div>
                   </>
@@ -156,15 +148,15 @@ export default function PricingPage() {
                 <CardTitle className="text-lg">Base Cost</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground">
-                SD: 1 token, HD: 2 tokens, 4K: 3 tokens per export
+                SD: 1 token · HD: 2 tokens (at 5s, 30fps)
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Duration Cost</CardTitle>
+                <CardTitle className="text-lg">Add-Ons</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground">
-                +1 token per 10 seconds of video duration
+                +1 token per longer duration · +1 token for 60fps
               </CardContent>
             </Card>
             <Card>
@@ -172,7 +164,7 @@ export default function PricingPage() {
                 <CardTitle className="text-lg">Free Daily Export</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground">
-                Get 1 free SD export every 24 hours!
+                1 free SD export every 24 hours (5–10s, 30fps)
               </CardContent>
             </Card>
           </div>

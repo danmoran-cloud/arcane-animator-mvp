@@ -36,72 +36,64 @@ export const TOKEN_PACKS: TokenPack[] = [
   },
 ]
 
-export type ExportResolution = 'sd' | 'hd' | '4k'
+export type ExportResolution = 'sd' | 'hd'
 
-export interface ExportCost {
-  resolution: ExportResolution
-  label: string
-  baseTokenCost: number
-  perSecondCost: number
-  description: string
+// Token cost at the baseline of 5 seconds / 30fps. Every step up in duration
+// adds a token, and 60fps adds one more (see calculateExportCost).
+export const BASE_TOKEN_COST: Record<ExportResolution, number> = {
+  sd: 1,
+  hd: 2,
 }
 
-export const EXPORT_COSTS: Record<ExportResolution, ExportCost> = {
-  sd: {
-    resolution: 'sd',
-    label: 'SD (720p)',
-    baseTokenCost: 0,
-    perSecondCost: 0,
-    description: 'Free export at standard definition',
-  },
-  hd: {
-    resolution: 'hd',
-    label: 'HD (1080p)',
-    baseTokenCost: 1,
-    perSecondCost: 0.1, // 0.1 tokens per second
-    description: '1 token base + 0.1 per second',
-  },
-  '4k': {
-    resolution: '4k',
-    label: '4K (2160p)',
-    baseTokenCost: 3,
-    perSecondCost: 0.25, // 0.25 tokens per second
-    description: '3 tokens base + 0.25 per second',
-  },
+// Duration options in order. Each step up the ladder costs one extra token.
+export const EXPORT_DURATIONS = [5, 10, 15, 30] as const
+
+// Frame rate at or above which an extra token applies.
+export const HIGH_FRAME_RATE = 60
+
+export function calculateExportCost(
+  resolution: ExportResolution,
+  durationSeconds: number,
+  frameRate: number,
+): number {
+  const base = BASE_TOKEN_COST[resolution] ?? BASE_TOKEN_COST.sd
+  const stepIndex = EXPORT_DURATIONS.indexOf(durationSeconds as (typeof EXPORT_DURATIONS)[number])
+  const durationCost = stepIndex > 0 ? stepIndex : 0
+  const frameRateCost = frameRate >= HIGH_FRAME_RATE ? 1 : 0
+  return base + durationCost + frameRateCost
 }
 
-export function calculateExportCost(resolution: ExportResolution, durationSeconds: number): number {
-  const cost = EXPORT_COSTS[resolution]
-  if (!cost) return 0
-  
-  const baseCost = cost.baseTokenCost
-  const durationCost = Math.ceil(cost.perSecondCost * durationSeconds)
-  
-  return baseCost + durationCost
+// One free export per day: SD only, 5 or 10 seconds, standard frame rate.
+// HD, longer durations, and 60fps always cost tokens.
+export function isFreeExportEligible(
+  resolution: ExportResolution,
+  durationSeconds: number,
+  frameRate: number,
+): boolean {
+  return (
+    resolution === 'sd' &&
+    (durationSeconds === 5 || durationSeconds === 10) &&
+    frameRate < HIGH_FRAME_RATE
+  )
 }
 
 export function canAffordExport(
   tokenBalance: number,
   resolution: ExportResolution,
   durationSeconds: number,
+  frameRate: number,
   hasFreeExportToday: boolean
 ): { canAfford: boolean; cost: number; reason?: string } {
-  // SD is always free
-  if (resolution === 'sd') {
-    return { canAfford: true, cost: 0 }
-  }
-  
-  const cost = calculateExportCost(resolution, durationSeconds)
-  
-  // Check if user has daily free export available
-  if (hasFreeExportToday && cost <= 5) {
+  const cost = calculateExportCost(resolution, durationSeconds, frameRate)
+
+  if (hasFreeExportToday && isFreeExportEligible(resolution, durationSeconds, frameRate)) {
     return { canAfford: true, cost: 0, reason: 'Using daily free export' }
   }
-  
+
   if (tokenBalance >= cost) {
     return { canAfford: true, cost }
   }
-  
+
   return {
     canAfford: false,
     cost,

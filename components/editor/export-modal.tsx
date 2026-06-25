@@ -42,6 +42,7 @@ import {
   ExportFrameRate,
   DEFAULT_EXPORT_SETTINGS,
   RESOLUTION_CONFIGS,
+  getExportDimensions,
 } from '@/lib/export-types'
 import { calculateExportCost } from '@/lib/tokens'
 import { SPRITE_SHEETS } from '@/lib/sprite-sheets'
@@ -80,22 +81,40 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   const [exportedAt, setExportedAt] = useState<Date | null>(null)
   const [authResult, setAuthResult] = useState<ExportAuthResult | null>(null)
   const [checkingAuth, setCheckingAuth] = useState(false)
+  // Sharpest longest-edge (px) the project's bitmap art can actually fill;
+  // null when there are no image layers (vector effects scale infinitely).
+  const [sourceLongEdge, setSourceLongEdge] = useState<number | null>(null)
   const imageCache = useRef<Map<string, HTMLImageElement>>(new Map())
   const abortController = useRef<AbortController | null>(null)
 
   const isExporting = ['preparing', 'rendering', 'encoding', 'finalizing'].includes(progress.status)
-  const exportCost = calculateExportCost(settings.resolution, settings.duration)
+  const exportCost = calculateExportCost(settings.resolution, settings.duration, settings.frameRate)
+  const targetLongEdge = RESOLUTION_CONFIGS[settings.resolution].longEdge
+  const exportDimensions = project
+    ? getExportDimensions(targetLongEdge, project.canvasSize)
+    : null
+  // Warn (don't block) when the chosen tier would only upscale the source art.
+  // 10% tolerance avoids nagging when the source is a hair under the target.
+  const isUpscaling = sourceLongEdge !== null && targetLongEdge > sourceLongEdge * 1.1
+  // Target encoder bitrate (shared by the file-size estimate and the recorder).
+  const videoBitrate = settings.resolution === 'hd' ? 10_000_000 : 5_000_000
+  // Approx file size: VBR targets ~bitrate over the clip, independent of fps.
+  const estimatedSizeMb = (videoBitrate * settings.duration) / 8 / 1_000_000
 
   // Check authorization when modal opens or settings change
   useEffect(() => {
     if (open) {
       checkAuth()
     }
-  }, [open, settings.resolution, settings.duration])
+  }, [open, settings.resolution, settings.duration, settings.frameRate])
 
   const checkAuth = async () => {
     setCheckingAuth(true)
-    const result = await checkExportAuthorization(settings.resolution, settings.duration)
+    const result = await checkExportAuthorization(
+      settings.resolution,
+      settings.duration,
+      settings.frameRate,
+    )
     setAuthResult(result)
     setCheckingAuth(false)
   }
@@ -141,6 +160,25 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
     for (const effectId of effectIds) {
       await prepareEffect(effectId)
     }
+
+    // Measure the sharpest resolution the bitmap layers can fill, expressed as a
+    // longest-edge target, so we can warn when a tier would just upscale them.
+    if (project) {
+      const canvasLong = Math.max(project.canvasSize.width, project.canvasSize.height)
+      let best = 0
+      for (const layer of layers) {
+        if (layer.type !== 'map' && layer.type !== 'asset') continue
+        const img = imageCache.current.get((layer as { src: string }).src)
+        if (!img?.naturalWidth) continue
+        // Source pixels per canvas unit — take the sharper of the two axes.
+        const density = Math.max(
+          img.naturalWidth / layer.size.width,
+          img.naturalHeight / layer.size.height,
+        )
+        best = Math.max(best, density * canvasLong)
+      }
+      setSourceLongEdge(best > 0 ? Math.round(best) : null)
+    }
   }
 
   const handleExport = async () => {
@@ -155,14 +193,18 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
         authResult.userId,
         settings.resolution,
         settings.duration,
-        authResult.hasFreeExport || false
+        settings.frameRate,
+        authResult.freeApplied || false
       )
 
       if (!recordResult.success) {
         throw new Error(recordResult.error || 'Failed to process export')
       }
 
-      const { width, height } = RESOLUTION_CONFIGS[settings.resolution]
+      const { width, height } = getExportDimensions(
+        RESOLUTION_CONFIGS[settings.resolution].longEdge,
+        project.canvasSize,
+      )
       const totalFrames = settings.duration * settings.frameRate
       const frameDuration = 1000 / settings.frameRate
 
@@ -187,8 +229,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       
       const mediaRecorder = new MediaRecorder(stream, {
         mimeType,
-        videoBitsPerSecond: settings.resolution === '4k' ? 20000000 : 
-                           settings.resolution === 'hd' ? 10000000 : 5000000,
+        videoBitsPerSecond: videoBitrate,
       })
 
       const chunks: Blob[] = []
@@ -325,11 +366,21 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sd">SD (1280x720)</SelectItem>
-                  <SelectItem value="hd">HD (1920x1080)</SelectItem>
-                  <SelectItem value="4k">4K (3840x2160)</SelectItem>
+                  <SelectItem value="sd">SD (up to 1280px)</SelectItem>
+                  <SelectItem value="hd">HD (up to 1920px)</SelectItem>
                 </SelectContent>
               </Select>
+              {isUpscaling && (
+                <p className="flex items-start gap-1.5 text-xs text-amber-500">
+                  <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                  <span>
+                    Your map art is only ~{sourceLongEdge}px on its longest side, so{' '}
+                    {RESOLUTION_CONFIGS[settings.resolution].label} will upscale it without adding
+                    real detail.
+                    {settings.resolution === 'hd' && ' SD looks just as sharp here and is free.'}
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* Duration Selection */}
@@ -379,7 +430,9 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
             <div className="rounded-lg bg-muted/30 p-3 border border-border">
               <p className="text-xs text-muted-foreground">
                 <strong className="text-foreground">Estimated output:</strong>{' '}
-                {settings.duration * settings.frameRate} frames at {RESOLUTION_CONFIGS[settings.resolution].width}x{RESOLUTION_CONFIGS[settings.resolution].height}
+                {settings.duration * settings.frameRate} frames at{' '}
+                {exportDimensions ? `${exportDimensions.width}×${exportDimensions.height}` : '—'}
+                {' · ~'}{estimatedSizeMb.toFixed(1)} MB
               </p>
             </div>
 
@@ -402,28 +455,49 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                         <Link href="/auth/login">Sign In</Link>
                       </Button>
                     </div>
-                  ) : authResult.hasFreeExport && settings.resolution === 'sd' ? (
-                    <div className="flex items-center gap-2">
-                      <Gift className="w-5 h-5 text-green-500" />
-                      <span className="font-medium text-green-600">Free daily export available!</span>
-                    </div>
                   ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Coins className="w-5 h-5 text-primary" />
-                          <span className="font-medium">Cost: {exportCost} tokens</span>
+                    <div className="space-y-3">
+                      {/* Daily free allowance status */}
+                      {authResult.dailyFreeAvailable ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <Gift className="w-4 h-4 text-green-500 shrink-0" />
+                          <span className="text-green-600">
+                            Free daily export available
+                            {!authResult.freeApplied && ' — SD at 5s or 10s, 30fps'}
+                          </span>
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          Balance: {authResult.tokenBalance || 0}
-                        </span>
-                      </div>
-                      {!authResult.authorized && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-destructive">{authResult.error}</span>
-                          <Button asChild size="sm" variant="outline">
-                            <Link href="/pricing">Buy Tokens</Link>
-                          </Button>
+                      ) : (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Gift className="w-4 h-4 shrink-0" />
+                          <span>Daily free export already used today</span>
+                        </div>
+                      )}
+
+                      {/* Cost of this export */}
+                      {authResult.freeApplied ? (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-5 h-5 text-green-500" />
+                          <span className="font-medium text-green-600">This export is free</span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Coins className="w-5 h-5 text-primary" />
+                              <span className="font-medium">Cost: {exportCost} tokens</span>
+                            </div>
+                            <span className="text-sm text-muted-foreground">
+                              Balance: {authResult.tokenBalance || 0}
+                            </span>
+                          </div>
+                          {!authResult.authorized && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-destructive">{authResult.error}</span>
+                              <Button asChild size="sm" variant="outline">
+                                <Link href="/pricing">Buy Tokens</Link>
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -548,7 +622,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                 className="bg-primary text-primary-foreground gap-2"
               >
                 <Film className="w-4 h-4" />
-                {authResult?.hasFreeExport && settings.resolution === 'sd' ? 'Export Free' : `Export (${exportCost} tokens)`}
+                {authResult?.freeApplied ? 'Export Free' : `Export (${exportCost} tokens)`}
               </Button>
             </>
           )}
