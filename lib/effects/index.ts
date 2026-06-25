@@ -1,0 +1,16 @@
+// Effects render spine. Import from here to get the render contract + registry;
+// importing this module also registers the built-in renderers. New backends
+// (particle/Pixi, vector/Lottie) register here as they land.
+
+import { registerRenderer } from './render-core'
+import { spriteRenderer } from './sprite-renderer'
+import { particleRenderer } from './particle-renderer'
+import { vectorRenderer } from './vector-renderer'
+
+registerRenderer(spriteRenderer)
+registerRenderer(particleRenderer)
+registerRenderer(vectorRenderer)
+
+export * from './render-core'
+export { loadAssets, loadImage, getCachedImage } from './image-cache'
+export { subscribeFrame, getQuality } from './clock'

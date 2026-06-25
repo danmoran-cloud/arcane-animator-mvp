@@ -85,8 +85,7 @@ const OUTPUT_FILE   = effectId + '.png'
 const OUTPUT_PATH   = join(OUTPUT_DIR, OUTPUT_FILE)
 const PUBLIC_URL    = `/effects/new/${OUTPUT_FILE}`
 const LIB_PATH      = join(ROOT, 'lib', 'effects-library.ts')
-const RENDERER_PATH = join(ROOT, 'components', 'editor', 'premium-effects.tsx')
-const EXPORT_PATH   = join(ROOT, 'components', 'editor', 'export-modal.tsx')
+const SHEETS_PATH   = join(ROOT, 'lib', 'sprite-sheets.ts')
 
 // ── Standard output format ─────────────────────────────────────────────────────
 
@@ -208,39 +207,27 @@ lib = lib.replace('  // NEW_EFFECT_DEFS', def)
 writeFileSync(LIB_PATH, lib, 'utf8')
 console.log('✓ effects-library.ts updated')
 
-// ── Update premium-effects.tsx ─────────────────────────────────────────────────
+// ── Update lib/sprite-sheets.ts ────────────────────────────────────────────────
+// One shared geometry+presentation map feeds both the editor preview and the
+// exporter via the lib/effects registry, so a single entry registers the effect
+// for both render paths.
 
-console.log('Updating premium-effects.tsx …')
-let renderer = readFileSync(RENDERER_PATH, 'utf8')
+console.log('Updating lib/sprite-sheets.ts …')
+let sheets = readFileSync(SHEETS_PATH, 'utf8')
 
-if (renderer.includes(`'${effectId}':`)) {
-  console.error(`Error: effect ID "${effectId}" already exists in premium-effects.tsx`)
+if (sheets.includes(`'${effectId}':`)) {
+  console.error(`Error: effect ID "${effectId}" already exists in sprite-sheets.ts`)
   process.exit(1)
 }
 
-const spriteEntry = `  '${effectId}': { url: '${PUBLIC_URL}', cols: ${OUT_COLS}, rows: ${OUT_ROWS}, frames: ${MAX_OUT_FRAMES}, blend: '${blendMode}' },\n  // NEW_SPRITES_END`
+// New Effects don't draw a color glow; blend is screen for light-emitting
+// effects and normal for occluding ones (smoke/fog/debris).
+const sheetEntry = `  '${effectId}': { url: '${PUBLIC_URL}', cols: ${OUT_COLS}, rows: ${OUT_ROWS}, frames: ${MAX_OUT_FRAMES}, glow: false, fps: 20, blend: '${blendMode}' },\n  // NEW_SHEETS_END`
 
-renderer = renderer.replace('  // NEW_SPRITES_END', spriteEntry)
+sheets = sheets.replace('  // NEW_SHEETS_END', sheetEntry)
 
-writeFileSync(RENDERER_PATH, renderer, 'utf8')
-console.log('✓ premium-effects.tsx updated')
-
-// ── Update export-modal.tsx (canvas/video renderer) ────────────────────────────
-
-console.log('Updating export-modal.tsx …')
-let exporter = readFileSync(EXPORT_PATH, 'utf8')
-
-if (exporter.includes(`'${effectId}':`)) {
-  console.error(`Error: effect ID "${effectId}" already exists in export-modal.tsx`)
-  process.exit(1)
-}
-
-const exportEntry = `  '${effectId}': { url: '${PUBLIC_URL}', cols: ${OUT_COLS}, rows: ${OUT_ROWS}, frames: ${MAX_OUT_FRAMES}, blend: '${blendMode}' },\n  // NEW_EXPORT_SPRITES_END`
-
-exporter = exporter.replace('  // NEW_EXPORT_SPRITES_END', exportEntry)
-
-writeFileSync(EXPORT_PATH, exporter, 'utf8')
-console.log('✓ export-modal.tsx updated')
+writeFileSync(SHEETS_PATH, sheets, 'utf8')
+console.log('✓ sprite-sheets.ts updated')
 
 // ── Done ───────────────────────────────────────────────────────────────────────
 

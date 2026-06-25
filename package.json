@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "verify-sheets": "node scripts/verify-sheets.mjs",
+    "import-sheet": "node scripts/import-sheet.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

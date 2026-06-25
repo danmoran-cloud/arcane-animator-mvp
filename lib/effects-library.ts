@@ -1,43 +1,38 @@
 // Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'magic' | 'scifi' | 'launch' | 'caustics' | 'rain' | 'cemetery' | 'subterranean' | 'lightsource' | 'lightsource-revised' | 'new'
+export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'scifi' | 'launch' | 'caustics' | 'cemetery' | 'subterranean' | 'lightsource' | 'lightsource-revised' | 'new' | 'particles' | 'vector'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
   | 'torch' | 'torch-2' | 'campfire' | 'lantern' | 'candles' | 'brazier' | 'magical-light'
-  // Atmospheric Pack (8) - Full-area weather/environment overlays
-  | 'rain' | 'snow' | 'fog' | 'mist' | 'wind' | 'lightning-storm' | 'dust-storm' | 'blizzard'
-  // Terrain Pack (6) - Ground/surface effects
-  | 'water-ripples' | 'waterfall' | 'lava-flow' | 'swamp-bubbles' | 'ice-crystals' | 'smoke-vents'
+  // Atmospheric Pack - Full-area weather/environment overlays
+  // (rain, snow, fog, mist, dust-storm, blizzard removed — superseded by the Particle pack)
+  | 'wind' | 'lightning-storm'
+  // Terrain Pack - Ground/surface effects
+  // (swamp-bubbles, smoke-vents removed — superseded by particle-bubbles / particle-smoke)
+  | 'water-ripples' | 'waterfall' | 'lava-flow' | 'ice-crystals'
   // Fantasy Pack (6)
   | 'arcane-circles' | 'portals' | 'floating-runes' | 'divine-light' | 'necrotic-corruption' | 'spirit-apparitions'
-  // Magic Effects Pack (17) - portal gateways + magic-circle sprite-sheet animations
+  // Portal gateways (now in the New pack). Magic-circle sprites retired — see the Vector pack.
   | 'blue-portal' | 'fire-portal'
-  | 'magic-golden-arcane' | 'magic-cyan-heptagram' | 'magic-purple-hexagram' | 'magic-verdant-summoning' | 'magic-infernal-flame'
-  | 'magic-radiant-ward' | 'magic-magenta-hex' | 'magic-golden-rune' | 'magic-azure-conjuration' | 'magic-violet-enchantment'
-  | 'magic-emerald-nature' | 'magic-spiral-vortex' | 'magic-crimson-pentagram' | 'magic-amber-alchemy' | 'magic-frost-sigil'
   // Sci-Fi Pack (4)
   | 'holograms' | 'energy-shields' | 'data-streams' | 'reactor-core'
-  // Launch Effects Pack (15) - sprite-sheet animations
-  | 'launch-torch-light' | 'launch-lantern-glow' | 'launch-campfire' | 'launch-smoke-wisps' | 'launch-running-water'
-  | 'launch-rain' | 'launch-fog' | 'launch-floating-dust' | 'launch-fireflies' | 'launch-arcane-runes'
+  // Launch Effects Pack (10) - sprite-sheet animations (rain/fog/fireflies/floating-dust/smoke-wisps → Particle pack)
+  | 'launch-torch-light' | 'launch-lantern-glow' | 'launch-campfire' | 'launch-running-water' | 'launch-arcane-runes'
   | 'launch-portal' | 'launch-lightning' | 'launch-divine-light' | 'launch-necrotic-corruption' | 'launch-ghost-apparition'
   // Caustics Pack (15) - underwater light sprite-sheet animations
   | 'caustics-shallow-clear' | 'caustics-deep-blue' | 'caustics-tropical-shallow' | 'caustics-soft-sand' | 'caustics-rocky-bottom'
   | 'caustics-fast-moving' | 'caustics-slow-gentle' | 'caustics-blue-green' | 'caustics-sunlit-deep' | 'caustics-murky-water'
   | 'caustics-cave-water' | 'caustics-kelp-forest' | 'caustics-rippling-sand' | 'caustics-wavy-surface' | 'caustics-magic-glow'
-  // Rain Effects Pack (15) - rain sprite-sheet animations
-  | 'rain-light-drizzle' | 'rain-steady' | 'rain-heavy' | 'rain-torrential' | 'rain-wind-blown'
-  | 'rain-fine-mist' | 'rain-sheet' | 'rain-intermittent' | 'rain-splatter-spray' | 'rain-ground-mist'
-  | 'rain-micro-drizzle' | 'rain-sideways' | 'rain-fog-mix' | 'rain-droplet-impacts' | 'rain-dynamic-storm'
-  // Cemetery Effects Pack (15) - spooky sprite-sheet animations
-  | 'cemetery-graveyard-fog' | 'cemetery-will-o-wisps' | 'cemetery-soul-spirits' | 'cemetery-necrotic-aura' | 'cemetery-blood-petals'
+  // Rain Effects Pack removed — superseded by particle-rain
+  // Cemetery Effects Pack (13) - spooky sprite-sheet animations (graveyard-fog/ethereal-mist-swirl → Particle pack)
+  | 'cemetery-will-o-wisps' | 'cemetery-soul-spirits' | 'cemetery-necrotic-aura' | 'cemetery-blood-petals'
   | 'cemetery-haunted-lantern' | 'cemetery-cracked-stone-rise' | 'cemetery-skeletal-remains' | 'cemetery-dark-ritual-circle' | 'cemetery-coffin-burst'
-  | 'cemetery-ethereal-mist-swirl' | 'cemetery-moonbeam-trees' | 'cemetery-draining-life-vortex' | 'cemetery-candle-flame' | 'cemetery-bats-in-flight'
-  // Subterranean Effects Pack (15) - cave sprite-sheet animations
-  | 'subterranean-cave-drips' | 'subterranean-stalactite-seep' | 'subterranean-underground-stream' | 'subterranean-cave-mist' | 'subterranean-crystal-sparkles'
-  | 'subterranean-crystal-pulse' | 'subterranean-bioluminescent-spores' | 'subterranean-glowing-mushroom-aura' | 'subterranean-bat-swarm' | 'subterranean-dustfall'
-  | 'subterranean-pebble-collapse' | 'subterranean-steam-vent' | 'subterranean-cave-fireflies' | 'subterranean-arcane-cave-energy' | 'subterranean-ambient'
+  | 'cemetery-moonbeam-trees' | 'cemetery-draining-life-vortex' | 'cemetery-candle-flame' | 'cemetery-bats-in-flight'
+  // Subterranean Effects Pack (10) - cave sprite-sheet animations (cave-mist/crystal-sparkles/dustfall/steam-vent/cave-fireflies → Particle pack)
+  | 'subterranean-cave-drips' | 'subterranean-stalactite-seep' | 'subterranean-underground-stream'
+  | 'subterranean-crystal-pulse' | 'subterranean-bioluminescent-spores' | 'subterranean-glowing-mushroom-aura' | 'subterranean-bat-swarm'
+  | 'subterranean-pebble-collapse' | 'subterranean-arcane-cave-energy' | 'subterranean-ambient'
   // Light Source Effects Pack (15) - illumination sprite-sheet animations
   | 'lightsource-wall-torch' | 'lightsource-ornate-lantern' | 'lightsource-iron-lantern' | 'lightsource-hanging-lantern' | 'lightsource-carriage-lantern'
   | 'lightsource-campfire' | 'lightsource-sparkler-burst' | 'lightsource-candle' | 'lightsource-glowing-orb' | 'lightsource-fire-brazier'
@@ -48,7 +43,12 @@ export type EffectId =
   | 'lsr-blue-flame' | 'lsr-green-flame' | 'lsr-starburst' | 'lsr-arcane-circle' | 'lsr-smoke'
   // NEW EFFECTS PACK — auto-generated, do not edit this line
   | 'new-fire-torch'
-  | 'new-smoke'
+  // PARTICLE EFFECTS PACK (procedural, GPU-ready) — Phase 3
+  | 'particle-rain' | 'particle-snow' | 'particle-embers' | 'particle-fog' | 'particle-fireflies'
+  | 'particle-dust' | 'particle-smoke' | 'particle-bubbles' | 'particle-sparkles'
+  // VECTOR EFFECTS PACK (procedural magic circles + portals) — Phase 4
+  | 'vector-pentagram' | 'vector-hexagram' | 'vector-heptagram' | 'vector-arcane-circle' | 'vector-rune-circle'
+  | 'vector-portal' | 'vector-fire-portal'
   // NEW_EFFECT_IDS
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
@@ -100,13 +100,7 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     color: '#8b5cf6',
     description: 'Magical and mystical effects'
   },
-  magic: { 
-    name: 'Magic Effects', 
-    icon: 'sparkles', 
-    color: '#a855f7',
-    description: 'Magic circles, sigils, and arcane portals'
-  },
-  scifi: { 
+  scifi: {
     name: 'Sci-Fi', 
     icon: 'cpu', 
     color: '#06b6d4',
@@ -124,13 +118,7 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     color: '#38bdf8',
     description: 'Underwater light caustics'
   },
-  rain: { 
-    name: 'Rain Effects', 
-    icon: 'cloud-rain', 
-    color: '#60a5fa',
-    description: 'Animated rain sprite effects'
-  },
-  cemetery: { 
+  cemetery: {
     name: 'Cemetery Effects', 
     icon: 'skull', 
     color: '#22c55e',
@@ -159,6 +147,18 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     icon: 'plus',
     color: '#6366f1',
     description: 'Newly imported sprite sheet effects'
+  },
+  particles: {
+    name: 'Particle Effects',
+    icon: 'sparkles',
+    color: '#38bdf8',
+    description: 'Procedural GPU-ready particles with live controls'
+  },
+  vector: {
+    name: 'Magic Circles & Portals',
+    icon: 'circle-dot',
+    color: '#c084fc',
+    description: 'Procedural vector magic circles and portals — crisp, recolorable, looping'
   },
 }
 
@@ -292,67 +292,7 @@ export const effectsLibrary: EffectDefinition[] = [
   },
 
   // ===== ATMOSPHERIC PACK - Weather & Environment =====
-  {
-    id: 'rain',
-    name: 'Rain',
-    pack: 'atmospheric',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain',
-    description: 'Falling rain with ground ripples',
-    defaultSettings: {
-      speed: 70,
-      intensity: 60,
-      density: 50,
-      color: '#a8c8e8',
-      direction: 180,
-      scale: 1,
-    },
-  },
-  {
-    id: 'snow',
-    name: 'Snowfall',
-    pack: 'atmospheric',
-    renderMode: 'atmospheric',
-    icon: 'snowflake',
-    description: 'Gentle drifting snowflakes',
-    defaultSettings: {
-      speed: 30,
-      intensity: 50,
-      density: 40,
-      color: '#ffffff',
-      scale: 1,
-    },
-  },
-  {
-    id: 'fog',
-    name: 'Fog',
-    pack: 'atmospheric',
-    renderMode: 'atmospheric',
-    icon: 'cloud',
-    description: 'Thick rolling fog banks',
-    defaultSettings: {
-      speed: 15,
-      intensity: 70,
-      density: 80,
-      color: '#d4d4d4',
-      scale: 2,
-    },
-  },
-  {
-    id: 'mist',
-    name: 'Mist',
-    pack: 'atmospheric',
-    renderMode: 'atmospheric',
-    icon: 'cloud',
-    description: 'Light ethereal haze',
-    defaultSettings: {
-      speed: 10,
-      intensity: 40,
-      density: 50,
-      color: '#e5e7eb',
-      scale: 1.5,
-    },
-  },
+  // rain / snow / fog / mist removed — superseded by the procedural Particle pack.
   {
     id: 'wind',
     name: 'Wind',
@@ -386,40 +326,7 @@ export const effectsLibrary: EffectDefinition[] = [
       scale: 1,
     },
   },
-  {
-    id: 'dust-storm',
-    name: 'Dust Storm',
-    pack: 'atmospheric',
-    renderMode: 'atmospheric',
-    icon: 'wind',
-    description: 'Swirling sand and dust particles',
-    defaultSettings: {
-      speed: 75,
-      intensity: 65,
-      density: 70,
-      color: '#d4a574',
-      secondaryColor: '#a8845c',
-      direction: 45,
-      scale: 1.2,
-    },
-  },
-  {
-    id: 'blizzard',
-    name: 'Blizzard',
-    pack: 'atmospheric',
-    renderMode: 'atmospheric',
-    icon: 'snowflake',
-    description: 'Intense snow with howling wind',
-    defaultSettings: {
-      speed: 85,
-      intensity: 80,
-      density: 75,
-      color: '#ffffff',
-      secondaryColor: '#e0f2fe',
-      direction: 60,
-      scale: 1,
-    },
-  },
+  // dust-storm / blizzard removed — superseded by particle-dust / particle-snow.
 
   // ===== TERRAIN PACK - Ground & Surface =====
   {
@@ -472,22 +379,6 @@ export const effectsLibrary: EffectDefinition[] = [
     },
   },
   {
-    id: 'swamp-bubbles',
-    name: 'Swamp Bubbles',
-    pack: 'terrain',
-    renderMode: 'terrain',
-    icon: 'droplets',
-    description: 'Murky water with rising bubbles',
-    defaultSettings: {
-      speed: 25,
-      intensity: 45,
-      density: 35,
-      color: '#4a5c4a',
-      secondaryColor: '#6b8e6b',
-      scale: 1,
-    },
-  },
-  {
     id: 'ice-crystals',
     name: 'Ice Crystals',
     pack: 'terrain',
@@ -504,22 +395,7 @@ export const effectsLibrary: EffectDefinition[] = [
       scale: 1,
     },
   },
-  {
-    id: 'smoke-vents',
-    name: 'Smoke Vents',
-    pack: 'terrain',
-    renderMode: 'terrain',
-    icon: 'cloud',
-    description: 'Rising smoke from ground cracks',
-    defaultSettings: {
-      speed: 30,
-      intensity: 55,
-      density: 45,
-      color: '#4a4a4a',
-      secondaryColor: '#6b6b6b',
-      scale: 1,
-    },
-  },
+  // smoke-vents removed — superseded by particle-smoke.
 
   // ===== FANTASY PACK =====
   {
@@ -625,7 +501,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'blue-portal',
     name: 'Blue Portal',
-    pack: 'magic',
+    pack: 'new',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Expanding arcane blue ring portal',
@@ -642,7 +518,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'fire-portal',
     name: 'Fire Portal',
-    pack: 'magic',
+    pack: 'new',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Erupting fiery portal sprite animation',
@@ -754,15 +630,6 @@ export const effectsLibrary: EffectDefinition[] = [
     defaultSettings: { speed: 55, intensity: 95, density: 60, color: '#ff7a1a', secondaryColor: '#ffcc00', glowIntensity: 90, scale: 1 },
   },
   {
-    id: 'launch-smoke-wisps',
-    name: 'Smoke Wisps',
-    pack: 'launch',
-    renderMode: 'localized',
-    icon: 'wind',
-    description: 'Drifting wisps of smoke',
-    defaultSettings: { speed: 35, intensity: 60, density: 50, color: '#e5e7eb', secondaryColor: '#9ca3af', glowIntensity: 40, scale: 1 },
-  },
-  {
     id: 'launch-running-water',
     name: 'Running Water',
     pack: 'launch',
@@ -770,42 +637,6 @@ export const effectsLibrary: EffectDefinition[] = [
     icon: 'droplets',
     description: 'Splashing flowing water',
     defaultSettings: { speed: 60, intensity: 80, density: 60, color: '#7dd3fc', secondaryColor: '#bae6fd', glowIntensity: 60, scale: 1 },
-  },
-  {
-    id: 'launch-rain',
-    name: 'Rain',
-    pack: 'launch',
-    renderMode: 'localized',
-    icon: 'cloud-rain',
-    description: 'Falling rain with splashes',
-    defaultSettings: { speed: 70, intensity: 75, density: 70, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 40, scale: 1 },
-  },
-  {
-    id: 'launch-fog',
-    name: 'Fog',
-    pack: 'launch',
-    renderMode: 'localized',
-    icon: 'cloud',
-    description: 'Billowing fog clouds',
-    defaultSettings: { speed: 30, intensity: 60, density: 60, color: '#f3f4f6', secondaryColor: '#d1d5db', glowIntensity: 30, scale: 1 },
-  },
-  {
-    id: 'launch-floating-dust',
-    name: 'Floating Dust',
-    pack: 'launch',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Drifting motes of dust',
-    defaultSettings: { speed: 25, intensity: 50, density: 40, color: '#fde68a', secondaryColor: '#fbbf24', glowIntensity: 50, scale: 1 },
-  },
-  {
-    id: 'launch-fireflies',
-    name: 'Fireflies',
-    pack: 'launch',
-    renderMode: 'localized',
-    icon: 'sparkle',
-    description: 'Glowing dancing fireflies',
-    defaultSettings: { speed: 45, intensity: 80, density: 40, color: '#fde047', secondaryColor: '#facc15', glowIntensity: 90, scale: 1 },
   },
   {
     id: 'launch-arcane-runes',
@@ -1000,152 +831,8 @@ export const effectsLibrary: EffectDefinition[] = [
   },
 
   // ===== RAIN EFFECTS PACK - rain sprite sheets (8x3, 24 frames) =====
-  {
-    id: 'rain-light-drizzle',
-    name: 'Light Drizzle',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-drizzle',
-    description: 'Fine, sparse droplets. Slow fall',
-    defaultSettings: { speed: 35, intensity: 50, density: 30, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 30, scale: 1 },
-  },
-  {
-    id: 'rain-steady',
-    name: 'Steady Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain',
-    description: 'Consistent, even rainfall',
-    defaultSettings: { speed: 55, intensity: 70, density: 55, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
-  },
-  {
-    id: 'rain-heavy',
-    name: 'Heavy Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain',
-    description: 'Thicker drops, heavier density',
-    defaultSettings: { speed: 70, intensity: 85, density: 75, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 40, scale: 1 },
-  },
-  {
-    id: 'rain-torrential',
-    name: 'Torrential Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain',
-    description: 'Extreme downpour. High impact',
-    defaultSettings: { speed: 85, intensity: 95, density: 95, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 50, scale: 1 },
-  },
-  {
-    id: 'rain-wind-blown',
-    name: 'Wind Blown Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain-wind',
-    description: 'Rain driven by strong wind',
-    defaultSettings: { speed: 75, intensity: 75, density: 60, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
-  },
-  {
-    id: 'rain-fine-mist',
-    name: 'Fine Mist Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-fog',
-    description: 'Ultra-fine droplets and haze',
-    defaultSettings: { speed: 30, intensity: 45, density: 40, color: '#eff6ff', secondaryColor: '#ffffff', glowIntensity: 30, scale: 1 },
-  },
-  {
-    id: 'rain-sheet',
-    name: 'Rain Sheet (Curtain)',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain',
-    description: 'Vertical sheets of rain',
-    defaultSettings: { speed: 65, intensity: 90, density: 85, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 45, scale: 1 },
-  },
-  {
-    id: 'rain-intermittent',
-    name: 'Intermittent Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain',
-    description: 'Uneven rainfall with natural gaps',
-    defaultSettings: { speed: 55, intensity: 65, density: 50, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
-  },
-  {
-    id: 'rain-splatter-spray',
-    name: 'Splatter Spray',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'droplets',
-    description: 'Fine outward splashes and spray',
-    defaultSettings: { speed: 60, intensity: 70, density: 55, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 40, scale: 1 },
-  },
-  {
-    id: 'rain-ground-mist',
-    name: 'Ground Mist Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-fog',
-    description: 'Rain that creates rising ground mist',
-    defaultSettings: { speed: 50, intensity: 65, density: 50, color: '#e0f2fe', secondaryColor: '#f1f5f9', glowIntensity: 40, scale: 1 },
-  },
-  {
-    id: 'rain-micro-drizzle',
-    name: 'Micro Drizzle',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-drizzle',
-    description: 'Very small droplets and specks',
-    defaultSettings: { speed: 30, intensity: 40, density: 25, color: '#eff6ff', secondaryColor: '#ffffff', glowIntensity: 25, scale: 1 },
-  },
-  {
-    id: 'rain-sideways',
-    name: 'Sideways Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-rain-wind',
-    description: 'Strong horizontal angle rain',
-    defaultSettings: { speed: 80, intensity: 80, density: 65, color: '#dbeafe', secondaryColor: '#ffffff', glowIntensity: 35, scale: 1 },
-  },
-  {
-    id: 'rain-fog-mix',
-    name: 'Rain & Fog Mix',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-fog',
-    description: 'Rain blended with diffuse fog',
-    defaultSettings: { speed: 50, intensity: 70, density: 55, color: '#e0f2fe', secondaryColor: '#f1f5f9', glowIntensity: 40, scale: 1 },
-  },
-  {
-    id: 'rain-droplet-impacts',
-    name: 'Droplet Impacts',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'droplets',
-    description: 'Droplets hitting surfaces',
-    defaultSettings: { speed: 55, intensity: 75, density: 50, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 45, scale: 1 },
-  },
-  {
-    id: 'rain-dynamic-storm',
-    name: 'Dynamic Storm Rain',
-    pack: 'rain',
-    renderMode: 'atmospheric',
-    icon: 'cloud-lightning',
-    description: 'Variable density, speed and size',
-    defaultSettings: { speed: 85, intensity: 90, density: 80, color: '#e0f2fe', secondaryColor: '#ffffff', glowIntensity: 50, scale: 1 },
-  },
 
   // ===== CEMETERY EFFECTS PACK - spooky sprite sheets (5x6, 30 frames) =====
-  {
-    id: 'cemetery-graveyard-fog',
-    name: 'Graveyard Fog',
-    pack: 'cemetery',
-    renderMode: 'atmospheric',
-    icon: 'cloud-fog',
-    description: 'Low-lying drifting graveyard fog',
-    defaultSettings: { speed: 25, intensity: 65, density: 60, color: '#cbd5e1', secondaryColor: '#f1f5f9', glowIntensity: 30, scale: 1 },
-  },
   {
     id: 'cemetery-will-o-wisps',
     name: "Ghostly Will-o'-Wisps",
@@ -1228,15 +915,6 @@ export const effectsLibrary: EffectDefinition[] = [
     defaultSettings: { speed: 55, intensity: 85, density: 55, color: '#a16207', secondaryColor: '#facc15', glowIntensity: 60, scale: 1 },
   },
   {
-    id: 'cemetery-ethereal-mist-swirl',
-    name: 'Ethereal Mist Swirl',
-    pack: 'cemetery',
-    renderMode: 'atmospheric',
-    icon: 'cloud-fog',
-    description: 'Spiraling spectral mist vortex',
-    defaultSettings: { speed: 35, intensity: 65, density: 55, color: '#c4b5fd', secondaryColor: '#ede9fe', glowIntensity: 50, scale: 1 },
-  },
-  {
     id: 'cemetery-moonbeam-trees',
     name: 'Moonbeam Through Trees',
     pack: 'cemetery',
@@ -1302,24 +980,6 @@ export const effectsLibrary: EffectDefinition[] = [
     defaultSettings: { speed: 55, intensity: 75, density: 55, color: '#7dd3fc', secondaryColor: '#bae6fd', glowIntensity: 45, scale: 1 },
   },
   {
-    id: 'subterranean-cave-mist',
-    name: 'Cave Mist',
-    pack: 'subterranean',
-    renderMode: 'atmospheric',
-    icon: 'cloud-fog',
-    description: 'Drifting damp cave haze',
-    defaultSettings: { speed: 25, intensity: 60, density: 60, color: '#e2e8f0', secondaryColor: '#f1f5f9', glowIntensity: 30, scale: 1 },
-  },
-  {
-    id: 'subterranean-crystal-sparkles',
-    name: 'Crystal Sparkles',
-    pack: 'subterranean',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Twinkling crystal glints',
-    defaultSettings: { speed: 45, intensity: 80, density: 45, color: '#bfdbfe', secondaryColor: '#ffffff', glowIntensity: 80, scale: 1 },
-  },
-  {
     id: 'subterranean-crystal-pulse',
     name: 'Crystal Pulse',
     pack: 'subterranean',
@@ -1356,15 +1016,6 @@ export const effectsLibrary: EffectDefinition[] = [
     defaultSettings: { speed: 65, intensity: 80, density: 55, color: '#1e293b', secondaryColor: '#475569', glowIntensity: 10, scale: 1 },
   },
   {
-    id: 'subterranean-dustfall',
-    name: 'Dustfall',
-    pack: 'subterranean',
-    renderMode: 'atmospheric',
-    icon: 'sparkles',
-    description: 'Falling glowing dust motes',
-    defaultSettings: { speed: 35, intensity: 65, density: 55, color: '#fcd34d', secondaryColor: '#fde68a', glowIntensity: 55, scale: 1 },
-  },
-  {
     id: 'subterranean-pebble-collapse',
     name: 'Pebble Collapse',
     pack: 'subterranean',
@@ -1372,24 +1023,6 @@ export const effectsLibrary: EffectDefinition[] = [
     icon: 'mountain',
     description: 'Tumbling falling pebbles',
     defaultSettings: { speed: 55, intensity: 70, density: 50, color: '#a8a29e', secondaryColor: '#d6d3d1', glowIntensity: 15, scale: 1 },
-  },
-  {
-    id: 'subterranean-steam-vent',
-    name: 'Steam Vent',
-    pack: 'subterranean',
-    renderMode: 'localized',
-    icon: 'cloud',
-    description: 'Rising billowing steam',
-    defaultSettings: { speed: 45, intensity: 70, density: 55, color: '#f1f5f9', secondaryColor: '#ffffff', glowIntensity: 30, scale: 1 },
-  },
-  {
-    id: 'subterranean-cave-fireflies',
-    name: 'Cave Fireflies',
-    pack: 'subterranean',
-    renderMode: 'localized',
-    icon: 'sparkle',
-    description: 'Glowing drifting fireflies',
-    defaultSettings: { speed: 45, intensity: 80, density: 40, color: '#fde047', secondaryColor: '#facc15', glowIntensity: 90, scale: 1 },
   },
   {
     id: 'subterranean-arcane-cave-energy',
@@ -1411,141 +1044,6 @@ export const effectsLibrary: EffectDefinition[] = [
   },
 
   // ===== MAGIC EFFECTS PACK - magic-circle sprite sheets (5x5, 25 frames) =====
-  {
-    id: 'magic-golden-arcane',
-    name: 'Golden Arcane Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Rotating golden arcane summoning circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#f59e0b', secondaryColor: '#fcd34d', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-cyan-heptagram',
-    name: 'Cyan Heptagram',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Seven-pointed cyan magic circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#22d3ee', secondaryColor: '#a5f3fc', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-purple-hexagram',
-    name: 'Purple Hexagram',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Six-pointed violet magic circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#a855f7', secondaryColor: '#d8b4fe', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-verdant-summoning',
-    name: 'Verdant Summoning Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Swirling green summoning circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#22c55e', secondaryColor: '#86efac', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-infernal-flame',
-    name: 'Infernal Flame Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'flame',
-    description: 'Burning fiery summoning circle',
-    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#f97316', secondaryColor: '#fca5a5', glowIntensity: 90, scale: 1 },
-  },
-  {
-    id: 'magic-radiant-ward',
-    name: 'Radiant Ward Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Bright holy ward magic circle',
-    defaultSettings: { speed: 40, intensity: 85, density: 50, color: '#f8fafc', secondaryColor: '#e2e8f0', glowIntensity: 90, scale: 1 },
-  },
-  {
-    id: 'magic-magenta-hex',
-    name: 'Magenta Hex Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Sparkling magenta magic circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#d946ef', secondaryColor: '#f0abfc', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-golden-rune',
-    name: 'Golden Rune Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Glowing golden rune-dot circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#fde047', secondaryColor: '#fef08a', glowIntensity: 88, scale: 1 },
-  },
-  {
-    id: 'magic-azure-conjuration',
-    name: 'Azure Conjuration Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Flowing azure conjuration circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#3b82f6', secondaryColor: '#93c5fd', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-violet-enchantment',
-    name: 'Violet Enchantment Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Crackling violet enchantment circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#8b5cf6', secondaryColor: '#c4b5fd', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-emerald-nature',
-    name: 'Emerald Nature Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Light-green nature magic circle',
-    defaultSettings: { speed: 40, intensity: 80, density: 50, color: '#4ade80', secondaryColor: '#bbf7d0', glowIntensity: 82, scale: 1 },
-  },
-  {
-    id: 'magic-spiral-vortex',
-    name: 'Spiral Vortex Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'circle-dot',
-    description: 'Swirling magical spiral vortex',
-    defaultSettings: { speed: 55, intensity: 85, density: 50, color: '#f1f5f9', secondaryColor: '#86efac', glowIntensity: 80, scale: 1 },
-  },
-  {
-    id: 'magic-crimson-pentagram',
-    name: 'Crimson Pentagram',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Ominous red pentagram circle',
-    defaultSettings: { speed: 45, intensity: 88, density: 50, color: '#dc2626', secondaryColor: '#fca5a5', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-amber-alchemy',
-    name: 'Amber Alchemy Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Geometric amber alchemy circle',
-    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#f59e0b', secondaryColor: '#fbbf24', glowIntensity: 85, scale: 1 },
-  },
-  {
-    id: 'magic-frost-sigil',
-    name: 'Frost Sigil Circle',
-    pack: 'magic',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Crystalline icy frost magic circle',
-    defaultSettings: { speed: 40, intensity: 85, density: 50, color: '#38bdf8', secondaryColor: '#bae6fd', glowIntensity: 88, scale: 1 },
-  },
 
   // ===== LIGHT SOURCE EFFECTS PACK - illumination sprite sheets (5x6, 30 frames) =====
   {
@@ -1828,16 +1326,155 @@ export const effectsLibrary: EffectDefinition[] = [
     description: 'Fire Torch sprite animation',
     defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff6600', glowIntensity: 60, scale: 1 },
   },
-  {
-    id: 'new-smoke',
-    name: 'Smoke',
-    pack: 'new',
-    renderMode: 'localized',
-    icon: 'sparkles',
-    description: 'Smoke sprite animation',
-    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#9ca3af', glowIntensity: 60, scale: 1 },
-  },
   // NEW_EFFECT_DEFS
+
+  // ===== PARTICLE EFFECTS PACK (procedural) =====
+  {
+    id: 'particle-rain',
+    name: 'Rain (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Procedural rain — density, direction, speed and color are live',
+    defaultSettings: { speed: 60, intensity: 70, density: 55, color: '#dbeafe', direction: 180, scale: 1 },
+  },
+  {
+    id: 'particle-snow',
+    name: 'Snow (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Procedural snow — drifting flakes with live density, wind and speed',
+    defaultSettings: { speed: 30, intensity: 75, density: 45, color: '#ffffff', direction: 180, scale: 1 },
+  },
+  {
+    id: 'particle-embers',
+    name: 'Embers (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Procedural rising sparks — glowing, flickering, additive',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#ff7a1a', secondaryColor: '#ffcc00', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-fog',
+    name: 'Fog (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Procedural drifting fog — soft volumetric blobs, live drift and density',
+    defaultSettings: { speed: 20, intensity: 60, density: 50, color: '#cbd5e1', direction: 90, scale: 1 },
+  },
+  {
+    id: 'particle-fireflies',
+    name: 'Fireflies (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Procedural fireflies — wandering glow dots that pulse, additive',
+    defaultSettings: { speed: 40, intensity: 85, density: 40, color: '#fde047', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-dust',
+    name: 'Dust Motes (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Procedural floating dust — drifting, twinkling motes',
+    defaultSettings: { speed: 30, intensity: 60, density: 50, color: '#fde68a', scale: 1 },
+  },
+  {
+    id: 'particle-smoke',
+    name: 'Smoke (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Procedural rising smoke — soft plumes that grow and fade',
+    defaultSettings: { speed: 30, intensity: 65, density: 50, color: '#9ca3af', scale: 1 },
+  },
+  {
+    id: 'particle-bubbles',
+    name: 'Bubbles (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'droplets',
+    description: 'Procedural rising bubbles — wobbling rings with highlights',
+    defaultSettings: { speed: 40, intensity: 75, density: 45, color: '#a5f3fc', scale: 1 },
+  },
+  {
+    id: 'particle-sparkles',
+    name: 'Sparkles (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Procedural sparkles — twinkling additive points that flash',
+    defaultSettings: { speed: 50, intensity: 85, density: 50, color: '#bfdbfe', glowIntensity: 90, scale: 1 },
+  },
+
+  // ===== VECTOR EFFECTS PACK (procedural magic circles + portals) =====
+  {
+    id: 'vector-pentagram',
+    name: 'Pentagram Circle',
+    pack: 'vector',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Vector 5-point magic circle — rotating rings, star and runes',
+    defaultSettings: { speed: 35, intensity: 90, density: 50, color: '#c084fc', secondaryColor: '#e9d5ff', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'vector-hexagram',
+    name: 'Hexagram Circle',
+    pack: 'vector',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Vector 6-point magic circle — interlocking triangles and runes',
+    defaultSettings: { speed: 30, intensity: 90, density: 50, color: '#22d3ee', secondaryColor: '#a5f3fc', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'vector-heptagram',
+    name: 'Heptagram Circle',
+    pack: 'vector',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Vector 7-point magic circle — rotating star, rings and runes',
+    defaultSettings: { speed: 32, intensity: 90, density: 50, color: '#60a5fa', secondaryColor: '#bfdbfe', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'vector-arcane-circle',
+    name: 'Arcane Circle',
+    pack: 'vector',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Vector arcane circle — dense rune ring, ticks and concentric rings',
+    defaultSettings: { speed: 28, intensity: 90, density: 50, color: '#fbbf24', secondaryColor: '#fde68a', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'vector-rune-circle',
+    name: 'Rune Circle',
+    pack: 'vector',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Vector rune circle — runes around an inner triad',
+    defaultSettings: { speed: 30, intensity: 90, density: 50, color: '#4ade80', secondaryColor: '#bbf7d0', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'vector-portal',
+    name: 'Arcane Portal',
+    pack: 'vector',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Vector swirling portal — spiral arms, glowing rim and dark core',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#a855f7', secondaryColor: '#d8b4fe', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'vector-fire-portal',
+    name: 'Fire Portal',
+    pack: 'vector',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Vector fiery portal — flickering swirl with hot rim',
+    defaultSettings: { speed: 60, intensity: 90, density: 50, color: '#ff7a1a', secondaryColor: '#ffd166', glowIntensity: 90, scale: 1 },
+  },
 ]
 
 // Helper functions
