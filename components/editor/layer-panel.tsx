@@ -6,7 +6,7 @@ import {
   ChevronUp, ChevronDown,
   Flame, Cloud, Snowflake, Droplets, Waves, Zap, Wind,
   Sparkles, CircleDot, Gem, Sun, Skull, Ghost,
-  Monitor, Lightbulb, Shield, Binary, Atom, Plane, Image, Map
+  Monitor, Lightbulb, Shield, Binary, Atom, Plane, Image, Map, Grid3X3, Hexagon, Maximize2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEditor } from '@/lib/editor-store'
@@ -46,6 +46,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 function getLayerIcon(layer: Layer) {
   if (layer.type === 'map') return Map
   if (layer.type === 'asset') return Image
+  if (layer.type === 'grid') return layer.gridType === 'hex' ? Hexagon : Grid3X3
   if (layer.type === 'effect') {
     const effect = getEffectById(layer.effectId)
     if (effect) return iconMap[effect.icon] || Sparkles
@@ -178,8 +179,21 @@ function LayerRow({
 }
 
 function Inspector({ layer }: { layer: Layer | null }) {
-  const { updateLayer } = useEditor()
-  
+  const { state, updateLayer } = useEditor()
+
+  // One-click "fill the canvas" — sizes the layer to the full canvas (and resets
+  // rotation, since a rotated rect can't cover it). All other props stay manual.
+  const handleExpandToCanvas = () => {
+    if (!layer) return
+    const canvas = state.project?.canvasSize
+    if (!canvas) return
+    updateLayer(layer.id, {
+      position: { x: 0, y: 0 },
+      size: { width: canvas.width, height: canvas.height },
+      rotation: 0,
+    })
+  }
+
   if (!layer) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
@@ -273,7 +287,19 @@ function Inspector({ layer }: { layer: Layer | null }) {
               />
             </div>
           </div>
-          
+
+          {/* Expand to fill the whole canvas in one click */}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full h-7 gap-1.5 text-xs"
+            onClick={handleExpandToCanvas}
+            title="Resize this layer to fill the entire canvas"
+          >
+            <Maximize2 className="w-3 h-3" />
+            Expand to Fill Canvas
+          </Button>
+
           {/* Rotation */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">

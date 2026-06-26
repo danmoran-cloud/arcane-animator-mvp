@@ -33,15 +33,12 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
   'lightsource-hanging-lantern': { url: '/effects/light-source/hanging-lantern.png', cols: 5, rows: 4, frames: 20 },
   'lightsource-carriage-lantern': { url: '/effects/light-source/carriage-lantern.png', cols: 5, rows: 4, frames: 20 },
   'lightsource-campfire': { url: '/effects/light-source/campfire.png', cols: 5, rows: 5, frames: 25 },
-  'lightsource-sparkler-burst': { url: '/effects/light-source/sparkler-burst.png', cols: 5, rows: 5, frames: 25 },
   'lightsource-candle': { url: '/effects/light-source/candle.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-glowing-orb': { url: '/effects/light-source/glowing-orb.png', cols: 5, rows: 5, frames: 25 },
   'lightsource-fire-brazier': { url: '/effects/light-source/fire-brazier.png', cols: 5, rows: 4, frames: 20 },
   'lightsource-rune-light-circle': { url: '/effects/light-source/rune-light-circle.png', cols: 4, rows: 4, frames: 16 },
   'lightsource-pendant-light': { url: '/effects/light-source/pendant-light.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-radiant-starburst': { url: '/effects/light-source/radiant-starburst.png', cols: 5, rows: 5, frames: 25 },
-  'lightsource-soft-star-glow': { url: '/effects/light-source/soft-star-glow.png', cols: 5, rows: 5, frames: 25 },
-  'lightsource-sparkle-starburst': { url: '/effects/light-source/sparkle-starburst.png', cols: 5, rows: 5, frames: 25 },
+  // glowing-orb, sparkler-burst, radiant-starburst, soft-star-glow, sparkle-starburst
+  // are now procedural particle systems (see lib/effects/particle-renderer.ts).
 
   // ===== Light Source Revised Effects (640x768, 128px cells = uniform 5x6) =====
   'lsr-torch': { url: '/effects/light-source-revised/torch.png', cols: 5, rows: 6, frames: 30 },

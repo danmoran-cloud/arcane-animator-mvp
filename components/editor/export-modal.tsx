@@ -46,10 +46,10 @@ import {
 } from '@/lib/export-types'
 import { calculateExportCost } from '@/lib/tokens'
 import { SPRITE_SHEETS } from '@/lib/sprite-sheets'
-import { getRenderer, loadImage, prepareEffect } from '@/lib/effects'
+import { getRenderer, loadImage, prepareEffect, clipToExclusions } from '@/lib/effects'
 import { checkExportAuthorization, recordExport, type ExportAuthResult } from '@/app/actions/exports'
 import { ShareSection } from './share-section'
-import type { Project, Layer, ExpandedEffectLayer } from '@/lib/types'
+import type { Project, Layer, ExpandedEffectLayer, GridLayer } from '@/lib/types'
 import Link from 'next/link'
 
 interface ExportModalProps {
@@ -698,11 +698,66 @@ async function renderFrame(
     } else if (layer.type === 'effect') {
       // Draw effect layer with animation
       renderEffect(ctx, layer as ExpandedEffectLayer, time, imageCache)
+    } else if (layer.type === 'grid') {
+      drawGridLayer(ctx, layer as GridLayer)
     }
 
     ctx.restore()
   }
 
+  ctx.restore()
+}
+
+// Draw a grid layer onto the export canvas, matching the editor's GridOverlay
+// geometry (square lines or pointy-top hexes). Layer opacity is already applied
+// via ctx.globalAlpha by the caller.
+function drawGridLayer(ctx: CanvasRenderingContext2D, layer: GridLayer) {
+  const { gridSize } = layer
+  const ox = layer.position.x
+  const oy = layer.position.y
+  const W = layer.size.width
+  const H = layer.size.height
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(ox, oy, W, H)
+  ctx.clip()
+  ctx.strokeStyle = layer.color || 'rgba(214, 188, 250, 0.4)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+
+  if (layer.gridType === 'hex') {
+    const hexSize = gridSize / 2
+    const hexWidth = Math.sqrt(3) * hexSize
+    const hexHeight = 2 * hexSize
+    const vertSpacing = hexHeight * 0.75
+    const cols = Math.ceil(W / hexWidth) + 2
+    const rows = Math.ceil(H / vertSpacing) + 2
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const cx = ox + col * hexWidth + (row % 2 === 1 ? hexWidth / 2 : 0)
+        const cy = oy + row * vertSpacing
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i - Math.PI / 2
+          const x = cx + hexSize * Math.cos(angle)
+          const y = cy + hexSize * Math.sin(angle)
+          if (i === 0) ctx.moveTo(x, y)
+          else ctx.lineTo(x, y)
+        }
+        ctx.closePath()
+      }
+    }
+  } else {
+    for (let x = 0; x <= W; x += gridSize) {
+      ctx.moveTo(ox + x, oy)
+      ctx.lineTo(ox + x, oy + H)
+    }
+    for (let y = 0; y <= H; y += gridSize) {
+      ctx.moveTo(ox, oy + y)
+      ctx.lineTo(ox + W, oy + y)
+    }
+  }
+  ctx.stroke()
   ctx.restore()
 }
 
@@ -728,6 +783,8 @@ function renderEffect(
   const fastPulse = 0.5 + 0.5 * Math.sin(normalizedTime * Math.PI * 4)
 
   ctx.save()
+  // Punch out the layer's exclusion zones so the effect skips them (matches preview).
+  clipToExclusions(ctx, layer.exclusions, { x: position.x, y: position.y, width: size.width, height: size.height })
 
   // Effects with a registry renderer (the shared sprite-sheet packs today;
   // particle/vector backends later) draw through the exact same code path as the

@@ -35,17 +35,36 @@ export interface AssetLayer extends BaseLayer {
   src: string
 }
 
+// A no-effect region (freeform polygon) within an effect layer. Points are
+// normalized 0..1 relative to the layer's bounds, so they survive resize and map
+// the same way in the editor preview and the exporter.
+export interface ExclusionZone {
+  points: Position[]
+}
+
 // Effect layer (animated)
 export interface ExpandedEffectLayer extends BaseLayer {
   type: 'effect'
   effectId: string
   category: EffectPack
   settings: Partial<EffectSettings>
+  // Regions the effect must NOT render in (e.g. a house on the map).
+  exclusions?: ExclusionZone[]
 }
 
-export type Layer = MapLayer | AssetLayer | ExpandedEffectLayer
-
 export type GridType = 'square' | 'hex'
+
+// Grid layer (square or hex overlay). Covers the whole canvas and renders like any
+// other layer, so it can be reordered, hidden, and have its opacity adjusted. By
+// default it's inserted just above the base map and below effect/asset layers.
+export interface GridLayer extends BaseLayer {
+  type: 'grid'
+  gridType: GridType
+  gridSize: number
+  color?: string
+}
+
+export type Layer = MapLayer | AssetLayer | ExpandedEffectLayer | GridLayer
 
 export interface Project {
   id: string
@@ -59,6 +78,15 @@ export interface Project {
   canvasSize: Size
 }
 
+// Undo/redo history. Holds immutable snapshots of the project before each
+// undoable change. `lastKey` coalesces a continuous gesture (e.g. a drag = many
+// MOVE_LAYER actions) into a single undo step.
+export interface HistoryState {
+  past: Project[]
+  future: Project[]
+  lastKey: string | null
+}
+
 export interface EditorState {
   project: Project | null
   selectedLayerId: string | null
@@ -68,6 +96,7 @@ export interface EditorState {
   isResizing: boolean
   /** Size of the visible canvas viewport in screen pixels (for centering new layers) */
   viewportSize: { width: number; height: number }
+  history: HistoryState
 }
 
 // Re-exports for backwards compatibility

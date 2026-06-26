@@ -128,7 +128,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
     lightsource: false,
     'lightsource-revised': false,
     new: false,
-    particles: true,
+    particles: false,
     vector: false,
   })
   

@@ -10,6 +10,7 @@ interface PremiumEffectRendererProps {
   settings?: Partial<EffectSettings>
   width: number
   height: number
+  exclusions?: import('@/lib/types').ExclusionZone[]
 }
 
 // Rain effect - TOP DOWN: ripples/splashes on ground surface
@@ -763,7 +764,7 @@ function IceCrystalsEffect({ settings }: { settings: EffectSettings; width: numb
 }
 
 // Main renderer component
-export function PremiumEffectRenderer({ effectId, settings, width, height }: PremiumEffectRendererProps) {
+export function PremiumEffectRenderer({ effectId, settings, width, height, exclusions }: PremiumEffectRendererProps) {
   const effectDef = getEffectById(effectId)
   const mergedSettings: EffectSettings = {
     ...effectDef?.defaultSettings,
@@ -775,7 +776,7 @@ export function PremiumEffectRenderer({ effectId, settings, width, height }: Pre
   // and draws on a shared canvas — the same render path the exporter uses. New
   // backends (particle, vector) route here automatically as they register.
   if (getRenderer(effectId)) {
-    return <EffectCanvas effectId={effectId} settings={mergedSettings} width={width} height={height} />
+    return <EffectCanvas effectId={effectId} settings={mergedSettings} width={width} height={height} exclusions={exclusions} />
   }
 
   const effectComponents: Record<string, React.FC<{ settings: EffectSettings; width: number; height: number }>> = {

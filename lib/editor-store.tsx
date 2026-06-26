@@ -2,14 +2,17 @@
 
 import { createContext, useContext, useReducer, useEffect, type ReactNode } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import type { 
-  Project, 
-  Layer, 
-  EditorState, 
+import type {
+  Project,
+  Layer,
+  EditorState,
   Position,
+  Size,
   ExpandedEffectLayer,
+  GridLayer,
   EffectSettings,
-  GridType
+  GridType,
+  HistoryState
 } from './types'
 import type { EffectDefinition } from './effects-library'
 import { createClient } from './supabase/client'
@@ -40,6 +43,8 @@ type EditorAction =
   | { type: 'SET_DRAGGING'; isDragging: boolean }
   | { type: 'SET_RESIZING'; isResizing: boolean }
   | { type: 'SET_VIEWPORT_SIZE'; size: { width: number; height: number } }
+  | { type: 'UNDO' }
+  | { type: 'REDO' }
 
 const initialState: EditorState = {
   project: null,
@@ -49,6 +54,7 @@ const initialState: EditorState = {
   isDragging: false,
   isResizing: false,
   viewportSize: { width: 1280, height: 720 },
+  history: { past: [], future: [], lastKey: null },
 }
 
 function createNewProject(name: string): Project {
@@ -65,7 +71,43 @@ function createNewProject(name: string): Project {
   }
 }
 
-function editorReducer(state: EditorState, action: EditorAction): EditorState {
+// Reassign contiguous zIndex values from a back-to-front ordering.
+function reindexLayers(layers: Layer[]): Layer[] {
+  return [...layers].sort((a, b) => a.zIndex - b.zIndex).map((l, i) => ({ ...l, zIndex: i }))
+}
+
+function makeGridLayer(gridType: GridType, gridSize: number, canvasSize: Size): GridLayer {
+  return {
+    id: uuidv4(),
+    name: gridType === 'hex' ? 'Hex Grid' : 'Square Grid',
+    type: 'grid',
+    gridType,
+    gridSize,
+    position: { x: 0, y: 0 },
+    size: { ...canvasSize },
+    rotation: 0,
+    opacity: 1,
+    visible: true,
+    locked: false,
+    zIndex: 0,
+  }
+}
+
+// Insert a grid layer just above the base map layers (and below effects/assets),
+// replacing any existing grid layer, then reindex.
+function insertGridLayer(layers: Layer[], grid: GridLayer): Layer[] {
+  const base = layers.filter(l => l.type !== 'grid').sort((a, b) => a.zIndex - b.zIndex)
+  let insertAt = 0
+  base.forEach((l, i) => { if (l.type === 'map') insertAt = i + 1 })
+  const next = [...base.slice(0, insertAt), grid, ...base.slice(insertAt)]
+  return next.map((l, i) => ({ ...l, zIndex: i }))
+}
+
+function removeGridLayer(layers: Layer[]): Layer[] {
+  return reindexLayers(layers.filter(l => l.type !== 'grid'))
+}
+
+function baseReducer(state: EditorState, action: EditorAction): EditorState {
   switch (action.type) {
     case 'CREATE_PROJECT':
       return {
@@ -130,8 +172,8 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         ...state,
         project: {
           ...state.project,
-          layers: state.project.layers.map(l =>
-            l.id === action.layerId ? { ...l, ...action.updates } : l
+          layers: state.project.layers.map((l): Layer =>
+            l.id === action.layerId ? ({ ...l, ...action.updates } as Layer) : l
           ),
           updatedAt: new Date().toISOString(),
         },
@@ -148,7 +190,7 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         ...state,
         project: {
           ...state.project,
-          layers: state.project.layers.map(l => {
+          layers: state.project.layers.map((l): Layer => {
             // If moving a locked layer, move all other locked layers too
             if (movedLayer.locked && l.locked) {
               return {
@@ -245,28 +287,60 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         viewportSize: action.size,
       }
     
-    case 'TOGGLE_GRID':
+    case 'TOGGLE_GRID': {
       if (!state.project) return state
-      return {
-        ...state,
-        project: {
-          ...state.project,
-          gridEnabled: !state.project.gridEnabled,
-          updatedAt: new Date().toISOString(),
-        },
+      const existing = state.project.layers.find(l => l.type === 'grid')
+      let layers: Layer[]
+      let selectedLayerId = state.selectedLayerId
+      if (existing) {
+        layers = removeGridLayer(state.project.layers)
+        if (selectedLayerId === existing.id) selectedLayerId = null
+      } else {
+        const grid = makeGridLayer(state.project.gridType || 'square', state.project.gridSize || 50, state.project.canvasSize)
+        layers = insertGridLayer(state.project.layers, grid)
+        selectedLayerId = grid.id
       }
-    
-    case 'SET_GRID_TYPE':
+      return {
+        ...state,
+        project: { ...state.project, layers, gridEnabled: !existing, updatedAt: new Date().toISOString() },
+        selectedLayerId,
+      }
+    }
+
+    case 'SET_GRID_TYPE': {
       if (!state.project) return state
+      const existing = state.project.layers.find(l => l.type === 'grid') as GridLayer | undefined
+      let layers: Layer[]
+      let selectedLayerId = state.selectedLayerId
+      if (existing && existing.gridType === action.gridType) {
+        // Clicking the already-active grid type toggles the grid off.
+        layers = removeGridLayer(state.project.layers)
+        if (selectedLayerId === existing.id) selectedLayerId = null
+      } else if (existing) {
+        // Switch the existing grid layer's type in place.
+        layers = state.project.layers.map(l =>
+          l.type === 'grid'
+            ? { ...l, gridType: action.gridType, name: action.gridType === 'hex' ? 'Hex Grid' : 'Square Grid' }
+            : l,
+        )
+      } else {
+        const grid = makeGridLayer(action.gridType, state.project.gridSize || 50, state.project.canvasSize)
+        layers = insertGridLayer(state.project.layers, grid)
+        selectedLayerId = grid.id
+      }
       return {
         ...state,
         project: {
           ...state.project,
+          layers,
           gridType: action.gridType,
+          gridEnabled: layers.some(l => l.type === 'grid'),
           updatedAt: new Date().toISOString(),
         },
+        selectedLayerId,
       }
-    
+    }
+
     case 'SET_GRID_SIZE':
       if (!state.project) return state
       return {
@@ -274,6 +348,9 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
         project: {
           ...state.project,
           gridSize: action.size,
+          layers: state.project.layers.map(l =>
+            l.type === 'grid' ? { ...l, gridSize: action.size } : l,
+          ),
           updatedAt: new Date().toISOString(),
         },
       }
@@ -283,9 +360,109 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
     
     case 'SET_RESIZING':
       return { ...state, isResizing: action.isResizing }
-    
+
     default:
       return state
+  }
+}
+
+// ===== Undo / redo history wrapper =====
+//
+// We snapshot the (immutable) `project` before each undoable mutation. Continuous
+// gestures — a drag fires many MOVE_LAYER actions, a slider many UPDATE_LAYERs —
+// are coalesced into ONE undo step via a `lastKey`: consecutive actions sharing a
+// key don't create a new snapshot. Gesture boundaries (SET_DRAGGING/SET_RESIZING,
+// fired on mouse down/up) reset the key so a fresh gesture starts a new step.
+
+const HISTORY_LIMIT = 60
+
+// Mutations that change the project and should be undoable.
+const UNDOABLE = new Set<EditorAction['type']>([
+  'ADD_LAYER', 'REMOVE_LAYER', 'UPDATE_LAYER', 'MOVE_LAYER', 'DUPLICATE_LAYER',
+  'MOVE_LAYER_ORDER', 'TOGGLE_GRID', 'SET_GRID_TYPE', 'SET_GRID_SIZE',
+])
+
+// Coalesce key for an action. Consecutive actions with the same non-null key fold
+// into a single undo step; null means "always a discrete step".
+function coalesceKeyFor(action: EditorAction): string | null {
+  switch (action.type) {
+    case 'MOVE_LAYER':
+      return `m:${action.layerId}`
+    case 'UPDATE_LAYER':
+      return `u:${action.layerId}:${Object.keys(action.updates).sort().join(',')}`
+    default:
+      return null
+  }
+}
+
+function editorReducer(state: EditorState, action: EditorAction): EditorState {
+  if (action.type === 'UNDO') {
+    const { past, future } = state.history
+    if (past.length === 0 || !state.project) return state
+    const previous = past[past.length - 1]
+    const selectedLayerId = previous.layers.some(l => l.id === state.selectedLayerId)
+      ? state.selectedLayerId
+      : null
+    return {
+      ...state,
+      project: previous,
+      selectedLayerId,
+      history: {
+        past: past.slice(0, -1),
+        future: [state.project, ...future].slice(0, HISTORY_LIMIT),
+        lastKey: null,
+      },
+    }
+  }
+
+  if (action.type === 'REDO') {
+    const { past, future } = state.history
+    if (future.length === 0 || !state.project) return state
+    const next = future[0]
+    const selectedLayerId = next.layers.some(l => l.id === state.selectedLayerId)
+      ? state.selectedLayerId
+      : null
+    return {
+      ...state,
+      project: next,
+      selectedLayerId,
+      history: {
+        past: [...past, state.project].slice(-HISTORY_LIMIT),
+        future: future.slice(1),
+        lastKey: null,
+      },
+    }
+  }
+
+  const next = baseReducer(state, action)
+
+  // Switching projects clears the timeline — you can't undo across projects.
+  if (action.type === 'CREATE_PROJECT' || action.type === 'LOAD_PROJECT') {
+    return { ...next, history: { past: [], future: [], lastKey: null } }
+  }
+
+  // Gesture boundaries reset coalescing so the next drag/resize is its own step.
+  if (action.type === 'SET_DRAGGING' || action.type === 'SET_RESIZING') {
+    return { ...next, history: { ...state.history, lastKey: null } }
+  }
+
+  // Record history only for undoable mutations that actually changed the project.
+  if (!UNDOABLE.has(action.type) || !state.project || next.project === state.project) {
+    return next
+  }
+
+  const key = coalesceKeyFor(action)
+  if (key !== null && key === state.history.lastKey) {
+    // Same continuous gesture — fold into the existing step.
+    return { ...next, history: { ...state.history, lastKey: key } }
+  }
+  return {
+    ...next,
+    history: {
+      past: [...state.history.past, state.project].slice(-HISTORY_LIMIT),
+      future: [],
+      lastKey: key,
+    },
   }
 }
 
@@ -304,6 +481,10 @@ interface EditorContextType {
   removeLayer: (layerId: string) => void
   duplicateLayer: (layerId: string) => void
   moveLayerOrder: (layerId: string, direction: 'forward' | 'backward') => void
+  undo: () => void
+  redo: () => void
+  canUndo: boolean
+  canRedo: boolean
 }
 
 const EditorContext = createContext<EditorContextType | null>(null)
@@ -487,6 +668,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'MOVE_LAYER_ORDER', layerId, direction })
   }
 
+  const undo = () => dispatch({ type: 'UNDO' })
+  const redo = () => dispatch({ type: 'REDO' })
+
   return (
     <EditorContext.Provider
       value={{
@@ -504,6 +688,10 @@ export function EditorProvider({ children }: { children: ReactNode }) {
         removeLayer,
         duplicateLayer,
         moveLayerOrder,
+        undo,
+        redo,
+        canUndo: state.history.past.length > 0,
+        canRedo: state.history.future.length > 0,
       }}
     >
       {children}

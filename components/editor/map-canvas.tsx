@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { useEditor } from '@/lib/editor-store'
-import type { Layer, Position, ExpandedEffectLayer, MapLayer, AssetLayer } from '@/lib/types'
+import type { Layer, Position, ExpandedEffectLayer, MapLayer, AssetLayer, GridLayer } from '@/lib/types'
 import { PremiumEffectRenderer } from './premium-effects'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -19,7 +19,9 @@ import {
   Sparkles,
   RotateCw,
   Minus,
-  Plus
+  Plus,
+  Undo2,
+  Redo2
 } from 'lucide-react'
 
 // Floating particles component for the empty state
@@ -137,17 +139,15 @@ function TransformHandles({
 }
 
 // Effect layer rendering component
-function EffectLayerRenderer({ 
-  layer, 
+function EffectLayerRenderer({
+  layer,
   isSelected,
-  onSelect,
   onDragStart,
   onResizeStart,
   onRotateStart,
-}: { 
+}: {
   layer: ExpandedEffectLayer
   isSelected: boolean
-  onSelect: () => void
   onDragStart: (e: React.MouseEvent) => void
   onResizeStart: (e: React.MouseEvent, corner: string) => void
   onRotateStart: (e: React.MouseEvent) => void
@@ -170,14 +170,9 @@ function EffectLayerRenderer({
         opacity: layer.opacity,
         zIndex: layer.zIndex,
       }}
-      onClick={(e) => {
-        e.stopPropagation()
-        onSelect()
-      }}
       onMouseDown={(e) => {
         if (e.button === 0) {
           e.stopPropagation()
-          onSelect()
           onDragStart(e)
         }
       }}
@@ -187,6 +182,7 @@ function EffectLayerRenderer({
         settings={layer.settings as Record<string, unknown>}
         width={layer.size.width}
         height={layer.size.height}
+        exclusions={layer.exclusions}
       />
 
       {isSelected && !layer.locked && (
@@ -201,17 +197,15 @@ function EffectLayerRenderer({
 }
 
 // Image layer rendering component
-function ImageLayerRenderer({ 
-  layer, 
+function ImageLayerRenderer({
+  layer,
   isSelected,
-  onSelect,
   onDragStart,
   onResizeStart,
   onRotateStart,
-}: { 
+}: {
   layer: MapLayer | AssetLayer
   isSelected: boolean
-  onSelect: () => void
   onDragStart: (e: React.MouseEvent) => void
   onResizeStart: (e: React.MouseEvent, corner: string) => void
   onRotateStart: (e: React.MouseEvent) => void
@@ -234,14 +228,9 @@ function ImageLayerRenderer({
         opacity: layer.opacity,
         zIndex: layer.zIndex,
       }}
-      onClick={(e) => {
-        e.stopPropagation()
-        onSelect()
-      }}
       onMouseDown={(e) => {
         if (e.button === 0) {
           e.stopPropagation()
-          onSelect()
           onDragStart(e)
         }
       }}
@@ -267,6 +256,18 @@ function ImageLayerRenderer({
           onRotateStart={onRotateStart}
         />
       )}
+    </div>
+  )
+}
+
+// Grid layer renderer — draws the grid at the layer's z position (so it sits above
+// the map but below effects, per its order in the stack), honoring visibility and
+// opacity. pointer-events-none so it never intercepts drags on other layers.
+function GridLayerRenderer({ layer, canvasSize }: { layer: GridLayer; canvasSize: { width: number; height: number } }) {
+  if (!layer.visible) return null
+  return (
+    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: layer.zIndex, opacity: layer.opacity }}>
+      <GridOverlay gridSize={layer.gridSize} gridType={layer.gridType} canvasSize={canvasSize} />
     </div>
   )
 }
@@ -361,7 +362,7 @@ function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gri
 }
 
 export function MapCanvas() {
-  const { state, dispatch, createProject, addMapLayer, selectLayer, updateLayer, moveLayer } = useEditor()
+  const { state, dispatch, createProject, addMapLayer, selectLayer, updateLayer, moveLayer, undo, redo, canUndo, canRedo } = useEditor()
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   
@@ -370,7 +371,11 @@ export function MapCanvas() {
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 })
   
   const [draggedLayerId, setDraggedLayerId] = useState<string | null>(null)
-  const [lastDragPos, setLastDragPos] = useState<Position>({ x: 0, y: 0 })
+  // Live drag state in a ref so the move math reads fresh values regardless of
+  // React render / listener-registration timing. Storing the last pointer pos in
+  // state caused batched mousemove events to all compute their delta from the same
+  // stale origin and accumulate, making the layer race ahead of the cursor.
+  const dragRef = useRef<{ layerId: string; lastX: number; lastY: number } | null>(null)
   
   const [resizing, setResizing] = useState<{ layerId: string; corner: string } | null>(null)
   const [resizeStart, setResizeStart] = useState<Position>({ x: 0, y: 0 })
@@ -380,6 +385,21 @@ export function MapCanvas() {
   const [rotating, setRotating] = useState<string | null>(null)
   const [rotateCenter, setRotateCenter] = useState<Position>({ x: 0, y: 0 })
 
+  // Freeform no-effect zone drawing: the effect layer being drawn for + in-progress
+  // polygon points (in canvas-space; committed points are normalized 0..1 per layer).
+  const [drawingZoneFor, setDrawingZoneFor] = useState<string | null>(null)
+  const [draftPoints, setDraftPoints] = useState<Position[]>([])
+  const drawingZoneForRef = useRef<string | null>(null)
+  drawingZoneForRef.current = drawingZoneFor
+
+  // The currently-selected effect layer (for the no-effect-zone tools).
+  const selectedEffectLayer = state.project?.layers.find(
+    (l) => l.id === state.selectedLayerId && l.type === 'effect',
+  ) as ExpandedEffectLayer | undefined
+
+  // The grid layer (if any) — drives the toolbar's active state + size control.
+  const gridLayer = state.project?.layers.find((l) => l.type === 'grid') as GridLayer | undefined
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -387,7 +407,8 @@ export function MapCanvas() {
         setIsSpaceDown(true)
       }
       if (e.code === 'Delete' || e.code === 'Backspace') {
-        if (state.selectedLayerId && !e.target?.toString().includes('Input')) {
+        // While drawing a zone, Delete/Backspace edits the polygon, not the layer.
+        if (!drawingZoneForRef.current && state.selectedLayerId && !e.target?.toString().includes('Input')) {
           dispatch({ type: 'REMOVE_LAYER', layerId: state.selectedLayerId })
         }
       }
@@ -397,9 +418,17 @@ export function MapCanvas() {
           dispatch({ type: 'DUPLICATE_LAYER', layerId: state.selectedLayerId })
         }
       }
-      if (e.code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
+      // Undo / redo — but not while typing in a field (let it handle its own undo).
+      const tag = (e.target as HTMLElement | null)?.tagName
+      const inField = tag === 'INPUT' || tag === 'TEXTAREA'
+      if (!inField && (e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
         e.preventDefault()
-        // Undo would go here
+        if (e.shiftKey) redo()
+        else undo()
+      }
+      if (!inField && (e.ctrlKey || e.metaKey) && e.code === 'KeyY') {
+        e.preventDefault()
+        redo()
       }
     }
     
@@ -415,7 +444,26 @@ export function MapCanvas() {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
     }
-  }, [state.selectedLayerId, isSpaceDown, dispatch])
+  }, [state.selectedLayerId, isSpaceDown, dispatch, undo, redo])
+
+  // Zone-drawing keys (active only while drawing): Enter/double-click commits,
+  // Esc cancels, Backspace/Delete removes the last placed point.
+  useEffect(() => {
+    if (!drawingZoneFor) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        cancelZone()
+      } else if (e.key === 'Enter') {
+        commitZone()
+      } else if (e.key === 'Backspace' || e.key === 'Delete') {
+        e.preventDefault()
+        setDraftPoints((prev) => prev.slice(0, -1))
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawingZoneFor, draftPoints, selectedEffectLayer])
 
   // Keep the store's viewport size in sync with the canvas container so new
   // effect layers can be placed at the center of what the user is looking at.
@@ -461,6 +509,8 @@ export function MapCanvas() {
 
   // Canvas mouse down - pan with middle click or space+drag
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    // While drawing a zone, the overlay handles clicks; don't deselect/pan.
+    if (drawingZoneForRef.current && e.button === 0 && !isSpaceDown) return
     if (e.button === 1 || (e.button === 0 && isSpaceDown)) {
       e.preventDefault()
       setIsPanning(true)
@@ -470,15 +520,35 @@ export function MapCanvas() {
     }
   }
 
-  // Layer drag start
+  // Layer drag start. `layerId` is the layer whose DOM element captured the press
+  // (the topmost one painted under the cursor). If a *different* layer is already
+  // selected and the press lands within its bounds, drag that selected layer
+  // instead — otherwise a higher overlapping layer hijacks a lower one the user
+  // deliberately selected.
   const handleLayerDragStart = (e: React.MouseEvent, layerId: string) => {
-    const layer = state.project?.layers.find(l => l.id === layerId)
-    if (!layer) return
+    const layers = state.project?.layers
+    if (!layers) return
 
-    setDraggedLayerId(layerId)
-    setLastDragPos({ x: e.clientX, y: e.clientY })
+    let targetId = layerId
+    const selected = layers.find(l => l.id === state.selectedLayerId)
+    if (selected && selected.id !== layerId) {
+      const pt = canvasPointFromEvent(e)
+      if (pt && pointInLayerBounds(pt, selected)) targetId = selected.id
+    }
+
+    if (state.selectedLayerId !== targetId) selectLayer(targetId)
+    dragRef.current = { layerId: targetId, lastX: e.clientX, lastY: e.clientY }
+    setDraggedLayerId(targetId)
     dispatch({ type: 'SET_DRAGGING', isDragging: true })
   }
+
+  // Axis-aligned bounds test in canvas space (rotation ignored — good enough for
+  // deciding which overlapping layer a press should grab).
+  const pointInLayerBounds = (pt: Position, l: Layer) =>
+    pt.x >= l.position.x &&
+    pt.x <= l.position.x + l.size.width &&
+    pt.y >= l.position.y &&
+    pt.y <= l.position.y + l.size.height
 
   // Resize start
   const handleResizeStart = (e: React.MouseEvent, layerId: string, corner: string) => {
@@ -516,13 +586,15 @@ export function MapCanvas() {
           y: e.clientY - panStart.y 
         } 
       })
-    } else if (draggedLayerId) {
-      const deltaX = (e.clientX - lastDragPos.x) / state.zoom
-      const deltaY = (e.clientY - lastDragPos.y) / state.zoom
-      
-      // moveLayer handles linked layers automatically
-      moveLayer(draggedLayerId, deltaX, deltaY)
-      setLastDragPos({ x: e.clientX, y: e.clientY })
+    } else if (dragRef.current) {
+      const drag = dragRef.current
+      const deltaX = (e.clientX - drag.lastX) / state.zoom
+      const deltaY = (e.clientY - drag.lastY) / state.zoom
+      // Advance the origin synchronously so batched mousemoves don't re-apply the
+      // same delta. moveLayer handles linked layers automatically.
+      drag.lastX = e.clientX
+      drag.lastY = e.clientY
+      moveLayer(drag.layerId, deltaX, deltaY)
     } else if (resizing) {
       const deltaX = (e.clientX - resizeStart.x) / state.zoom
       const deltaY = (e.clientY - resizeStart.y) / state.zoom
@@ -572,10 +644,11 @@ export function MapCanvas() {
       
       updateLayer(rotating, { rotation: (degrees + 360) % 360 })
     }
-  }, [isPanning, panStart, draggedLayerId, lastDragPos, resizing, resizeStart, layerStartPos, layerStartSize, rotating, rotateCenter, state.zoom, state.panOffset, dispatch, updateLayer, moveLayer])
+  }, [isPanning, panStart, resizing, resizeStart, layerStartPos, layerStartSize, rotating, rotateCenter, state.zoom, state.panOffset, dispatch, updateLayer, moveLayer])
 
   const handleMouseUp = useCallback(() => {
     setIsPanning(false)
+    dragRef.current = null
     setDraggedLayerId(null)
     setResizing(null)
     setRotating(null)
@@ -598,8 +671,6 @@ export function MapCanvas() {
     dispatch({ type: 'SET_ZOOM', zoom: 1 })
     dispatch({ type: 'SET_PAN_OFFSET', offset: { x: 0, y: 0 } })
   }
-  const handleToggleGrid = () => dispatch({ type: 'TOGGLE_GRID' })
-
   const handleUploadClick = () => fileInputRef.current?.click()
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -647,6 +718,10 @@ export function MapCanvas() {
 
   // Double-click to focus layer
   const handleDoubleClick = (e: React.MouseEvent) => {
+    if (drawingZoneFor) {
+      commitZone()
+      return
+    }
     if (state.selectedLayerId) {
       const layer = state.project?.layers.find(l => l.id === state.selectedLayerId)
       if (layer) {
@@ -669,7 +744,73 @@ export function MapCanvas() {
   const hasLayers = (state.project?.layers.length || 0) > 0
   const canvasSize = state.project?.canvasSize || { width: 1920, height: 1080 }
 
+  // Convert a pointer event to canvas-space coordinates (undo pan + zoom).
+  const canvasPointFromEvent = (e: { clientX: number; clientY: number }): Position | null => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    if (!rect) return null
+    return {
+      x: (e.clientX - rect.left - state.panOffset.x) / state.zoom,
+      y: (e.clientY - rect.top - state.panOffset.y) / state.zoom,
+    }
+  }
+
+  const commitZone = () => {
+    const layer = selectedEffectLayer
+    if (layer && draftPoints.length >= 3) {
+      const norm = draftPoints.map((p) => ({
+        x: (p.x - layer.position.x) / layer.size.width,
+        y: (p.y - layer.position.y) / layer.size.height,
+      }))
+      updateLayer(layer.id, { exclusions: [...(layer.exclusions || []), { points: norm }] })
+    }
+    setDrawingZoneFor(null)
+    setDraftPoints([])
+  }
+
+  const cancelZone = () => {
+    setDrawingZoneFor(null)
+    setDraftPoints([])
+  }
+
+  // Apply the selected effect layer's no-effect zones to every other effect layer.
+  // Zones are remapped through canvas space (source-local → canvas → target-local)
+  // so they cover the same spot on the MAP regardless of each layer's size/position.
+  const copyZonesToAllEffects = () => {
+    const src = selectedEffectLayer
+    if (!src || !(src.exclusions?.length)) return
+    for (const l of state.project?.layers ?? []) {
+      if (l.type !== 'effect' || l.id === src.id) continue
+      const target = l as ExpandedEffectLayer
+      const remapped = src.exclusions.map((z) => ({
+        points: z.points.map((p) => {
+          const cx = src.position.x + p.x * src.size.width
+          const cy = src.position.y + p.y * src.size.height
+          return {
+            x: (cx - target.position.x) / target.size.width,
+            y: (cy - target.position.y) / target.size.height,
+          }
+        }),
+      }))
+      updateLayer(target.id, { exclusions: remapped })
+    }
+  }
+
+  const handleZonePointClick = (e: React.MouseEvent) => {
+    const p = canvasPointFromEvent(e)
+    if (!p) return
+    // Click near the first point (>=3 placed) closes the polygon.
+    if (draftPoints.length >= 3) {
+      const f = draftPoints[0]
+      if (Math.hypot(p.x - f.x, p.y - f.y) * state.zoom < 12) {
+        commitZone()
+        return
+      }
+    }
+    setDraftPoints((prev) => [...prev, p])
+  }
+
   const getCursor = () => {
+    if (drawingZoneFor) return 'crosshair'
     if (isPanning || isSpaceDown) return 'grab'
     if (resizing) return 'grabbing'
     if (rotating) return 'grabbing'
@@ -680,6 +821,18 @@ export function MapCanvas() {
     <div className="flex-1 flex flex-col bg-background overflow-hidden">
       {/* Toolbar */}
       <div className="h-10 border-b border-border bg-card/50 flex items-center px-3 gap-2">
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={undo} disabled={!canUndo} title="Undo (Ctrl+Z)">
+            <Undo2 className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={redo} disabled={!canRedo} title="Redo (Ctrl+Shift+Z)">
+            <Redo2 className="w-4 h-4" />
+          </Button>
+        </div>
+
+        <div className="h-4 w-px bg-border mx-2" />
+
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleZoomOut} disabled={!hasProject}>
             <ZoomOut className="w-4 h-4" />
@@ -697,48 +850,30 @@ export function MapCanvas() {
 
         {/* Grid Controls */}
         <div className="flex items-center gap-1">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={cn("h-7 w-7", state.project?.gridEnabled && state.project?.gridType === 'square' && "bg-muted text-primary")}
-            onClick={() => {
-              if (!state.project?.gridEnabled) {
-                handleToggleGrid()
-                dispatch({ type: 'SET_GRID_TYPE', gridType: 'square' })
-              } else if (state.project?.gridType !== 'square') {
-                dispatch({ type: 'SET_GRID_TYPE', gridType: 'square' })
-              } else {
-                handleToggleGrid()
-              }
-            }}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7", gridLayer?.gridType === 'square' && "bg-muted text-primary")}
+            onClick={() => dispatch({ type: 'SET_GRID_TYPE', gridType: 'square' })}
             disabled={!hasProject}
-            title="Square Grid"
+            title="Square Grid (adds a grid layer above the map)"
           >
             <Grid3X3 className="w-4 h-4" />
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className={cn("h-7 w-7", state.project?.gridEnabled && state.project?.gridType === 'hex' && "bg-muted text-primary")}
-            onClick={() => {
-              if (!state.project?.gridEnabled) {
-                handleToggleGrid()
-                dispatch({ type: 'SET_GRID_TYPE', gridType: 'hex' })
-              } else if (state.project?.gridType !== 'hex') {
-                dispatch({ type: 'SET_GRID_TYPE', gridType: 'hex' })
-              } else {
-                handleToggleGrid()
-              }
-            }}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn("h-7 w-7", gridLayer?.gridType === 'hex' && "bg-muted text-primary")}
+            onClick={() => dispatch({ type: 'SET_GRID_TYPE', gridType: 'hex' })}
             disabled={!hasProject}
-            title="Hex Grid"
+            title="Hex Grid (adds a grid layer above the map)"
           >
             <Hexagon className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Grid Size Controls */}
-        {state.project?.gridEnabled && (
+        {gridLayer && (
           <div className="flex items-center gap-1 ml-1">
             <Button 
               variant="ghost" 
@@ -804,31 +939,66 @@ export function MapCanvas() {
                       key={layer.id}
                       layer={layer as ExpandedEffectLayer}
                       isSelected={state.selectedLayerId === layer.id}
-                      onSelect={() => selectLayer(layer.id)}
                       onDragStart={(e) => handleLayerDragStart(e, layer.id)}
                       onResizeStart={(e, corner) => handleResizeStart(e, layer.id, corner)}
                       onRotateStart={(e) => handleRotateStart(e, layer.id)}
+                    />
+                  ) : layer.type === 'grid' ? (
+                    <GridLayerRenderer
+                      key={layer.id}
+                      layer={layer as GridLayer}
+                      canvasSize={canvasSize}
                     />
                   ) : (
                     <ImageLayerRenderer
                       key={layer.id}
                       layer={layer as MapLayer | AssetLayer}
                       isSelected={state.selectedLayerId === layer.id}
-                      onSelect={() => selectLayer(layer.id)}
                       onDragStart={(e) => handleLayerDragStart(e, layer.id)}
                       onResizeStart={(e, corner) => handleResizeStart(e, layer.id, corner)}
                       onRotateStart={(e) => handleRotateStart(e, layer.id)}
                     />
                   )
                 ))}
-              
-              {/* Grid overlay - rendered on top of all layers */}
-              {state.project?.gridEnabled && (
-                <GridOverlay 
-                  gridSize={state.project.gridSize} 
-                  gridType={state.project.gridType || 'square'} 
-                  canvasSize={canvasSize} 
-                />
+
+              {/* No-effect zones for the selected effect layer (drawn in canvas space) */}
+              {selectedEffectLayer && ((selectedEffectLayer.exclusions?.length || 0) > 0 || drawingZoneFor === selectedEffectLayer.id) && (
+                <svg
+                  className="absolute left-0 top-0"
+                  width={canvasSize.width}
+                  height={canvasSize.height}
+                  style={{
+                    pointerEvents: drawingZoneFor === selectedEffectLayer.id ? 'auto' : 'none',
+                    zIndex: 10000,
+                    cursor: drawingZoneFor === selectedEffectLayer.id ? 'crosshair' : 'default',
+                  }}
+                  onMouseDown={(e) => { if (drawingZoneFor) e.stopPropagation() }}
+                  onClick={(e) => { if (drawingZoneFor === selectedEffectLayer.id) handleZonePointClick(e) }}
+                >
+                  {(selectedEffectLayer.exclusions || []).map((z, zi) => (
+                    <polygon
+                      key={zi}
+                      points={z.points.map((p) => `${selectedEffectLayer.position.x + p.x * selectedEffectLayer.size.width},${selectedEffectLayer.position.y + p.y * selectedEffectLayer.size.height}`).join(' ')}
+                      fill="rgba(248,113,113,0.12)"
+                      stroke="rgba(248,113,113,0.9)"
+                      strokeWidth={2 / state.zoom}
+                      strokeDasharray={`${6 / state.zoom} ${4 / state.zoom}`}
+                    />
+                  ))}
+                  {drawingZoneFor === selectedEffectLayer.id && draftPoints.length > 0 && (
+                    <>
+                      <polyline
+                        points={draftPoints.map((p) => `${p.x},${p.y}`).join(' ')}
+                        fill="rgba(96,165,250,0.10)"
+                        stroke="rgba(96,165,250,0.95)"
+                        strokeWidth={2 / state.zoom}
+                      />
+                      {draftPoints.map((p, i) => (
+                        <circle key={i} cx={p.x} cy={p.y} r={(i === 0 ? 5 : 3.5) / state.zoom} fill={i === 0 ? '#3b82f6' : '#ffffff'} stroke="#3b82f6" strokeWidth={1.5 / state.zoom} />
+                      ))}
+                    </>
+                  )}
+                </svg>
               )}
             </div>
           ) : (
@@ -847,6 +1017,62 @@ export function MapCanvas() {
             >
               Create a Project
             </button>
+          </div>
+        )}
+
+        {/* No-effect zone toolbar (shown when an effect layer is selected) */}
+        {selectedEffectLayer && (
+          <div
+            className="absolute top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-md border border-border bg-card/95 px-2 py-1.5 shadow-lg backdrop-blur"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {drawingZoneFor === selectedEffectLayer.id ? (
+              <>
+                <span className="text-xs text-muted-foreground">Click to add points · double-click / Enter to finish · Esc to cancel</span>
+                <button
+                  type="button"
+                  onClick={commitZone}
+                  disabled={draftPoints.length < 3}
+                  className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:opacity-40"
+                >
+                  Finish
+                </button>
+                <button type="button" onClick={cancelZone} className="rounded border border-border px-2 py-1 text-xs">
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => { setDrawingZoneFor(selectedEffectLayer.id); setDraftPoints([]) }}
+                  className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground"
+                >
+                  Draw No-Effect Zone
+                </button>
+                {(selectedEffectLayer.exclusions?.length || 0) > 0 && (
+                  <>
+                    {(state.project?.layers.filter((l) => l.type === 'effect').length || 0) > 1 && (
+                      <button
+                        type="button"
+                        onClick={copyZonesToAllEffects}
+                        className="rounded border border-border px-2 py-1 text-xs"
+                        title="Apply these no-effect zones to every other effect layer"
+                      >
+                        Copy to all effects
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => updateLayer(selectedEffectLayer.id, { exclusions: [] })}
+                      className="rounded border border-border px-2 py-1 text-xs"
+                    >
+                      Clear zones ({selectedEffectLayer.exclusions!.length})
+                    </button>
+                  </>
+                )}
+              </>
+            )}
           </div>
         )}
 

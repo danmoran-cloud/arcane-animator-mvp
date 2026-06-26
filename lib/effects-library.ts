@@ -46,6 +46,7 @@ export type EffectId =
   // PARTICLE EFFECTS PACK (procedural, GPU-ready) — Phase 3
   | 'particle-rain' | 'particle-snow' | 'particle-embers' | 'particle-fog' | 'particle-fireflies'
   | 'particle-dust' | 'particle-smoke' | 'particle-bubbles' | 'particle-sparkles'
+  | 'particle-rain-top' | 'particle-snow-top' | 'particle-leaves-top' | 'particle-embers-top'
   // VECTOR EFFECTS PACK (procedural magic circles + portals) — Phase 4
   | 'vector-pentagram' | 'vector-hexagram' | 'vector-heptagram' | 'vector-arcane-circle' | 'vector-rune-circle'
   | 'vector-portal' | 'vector-fire-portal'
@@ -143,10 +144,10 @@ export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; colo
     description: 'Revised torches, lanterns, flames, and glowing light sprites'
   },
   new: {
-    name: 'New Effects',
+    name: 'Sprite Effects',
     icon: 'plus',
     color: '#6366f1',
-    description: 'Newly imported sprite sheet effects'
+    description: 'Sprite-sheet portals and torch effects'
   },
   particles: {
     name: 'Particle Effects',
@@ -1337,6 +1338,42 @@ export const effectsLibrary: EffectDefinition[] = [
     icon: 'cloud-rain',
     description: 'Procedural rain — density, direction, speed and color are live',
     defaultSettings: { speed: 60, intensity: 70, density: 55, color: '#dbeafe', direction: 180, scale: 1 },
+  },
+  {
+    id: 'particle-rain-top',
+    name: 'Rain — Top-Down (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Aerial rain seen from above — drops land as expanding ripples',
+    defaultSettings: { speed: 60, intensity: 75, density: 55, color: '#bfdbfe', scale: 1 },
+  },
+  {
+    id: 'particle-snow-top',
+    name: 'Snow — Top-Down (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Aerial snow seen from above — flakes drift across the map on the wind',
+    defaultSettings: { speed: 30, intensity: 75, density: 50, color: '#ffffff', direction: 180, scale: 1 },
+  },
+  {
+    id: 'particle-leaves-top',
+    name: 'Leaves — Top-Down (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'leaf',
+    description: 'Aerial autumn leaves blowing across the ground, tumbling as they go',
+    defaultSettings: { speed: 40, intensity: 80, density: 45, color: '#c2410c', direction: 180, scale: 1 },
+  },
+  {
+    id: 'particle-embers-top',
+    name: 'Embers — Top-Down (Particles)',
+    pack: 'particles',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Aerial embers scattered on the wind — flickering sparks over the ground',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#ff7a1a', direction: 180, glowIntensity: 90, scale: 1 },
   },
   {
     id: 'particle-snow',

@@ -2,13 +2,15 @@
 
 import { useEffect, useRef } from 'react'
 import type { EffectSettings } from '@/lib/effects-library'
-import { getRenderer, getEffectAssets, loadAssets, prepareEffect, subscribeFrame, getQuality } from '@/lib/effects'
+import type { ExclusionZone } from '@/lib/types'
+import { getRenderer, getEffectAssets, loadAssets, prepareEffect, subscribeFrame, getQuality, clipToExclusions } from '@/lib/effects'
 
 interface EffectCanvasProps {
   effectId: string
   settings: EffectSettings
   width: number
   height: number
+  exclusions?: ExclusionZone[]
 }
 
 // Renders any registry effect via the shared draw() contract, driven by the
@@ -16,10 +18,12 @@ interface EffectCanvasProps {
 // loop — so N effect layers cost one rAF tick, all on one synced timeline, with
 // adaptive quality under load. Live setting changes are read from a ref so slider
 // edits apply without restarting the animation.
-export function EffectCanvas({ effectId, settings, width, height }: EffectCanvasProps) {
+export function EffectCanvas({ effectId, settings, width, height, exclusions }: EffectCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const settingsRef = useRef(settings)
   settingsRef.current = settings
+  const exclusionsRef = useRef(exclusions)
+  exclusionsRef.current = exclusions
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -40,6 +44,8 @@ export function EffectCanvas({ effectId, settings, width, height }: EffectCanvas
     const drawFrame = (timeMs: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
       ctx.clearRect(0, 0, width, height)
+      ctx.save()
+      clipToExclusions(ctx, exclusionsRef.current, { x: 0, y: 0, width, height })
       renderer.draw(effectId, {
         ctx,
         timeMs,
@@ -48,6 +54,7 @@ export function EffectCanvas({ effectId, settings, width, height }: EffectCanvas
         settings: settingsRef.current,
         quality: getQuality(),
       })
+      ctx.restore()
     }
 
     Promise.all([prepareEffect(effectId), loadAssets(getEffectAssets(effectId))]).then(() => {

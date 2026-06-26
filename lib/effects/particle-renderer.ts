@@ -24,6 +24,17 @@ function hash(n: number): number {
 function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t
 }
+// Shared "view from the sky" perspective for the top-down effects. A particle has a
+// ground target (gx,gy — absolute px within the box) and a height z in [0,1] (1 = high
+// up near the overhead camera, 0 = resting on the map). Particles higher up are pushed
+// farther from the frame centre and render larger — radial parallax toward the
+// vanishing point directly below the camera — so the eye reads vertical motion: things
+// falling toward, or rising away from, the ground below you.
+const SKY_PARALLAX = 0.9
+function skyProject(cx: number, cy: number, gx: number, gy: number, z: number) {
+  const m = 1 + z * SKY_PARALLAX
+  return { x: cx + (gx - cx) * m, y: cy + (gy - cy) * m, depth: 0.4 + z }
+}
 // Particle count from the density slider, scaled by the preview quality factor
 // (1 in export) so heavy scenes shed particles under load instead of stalling.
 function countFrom(settings: Settings, min: number, max: number, quality: number): number {
@@ -380,6 +391,428 @@ const sparklesSystem: ParticleSystem = {
   },
 }
 
+// ── Top-down rain: drops falling toward the map, seen from the sky ─────────────
+// Each drop falls from high (z=1) to the ground (z=0). skyProject() streaks it
+// inward toward the vanishing point and shrinks it as it drops, so you read real
+// vertical motion from above; it then bursts into a small impact ripple where it
+// lands. See skyProject() for the shared perspective model.
+const rainTopSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 30, 300, quality)
+    const color = settings.color || '#bfdbfe'
+    const alpha = intensityAlpha(settings)
+    const rate = lerp(0.5, 1.8, (settings.speed ?? 60) / 100)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2
+    const cy = by + H / 2
+    // Splash ripple radius kept small (~20% of the original) so impacts read as
+    // tight pinpricks rather than large rings.
+    const maxRipple = Math.min(W, H) * 0.01 + 1.2
+    const FALL = 0.78 // fraction of the cycle spent falling; the rest is the splash
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.strokeStyle = color
+    ctx.fillStyle = color
+    ctx.lineCap = 'round'
+
+    for (let i = 0; i < count; i++) {
+      const rVar = hash(i * 7.3 + 2.2)
+      const rPhase = hash(i * 5.1 + 0.7)
+      const gx = bx + hash(i * 1.7 + 0.3) * W
+      const gy = by + hash(i * 3.9 + 1.1) * H
+      const prog = (rPhase + tSec * rate * lerp(0.7, 1.3, rVar)) % 1
+
+      if (prog < FALL) {
+        // Falling: z accelerates toward the ground (1 - u² ≈ gravity). Radial
+        // parallax + shrink make the drop read as plunging toward the map below.
+        const u = prog / FALL
+        const z = 1 - u * u
+        const here = skyProject(cx, cy, gx, gy, z)
+        const tail = skyProject(cx, cy, gx, gy, Math.min(1, z + 0.07 + 0.06 * rVar))
+        const appear = Math.min(1, u * 8)
+        ctx.lineWidth = lerp(0.7, 1.7, rVar) * here.depth
+        ctx.globalAlpha = opacity * alpha * appear * (0.45 + 0.55 * z)
+        ctx.beginPath()
+        ctx.moveTo(here.x, here.y)
+        ctx.lineTo(tail.x, tail.y)
+        ctx.stroke()
+        // bright head
+        ctx.globalAlpha = opacity * alpha * appear
+        ctx.beginPath()
+        ctx.arc(here.x, here.y, lerp(0.5, 1.4, rVar) * here.depth, 0, Math.PI * 2)
+        ctx.fill()
+      } else {
+        // Impact ripple at the landing point.
+        const t = (prog - FALL) / (1 - FALL)
+        const r = t * maxRipple + 0.3
+        const fade = 1 - t
+        ctx.lineWidth = 1.1
+        ctx.globalAlpha = opacity * alpha * fade * 0.9
+        ctx.beginPath()
+        ctx.arc(gx, gy, r, 0, Math.PI * 2)
+        ctx.stroke()
+        if (t > 0.35) {
+          ctx.globalAlpha = opacity * alpha * fade * 0.4
+          ctx.beginPath()
+          ctx.arc(gx, gy, r * 0.55, 0, Math.PI * 2)
+          ctx.stroke()
+        }
+      }
+    }
+    ctx.restore()
+  },
+}
+
+// ── Top-down snow: flakes settling toward the map, seen from the sky ───────────
+// Same overhead perspective as the rain: each flake falls from z=1 to z=0, pushed
+// inward + shrinking via skyProject(), with a gentle lateral sway and a soft fade
+// in/out at the top and bottom of the fall so it loops without popping.
+const snowTopSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 30, 320, quality)
+    const color = settings.color || '#ffffff'
+    const alpha = intensityAlpha(settings)
+    const rate = lerp(0.05, 0.22, (settings.speed ?? 30) / 100)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2
+    const cy = by + H / 2
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.fillStyle = color
+
+    for (let i = 0; i < count; i++) {
+      const rVar = hash(i * 13.7 + 5.3)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const prog = (rPhase + tSec * rate * lerp(0.6, 1.4, rVar)) % 1
+      const z = 1 - prog
+      const sway = Math.sin(tSec * (0.5 + rVar) + rPhase * 6.28) * lerp(4, 16, rVar)
+      const gx = bx + hash(i) * W + sway
+      const gy = by + hash(i * 3.9 + 1.1) * H
+      const p = skyProject(cx, cy, gx, gy, z)
+      const size = lerp(0.8, 3.2, hash(i * 3.1 + 9.4)) * p.depth
+      const edge = Math.min(1, prog * 6) * Math.min(1, (1 - prog) * 6)
+      const twinkle = 0.7 + 0.3 * Math.sin(tSec * 1.5 + rPhase * 6.28)
+      ctx.globalAlpha = opacity * alpha * lerp(0.45, 1, rVar) * edge * twinkle
+      ctx.beginPath()
+      ctx.arc(p.x, p.y, size, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    ctx.restore()
+  },
+}
+
+// ── Top-down leaves: autumn leaves spiralling down to the ground, seen from above ─
+// Leaves fall from z=1 to z=0 (skyProject inward + shrink) while spinning and
+// flipping edge-on (the vertical squash). Per-leaf autumn tints keep the litter
+// from reading as one flat colour; a soft fade in/out hides the loop seam.
+const leavesTopSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 14, 140, quality)
+    const baseColor = settings.color || '#c2410c'
+    const alpha = intensityAlpha(settings)
+    const rate = lerp(0.04, 0.18, (settings.speed ?? 40) / 100)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2
+    const cy = by + H / 2
+    const palette = ['#b45309', '#c2410c', '#a16207', '#9a3412', baseColor]
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+
+    for (let i = 0; i < count; i++) {
+      const rVar = hash(i * 13.7 + 5.3)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const prog = (rPhase + tSec * rate * lerp(0.6, 1.4, rVar)) % 1
+      const z = 1 - prog
+      const sway = Math.sin(tSec * (0.4 + rVar) + rPhase * 6.28) * lerp(6, 20, rVar)
+      const gx = bx + hash(i) * W + sway
+      const gy = by + hash(i * 3.9 + 1.1) * H
+      const p = skyProject(cx, cy, gx, gy, z)
+      const spin = tSec * lerp(0.6, 2.4, rVar) * (rVar > 0.5 ? 1 : -1) + rPhase * 6.28
+      const tumble = Math.abs(Math.sin(tSec * (1 + rVar * 1.5) + rPhase * 6.28))
+      const len = lerp(4, 9, hash(i * 3.1 + 9.4)) * p.depth
+      const edge = Math.min(1, prog * 6) * Math.min(1, (1 - prog) * 6)
+      const a = opacity * alpha * (0.4 + 0.6 * tumble) * edge
+
+      ctx.save()
+      ctx.translate(p.x, p.y)
+      ctx.rotate(spin)
+      ctx.scale(1, 0.35 + 0.65 * tumble)
+      ctx.globalAlpha = a
+      ctx.fillStyle = palette[i % palette.length]
+      ctx.beginPath()
+      ctx.moveTo(0, -len)
+      ctx.quadraticCurveTo(len * 0.7, 0, 0, len)
+      ctx.quadraticCurveTo(-len * 0.7, 0, 0, -len)
+      ctx.fill()
+      ctx.globalAlpha = a * 0.5
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)'
+      ctx.lineWidth = 0.7
+      ctx.beginPath()
+      ctx.moveTo(0, -len)
+      ctx.lineTo(0, len)
+      ctx.stroke()
+      ctx.restore()
+    }
+    ctx.restore()
+  },
+}
+
+// ── Top-down embers: sparks rising toward the sky camera (additive) ────────────
+// The inverse of the falling effects: embers start on the ground (z=0) and rise
+// toward you (z=1), drifting outward and growing via skyProject() as they near the
+// camera, flickering, then burning out before they reach the top.
+const embersTopSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 20, 240, quality)
+    const color = settings.color || '#ff7a1a'
+    const alpha = intensityAlpha(settings)
+    const rate = lerp(0.06, 0.24, (settings.speed ?? 45) / 100)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2
+    const cy = by + H / 2
+    const sprite = glowSprite(color)
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+
+    for (let i = 0; i < count; i++) {
+      const rVar = hash(i * 13.7 + 5.3)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const prog = (rPhase + tSec * rate * lerp(0.7, 1.3, rVar)) % 1
+      const z = prog // rise toward the camera
+      const sway = Math.sin(tSec * (0.8 + rVar) + rPhase * 6.28) * lerp(4, 14, rVar)
+      const gx = bx + hash(i) * W + sway
+      const gy = by + hash(i * 3.9 + 1.1) * H
+      const p = skyProject(cx, cy, gx, gy, z)
+      const flicker = 0.3 + 0.7 * Math.pow(0.5 + 0.5 * Math.sin(tSec * (5 + rVar * 6) + i), 2)
+      const edge = Math.min(1, prog * 6) * (1 - prog) // fade in fast, burn out near the top
+      const size = lerp(1.2, 4, hash(i * 3.1 + 9.4)) * p.depth
+      ctx.globalAlpha = opacity * alpha * flicker * edge
+      ctx.drawImage(sprite, p.x - size, p.y - size, size * 2, size * 2)
+    }
+    ctx.restore()
+  },
+}
+
+// ===== Light Source pack — procedural glow / star / sparkle systems =====
+// These replace the sprite-sheet versions of the radial light effects with crisp,
+// scalable, fully colour/speed/intensity-controllable particle renders. All are
+// additive and centred on the layer.
+
+function glowAmount(settings: Settings): number {
+  return (settings.glowIntensity ?? 80) / 100
+}
+
+// ── Glowing orb: a steady warm light that breathes, with a bright core + motes ──
+const glowingOrbSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const color = settings.color || '#facc15'
+    const alpha = intensityAlpha(settings)
+    const glow = glowAmount(settings)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2, cy = by + H / 2
+    const R = Math.min(W, H) * 0.46
+    const sprite = glowSprite(color)
+    const breathe = 0.85 + 0.15 * Math.sin(tSec * lerp(0.8, 2.4, (settings.speed ?? 35) / 100))
+
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    // Soft outer halo.
+    const s1 = R * breathe
+    ctx.globalAlpha = opacity * alpha * 0.5 * glow
+    ctx.drawImage(sprite, cx - s1, cy - s1, s1 * 2, s1 * 2)
+    // Bright core.
+    const s2 = R * 0.34 * (0.9 + 0.1 * Math.sin(tSec * 2.2))
+    ctx.globalAlpha = opacity * alpha * 0.9
+    ctx.drawImage(sprite, cx - s2, cy - s2, s2 * 2, s2 * 2)
+    // A few slowly orbiting motes.
+    const count = countFrom(settings, 4, 16, quality)
+    for (let i = 0; i < count; i++) {
+      const rPhase = hash(i * 5.1 + 0.7)
+      const rad = lerp(0.3, 0.85, hash(i * 3.1 + 1.2)) * R
+      const ang = tSec * lerp(0.2, 0.6, hash(i * 7.7 + 2.2)) * (hash(i) > 0.5 ? 1 : -1) + rPhase * 6.28
+      const px = cx + Math.cos(ang) * rad, py = cy + Math.sin(ang) * rad
+      const tw = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(tSec * 3 + rPhase * 6.28))
+      const sz = lerp(2, 5, hash(i * 2.2 + 8.1)) * tw
+      ctx.globalAlpha = opacity * alpha * tw * 0.75
+      ctx.drawImage(sprite, px - sz, py - sz, sz * 2, sz * 2)
+    }
+    ctx.restore()
+  },
+}
+
+// Shared lens-flare "star" (N evenly spaced rays + a bright core glow).
+function drawStar(
+  ctx: CanvasRenderingContext2D, cx: number, cy: number, R: number, color: string,
+  sprite: HTMLCanvasElement, rays: number, len: number, lineW: number, spin: number,
+  rayAlpha: number, coreScale: number, coreAlpha: number,
+) {
+  ctx.save()
+  ctx.translate(cx, cy)
+  ctx.rotate(spin)
+  ctx.strokeStyle = color
+  ctx.lineCap = 'round'
+  for (let k = 0; k < rays; k++) {
+    ctx.rotate((2 * Math.PI) / rays)
+    const l = k % 2 === 0 ? len : len * 0.6
+    ctx.lineWidth = k % 2 === 0 ? lineW : lineW * 0.6
+    ctx.globalAlpha = rayAlpha * (k % 2 === 0 ? 1 : 0.55)
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    ctx.lineTo(0, -l)
+    ctx.stroke()
+  }
+  const cs = R * coreScale
+  ctx.globalAlpha = coreAlpha
+  ctx.drawImage(sprite, -cs, -cs, cs * 2, cs * 2)
+  ctx.restore()
+}
+
+// ── Soft star glow: diffuse halo + a gentle 4/8-point flare that slowly turns ──
+const softStarGlowSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const color = settings.color || '#fde68a'
+    const alpha = intensityAlpha(settings)
+    const glow = glowAmount(settings)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2, cy = by + H / 2
+    const R = Math.min(W, H) * 0.46
+    const sprite = glowSprite(color)
+    const tw = 0.85 + 0.15 * Math.sin(tSec * lerp(0.6, 1.8, (settings.speed ?? 35) / 100))
+
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.globalAlpha = opacity * alpha * 0.5 * glow
+    ctx.drawImage(sprite, cx - R, cy - R, R * 2, R * 2)
+    drawStar(ctx, cx, cy, R, color, sprite, 8, R * 1.05 * tw, 2, tSec * 0.15,
+      opacity * alpha * 0.6 * tw, 0.3, opacity * alpha * 0.9)
+    ctx.restore()
+  },
+}
+
+// ── Radiant starburst: bright pulsing star with many rotating rays ─────────────
+const radiantStarburstSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const color = settings.color || '#fde047'
+    const alpha = intensityAlpha(settings)
+    const glow = glowAmount(settings)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2, cy = by + H / 2
+    const R = Math.min(W, H) * 0.46
+    const sprite = glowSprite(color)
+    const spd = (settings.speed ?? 45) / 100
+    const pulse = 0.8 + 0.2 * Math.sin(tSec * lerp(1.5, 5, spd))
+
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.globalAlpha = opacity * alpha * 0.5 * glow * pulse
+    ctx.drawImage(sprite, cx - R * 0.9, cy - R * 0.9, R * 1.8, R * 1.8)
+    drawStar(ctx, cx, cy, R, color, sprite, 16, R * pulse, 3, tSec * lerp(0.2, 0.8, spd),
+      opacity * alpha * 0.6, 0.28 * pulse, opacity * alpha)
+    ctx.restore()
+  },
+}
+
+// ── Sparkle starburst: central glow surrounded by hard-twinkling sparkles ───────
+const sparkleStarburstSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const color = settings.color || '#fbbf24'
+    const alpha = intensityAlpha(settings)
+    const rate = lerp(2, 6, (settings.speed ?? 50) / 100)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2, cy = by + H / 2
+    const R = Math.min(W, H) * 0.46
+    const sprite = glowSprite(color)
+    const count = countFrom(settings, 16, 90, quality)
+
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    // Central glow.
+    const cs = R * 0.3 * (0.9 + 0.1 * Math.sin(tSec * 3))
+    ctx.globalAlpha = opacity * alpha * 0.6 * glowAmount(settings)
+    ctx.drawImage(sprite, cx - cs, cy - cs, cs * 2, cs * 2)
+    // Twinkling sparkles spread over the disc (sqrt for uniform density).
+    for (let i = 0; i < count; i++) {
+      const ang = hash(i * 3.1 + 1.2) * 6.28
+      const rad = Math.sqrt(hash(i * 5.4 + 2.6)) * R
+      const rPhase = hash(i * 13.9 + 5.1), rSize = hash(i * 2.2 + 8.1)
+      const px = cx + Math.cos(ang) * rad, py = cy + Math.sin(ang) * rad
+      const twk = Math.pow(0.5 + 0.5 * Math.sin(tSec * rate * (0.6 + rSize) + rPhase * 6.28), 3)
+      const sz = lerp(1.5, 4.5, rSize) * (0.4 + twk)
+      ctx.globalAlpha = opacity * alpha * twk
+      ctx.drawImage(sprite, px - sz, py - sz, sz * 2, sz * 2)
+    }
+    ctx.restore()
+  },
+}
+
+// ── Sparkler burst: a firework fountain — sparks streak outward and crackle out ─
+const sparklerBurstSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const color = settings.color || '#fff0b0'
+    const alpha = intensityAlpha(settings)
+    const rate = lerp(0.8, 2.2, (settings.speed ?? 60) / 100)
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2, cy = by + H / 2
+    const R = Math.min(W, H) * 0.48
+    const count = countFrom(settings, 40, 200, quality)
+
+    ctx.save()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.strokeStyle = color
+    ctx.fillStyle = color
+    ctx.lineCap = 'round'
+    for (let i = 0; i < count; i++) {
+      const rAng = hash(i * 1.7 + 0.3), rVar = hash(i * 7.3 + 2.2), rPhase = hash(i * 5.1 + 0.7)
+      const prog = (rPhase + tSec * rate * lerp(0.7, 1.4, rVar)) % 1
+      const ang = rAng * 6.28 + Math.sin(tSec * 2 + i) * 0.05
+      const dist = prog * R
+      const px = cx + Math.cos(ang) * dist, py = cy + Math.sin(ang) * dist
+      const fade = 1 - prog
+      const crackle = 0.5 + 0.5 * Math.sin(tSec * 30 + i * 3.3)
+      const tail = Math.max(0, dist - lerp(4, 12, rVar))
+      const tx = cx + Math.cos(ang) * tail, ty = cy + Math.sin(ang) * tail
+      ctx.globalAlpha = opacity * alpha * fade * crackle
+      ctx.lineWidth = lerp(0.6, 1.6, rVar)
+      ctx.beginPath()
+      ctx.moveTo(px, py)
+      ctx.lineTo(tx, ty)
+      ctx.stroke()
+      ctx.globalAlpha = opacity * alpha * fade * (0.6 + 0.4 * crackle)
+      ctx.beginPath()
+      ctx.arc(px, py, lerp(0.6, 1.6, rVar), 0, Math.PI * 2)
+      ctx.fill()
+    }
+    // Bright burning centre.
+    const sprite = glowSprite(color)
+    const cs = R * 0.12
+    ctx.globalAlpha = opacity * alpha * 0.9
+    ctx.drawImage(sprite, cx - cs, cy - cs, cs * 2, cs * 2)
+    ctx.restore()
+  },
+}
+
 const SYSTEMS: Record<string, ParticleSystem> = {
   'particle-rain': rainSystem,
   'particle-snow': snowSystem,
@@ -390,6 +823,16 @@ const SYSTEMS: Record<string, ParticleSystem> = {
   'particle-smoke': smokeSystem,
   'particle-bubbles': bubblesSystem,
   'particle-sparkles': sparklesSystem,
+  'particle-rain-top': rainTopSystem,
+  'particle-snow-top': snowTopSystem,
+  'particle-leaves-top': leavesTopSystem,
+  'particle-embers-top': embersTopSystem,
+  // Light Source pack — procedural replacements for the radial glow/star sprites.
+  'lightsource-glowing-orb': glowingOrbSystem,
+  'lightsource-soft-star-glow': softStarGlowSystem,
+  'lightsource-radiant-starburst': radiantStarburstSystem,
+  'lightsource-sparkle-starburst': sparkleStarburstSystem,
+  'lightsource-sparkler-burst': sparklerBurstSystem,
 }
 
 export const particleRenderer: EffectRenderer = {

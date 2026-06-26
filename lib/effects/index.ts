@@ -14,3 +14,4 @@ registerRenderer(vectorRenderer)
 export * from './render-core'
 export { loadAssets, loadImage, getCachedImage } from './image-cache'
 export { subscribeFrame, getQuality } from './clock'
+export { clipToExclusions } from './mask'
