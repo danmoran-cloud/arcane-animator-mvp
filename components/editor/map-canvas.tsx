@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Logo } from '@/components/logo'
+import { DiscordLink } from '@/components/discord-link'
 import { cn } from '@/lib/utils'
 import { 
   ZoomIn, 
@@ -1017,6 +1018,10 @@ export function MapCanvas() {
             >
               Create a Project
             </button>
+            <p className="text-xs text-muted-foreground mt-4 mb-2">
+              Share builds, get help, and swap maps with other DMs
+            </p>
+            <DiscordLink variant="button" label="Join our Discord" />
           </div>
         )}
 

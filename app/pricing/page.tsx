@@ -10,6 +10,7 @@ import { createTokenPurchaseCheckout } from '@/app/actions/stripe'
 import { Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
+import { DiscordLink } from '@/components/discord-link'
 
 const packIcons: Record<string, React.ReactNode> = {
   adventurer: <Zap className="w-8 h-8" />,
@@ -172,6 +173,11 @@ export default function PricingPage() {
 
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>Tokens never expire. Secure payment powered by Stripe.</p>
+        </div>
+
+        <div className="mt-10 flex flex-col items-center gap-3 border-t border-border pt-8">
+          <p className="text-sm text-muted-foreground">Questions, or want to see what other DMs are making?</p>
+          <DiscordLink variant="button" label="Join our Discord community" />
         </div>
       </div>
     </div>

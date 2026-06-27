@@ -36,6 +36,7 @@ import {
 import { ExportModal } from './export-modal'
 import { UserMenu } from './user-menu'
 import { Logo } from '@/components/logo'
+import { DiscordLink } from '@/components/discord-link'
 
 export function TopNavBar() {
   const { state, createProject, saveProject, loadProject, getSavedProjects, dispatch } = useEditor()
@@ -302,6 +303,9 @@ export function TopNavBar() {
           onOpenChange={setIsExportOpen}
           project={state.project}
         />
+
+        {/* Community Discord */}
+        <DiscordLink variant="icon" label="Join our Discord community" />
 
         {/* Ornate separator */}
         <div className="flex items-center gap-1 px-2">

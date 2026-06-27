@@ -2,6 +2,8 @@ export const SITE_CONFIG = {
   name: 'Arcane Animator',
   // Hashtags used in social share messages
   hashtags: ['DnD', 'TTRPG', 'VTT', 'DungeonMaster'],
+  // Community Discord server invite.
+  discordUrl: 'https://discord.gg/B5srNHhPk',
 }
 
 // Resolve the public site URL for building referral/share links.
