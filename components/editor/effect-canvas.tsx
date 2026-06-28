@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react'
 import type { EffectSettings } from '@/lib/effects-library'
 import type { ExclusionZone } from '@/lib/types'
-import { getRenderer, getEffectAssets, loadAssets, prepareEffect, subscribeFrame, getQuality, clipToExclusions } from '@/lib/effects'
+import { getRenderer, getEffectAssets, loadAssets, prepareEffect, subscribeFrame, getRenderScale, clipToExclusions } from '@/lib/effects'
 
 interface EffectCanvasProps {
   effectId: string
@@ -35,14 +35,24 @@ export function EffectCanvas({ effectId, settings, width, height, exclusions }: 
     if (!renderer) return
 
     const dpr = Math.min(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1, 2)
-    canvas.width = Math.max(1, Math.round(width * dpr))
-    canvas.height = Math.max(1, Math.round(height * dpr))
 
     let cancelled = false
     let unsubscribe = () => {}
 
     const drawFrame = (timeMs: number) => {
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+      // Adapt the backing-store RESOLUTION (not the particle count) to load, so the
+      // preview softens under heavy stacks but its brightness/density still matches
+      // the full-resolution, full-count export. The element is CSS-sized to the
+      // layer, so a smaller backing store simply upscales.
+      const scale = dpr * getRenderScale()
+      const bw = Math.max(1, Math.round(width * scale))
+      const bh = Math.max(1, Math.round(height * scale))
+      if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw
+        canvas.height = bh
+      }
+      // Map the effect's logical (width × height) space onto the current backing store.
+      ctx.setTransform(bw / width, 0, 0, bh / height, 0, 0)
       ctx.clearRect(0, 0, width, height)
       ctx.save()
       clipToExclusions(ctx, exclusionsRef.current, { x: 0, y: 0, width, height })
@@ -51,8 +61,9 @@ export function EffectCanvas({ effectId, settings, width, height, exclusions }: 
         timeMs,
         bounds: { x: 0, y: 0, width, height },
         opacity: 1,
+        // Full particle count, identical to the exporter — count must not depend on load.
         settings: settingsRef.current,
-        quality: getQuality(),
+        quality: 1,
       })
       ctx.restore()
     }

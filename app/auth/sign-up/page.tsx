@@ -111,6 +111,17 @@ function SignUpForm() {
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Create Account
             </Button>
+            <p className="text-xs text-muted-foreground text-center text-balance">
+              By creating an account, you agree to our{' '}
+              <Link href="/legal/terms" className="text-primary hover:underline">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/legal/privacy" className="text-primary hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </p>
             <p className="text-sm text-muted-foreground text-center">
               Already have an account?{' '}
               <Link href="/auth/login" className="text-primary hover:underline">

@@ -11,6 +11,7 @@ import { Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
 import { DiscordLink } from '@/components/discord-link'
+import { SiteFooter } from '@/components/site-footer'
 
 const packIcons: Record<string, React.ReactNode> = {
   adventurer: <Zap className="w-8 h-8" />,
@@ -40,8 +41,8 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container max-w-6xl mx-auto px-4 py-12">
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="container max-w-6xl mx-auto flex-1 px-4 py-12">
         <div className="mb-8">
           <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
@@ -180,6 +181,8 @@ export default function PricingPage() {
           <DiscordLink variant="button" label="Join our Discord community" />
         </div>
       </div>
+
+      <SiteFooter />
     </div>
   )
 }

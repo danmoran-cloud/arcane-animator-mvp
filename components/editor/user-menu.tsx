@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, Settings, LogOut, Coins, Shield, CreditCard } from 'lucide-react'
+import { User, Settings, LogOut, Coins, Shield, CreditCard, Scale } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
@@ -123,6 +123,12 @@ export function UserMenu() {
             <Link href="/pricing">
               <CreditCard className="w-3.5 h-3.5" />
               Buy Tokens
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild className="gap-2 text-xs cursor-pointer">
+            <Link href="/legal">
+              <Scale className="w-3.5 h-3.5" />
+              Legal
             </Link>
           </DropdownMenuItem>
           {profile?.is_admin && (

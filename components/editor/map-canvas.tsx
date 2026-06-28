@@ -66,13 +66,17 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
         Start by uploading your battle map, then add animated effects
       </p>
 
-      <Button 
+      <Button
         onClick={onUpload}
         className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
       >
         <Upload className="w-4 h-4" />
         Upload Base Map
       </Button>
+
+      <p className="text-muted-foreground/70 text-xs mt-4 max-w-md text-center">
+        For best results, a 16:9 widescreen map works great.
+      </p>
     </div>
   )
 }

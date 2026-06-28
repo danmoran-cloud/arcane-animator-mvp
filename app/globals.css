@@ -430,3 +430,75 @@
   0% { left: -15%; }
   100% { left: 115%; }
 }
+
+/* ------------------------------------------------------------------ */
+/* Legal document typography                                          */
+/* Used by the /legal/* pages (no Tailwind typography plugin needed). */
+/* ------------------------------------------------------------------ */
+.legal-prose {
+  color: var(--foreground);
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+.legal-prose > * + * {
+  margin-top: 1rem;
+}
+.legal-prose h2 {
+  font-family: var(--font-cinzel), serif;
+  color: var(--primary);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-top: 2.25rem;
+  margin-bottom: 0.25rem;
+  scroll-margin-top: 5rem;
+}
+.legal-prose h2:first-child {
+  margin-top: 0;
+}
+.legal-prose h3 {
+  color: var(--foreground);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+}
+.legal-prose p,
+.legal-prose li {
+  color: color-mix(in oklch, var(--foreground) 88%, transparent);
+}
+.legal-prose ul,
+.legal-prose ol {
+  margin-left: 1.25rem;
+  list-style-position: outside;
+}
+.legal-prose ul { list-style-type: disc; }
+.legal-prose ol { list-style-type: decimal; }
+.legal-prose li + li { margin-top: 0.4rem; }
+.legal-prose a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-prose a:hover { opacity: 0.85; }
+.legal-prose strong { color: var(--foreground); font-weight: 600; }
+.legal-prose hr {
+  border-color: var(--border);
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+.legal-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.legal-prose th,
+.legal-prose td {
+  border: 1px solid var(--border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.legal-prose th {
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+  font-weight: 600;
+}

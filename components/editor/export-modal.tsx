@@ -47,6 +47,7 @@ import {
 import { calculateExportCost } from '@/lib/tokens'
 import { SPRITE_SHEETS } from '@/lib/sprite-sheets'
 import { getRenderer, loadImage, prepareEffect, clipToExclusions } from '@/lib/effects'
+import { Muxer, ArrayBufferTarget } from 'webm-muxer'
 import { checkExportAuthorization, recordExport, type ExportAuthResult } from '@/app/actions/exports'
 import { ShareSection } from './share-section'
 import type { Project, Layer, ExpandedEffectLayer, GridLayer } from '@/lib/types'
@@ -206,7 +207,6 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
         project.canvasSize,
       )
       const totalFrames = settings.duration * settings.frameRate
-      const frameDuration = 1000 / settings.frameRate
 
       // Create offscreen canvas for rendering
       const canvas = document.createElement('canvas')
@@ -219,67 +219,42 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
 
       setProgress({ status: 'rendering', progress: 5, message: 'Starting render...', currentFrame: 0, totalFrames })
 
-      // Setup MediaRecorder for WebM capture
-      const stream = canvas.captureStream(settings.frameRate)
-      
-      // Check for VP9 support, fall back to VP8
-      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9') 
-        ? 'video/webm;codecs=vp9'
-        : 'video/webm;codecs=vp8'
-      
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType,
-        videoBitsPerSecond: videoBitrate,
-      })
-
-      const chunks: Blob[] = []
-      mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data)
-      }
-
-      const recordingComplete = new Promise<Blob>((resolve) => {
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunks, { type: 'video/webm' })
-          resolve(blob)
-        }
-      })
-
-      // Start recording
-      mediaRecorder.start()
-
-      // Render frames with timing
-      const startTime = performance.now()
-      
-      for (let frame = 0; frame < totalFrames; frame++) {
-        const animationTime = (frame / settings.frameRate) * 1000
-        
-        // Render frame
-        await renderFrame(ctx, project, width, height, animationTime, imageCache.current)
-
-        // Update progress
-        const progressPercent = 5 + (frame / totalFrames) * 85
+      const onProgress = (frame: number, total: number) => {
         setProgress({
           status: 'rendering',
-          progress: progressPercent,
-          currentFrame: frame + 1,
-          totalFrames,
-          message: `Rendering frame ${frame + 1} of ${totalFrames}`,
+          progress: 5 + (frame / total) * 85,
+          currentFrame: frame,
+          totalFrames: total,
+          message: `Rendering frame ${frame} of ${total}`,
         })
-
-        // Wait to maintain frame rate timing
-        const elapsed = performance.now() - startTime
-        const expectedTime = frame * frameDuration
-        if (elapsed < expectedTime) {
-          await new Promise(resolve => setTimeout(resolve, expectedTime - elapsed))
-        }
       }
 
-      // Stop recording and wait for completion
+      // Prefer WebCodecs: it encodes each rendered frame with an explicit, evenly
+      // spaced timestamp, so playback is perfectly smooth and the duration is exact,
+      // regardless of how long any frame took to render. Fall back to MediaRecorder
+      // (real-time capture) only where WebCodecs/VP9/VP8 isn't available.
+      const codecChoice = await pickVideoCodec(width, height, videoBitrate, settings.frameRate)
+
+      const blob = codecChoice
+        ? await encodeWithWebCodecs(
+            canvas, ctx, project, width, height, totalFrames, settings.frameRate,
+            videoBitrate, codecChoice.encoderCodec, codecChoice.muxerCodec, onProgress, imageCache.current,
+          )
+        : await encodeWithMediaRecorder(
+            canvas, ctx, project, width, height, totalFrames, settings.frameRate,
+            videoBitrate, onProgress, imageCache.current,
+          )
+
       setProgress({ status: 'encoding', progress: 90, message: 'Encoding video...' })
-      mediaRecorder.stop()
-      
-      const blob = await recordingComplete
-      
+
+      // Guard: a valid render is always at least a few KB. If we produced (next to)
+      // nothing, surface a clear error instead of handing over a blank file.
+      if (blob.size < 2048) {
+        throw new Error(
+          'The export came out empty. Try a shorter duration, a lower resolution, or fewer/lighter effects.',
+        )
+      }
+
       setProgress({ status: 'finalizing', progress: 95, message: 'Creating download...' })
       const url = URL.createObjectURL(blob)
       setDownloadUrl(url)
@@ -647,6 +622,147 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
   )
 }
 
+type ProgressFn = (frame: number, total: number) => void
+
+// Pick the best available encoder/codec pair, or null if WebCodecs can't be used.
+// Returns the WebCodecs codec string (for VideoEncoder.configure) and the matching
+// webm-muxer codec id. Tries VP9 at descending levels, then VP8.
+async function pickVideoCodec(
+  width: number,
+  height: number,
+  bitrate: number,
+  framerate: number,
+): Promise<{ encoderCodec: string; muxerCodec: 'V_VP9' | 'V_VP8' } | null> {
+  if (typeof window === 'undefined' || typeof (window as { VideoEncoder?: unknown }).VideoEncoder === 'undefined') {
+    return null
+  }
+  const candidates: Array<{ encoderCodec: string; muxerCodec: 'V_VP9' | 'V_VP8' }> = [
+    { encoderCodec: 'vp09.00.41.08', muxerCodec: 'V_VP9' }, // VP9 profile0, level 4.1 (≥1080p60), 8-bit
+    { encoderCodec: 'vp09.00.40.08', muxerCodec: 'V_VP9' }, // VP9 level 4.0 (1080p30)
+    { encoderCodec: 'vp09.00.10.08', muxerCodec: 'V_VP9' }, // VP9 level 1.0 (small)
+    { encoderCodec: 'vp8', muxerCodec: 'V_VP8' },
+  ]
+  for (const c of candidates) {
+    try {
+      const support = await VideoEncoder.isConfigSupported({ codec: c.encoderCodec, width, height, bitrate, framerate })
+      if (support.supported) return c
+    } catch {
+      // try the next candidate
+    }
+  }
+  return null
+}
+
+// Deterministic encode: render each frame, then hand it to a WebCodecs VideoEncoder
+// with an explicit, evenly spaced timestamp. Frame timing is baked in, so the result
+// is perfectly smooth and exactly `totalFrames / framerate` seconds long no matter
+// how long any individual frame took to render.
+async function encodeWithWebCodecs(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  project: Project,
+  width: number,
+  height: number,
+  totalFrames: number,
+  framerate: number,
+  bitrate: number,
+  encoderCodec: string,
+  muxerCodec: 'V_VP9' | 'V_VP8',
+  onProgress: ProgressFn,
+  imageCache: Map<string, HTMLImageElement>,
+): Promise<Blob> {
+  const target = new ArrayBufferTarget()
+  const muxer = new Muxer({ target, video: { codec: muxerCodec, width, height, frameRate: framerate } })
+
+  let encodeError: unknown = null
+  const encoder = new VideoEncoder({
+    output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+    error: (e) => { encodeError = e },
+  })
+  encoder.configure({ codec: encoderCodec, width, height, bitrate, framerate })
+
+  const frameDurUs = 1_000_000 / framerate
+  const keyEvery = Math.max(1, Math.round(framerate * 2)) // keyframe ~every 2s
+
+  for (let frame = 0; frame < totalFrames; frame++) {
+    if (encodeError) throw encodeError
+    await renderFrame(ctx, project, width, height, (frame / framerate) * 1000, imageCache)
+
+    const videoFrame = new VideoFrame(canvas, {
+      timestamp: Math.round(frame * frameDurUs),
+      duration: Math.round(frameDurUs),
+    })
+    encoder.encode(videoFrame, { keyFrame: frame % keyEvery === 0 })
+    videoFrame.close()
+
+    onProgress(frame + 1, totalFrames)
+
+    // Apply backpressure so the encode queue can't grow unbounded; always yield.
+    if (encoder.encodeQueueSize > 4) {
+      while (encoder.encodeQueueSize > 2) {
+        await new Promise((r) => setTimeout(r, 4))
+      }
+    } else {
+      await new Promise((r) => setTimeout(r, 0))
+    }
+  }
+
+  await encoder.flush()
+  encoder.close()
+  if (encodeError) throw encodeError
+
+  muxer.finalize()
+  return new Blob([target.buffer], { type: 'video/webm' })
+}
+
+// Fallback path: real-time capture via MediaRecorder. captureStream(fps) samples the
+// canvas on a wall-clock timeline, so the loop yields a macrotask EVERY frame —
+// including when behind schedule — otherwise a heavy scene starves the recorder and
+// produces an empty file.
+async function encodeWithMediaRecorder(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  project: Project,
+  width: number,
+  height: number,
+  totalFrames: number,
+  framerate: number,
+  bitrate: number,
+  onProgress: ProgressFn,
+  imageCache: Map<string, HTMLImageElement>,
+): Promise<Blob> {
+  const stream = canvas.captureStream(framerate)
+  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+    ? 'video/webm;codecs=vp9'
+    : 'video/webm;codecs=vp8'
+  const mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: bitrate })
+
+  const chunks: Blob[] = []
+  mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data) }
+  const recordingComplete = new Promise<Blob>((resolve) => {
+    mediaRecorder.onstop = () => resolve(new Blob(chunks, { type: 'video/webm' }))
+  })
+
+  mediaRecorder.start()
+  const frameDuration = 1000 / framerate
+  const startTime = performance.now()
+
+  for (let frame = 0; frame < totalFrames; frame++) {
+    await renderFrame(ctx, project, width, height, (frame / framerate) * 1000, imageCache)
+    onProgress(frame + 1, totalFrames)
+    const elapsed = performance.now() - startTime
+    const expectedTime = frame * frameDuration
+    if (elapsed < expectedTime) {
+      await new Promise((resolve) => setTimeout(resolve, expectedTime - elapsed))
+    } else {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    }
+  }
+
+  mediaRecorder.stop()
+  return recordingComplete
+}
+
 // Helper function to render a single frame
 async function renderFrame(
   ctx: CanvasRenderingContext2D,
@@ -696,8 +812,9 @@ async function renderFrame(
         ctx.drawImage(img, layer.position.x, layer.position.y, layer.size.width, layer.size.height)
       }
     } else if (layer.type === 'effect') {
-      // Draw effect layer with animation
-      renderEffect(ctx, layer as ExpandedEffectLayer, time, imageCache)
+      // Draw the effect on its own transparent layer, then composite — mirrors the
+      // editor's per-layer canvases so additive effects don't blow out over the map.
+      renderEffectIsolated(ctx, layer as ExpandedEffectLayer, time, imageCache, width, height)
     } else if (layer.type === 'grid') {
       drawGridLayer(ctx, layer as GridLayer)
     }
@@ -761,12 +878,65 @@ function drawGridLayer(ctx: CanvasRenderingContext2D, layer: GridLayer) {
   ctx.restore()
 }
 
-// Render effect with time-based animation
+// Reused offscreen "layer" canvas. Effects render onto this transparent surface so
+// their own compositing (e.g. additive 'lighter') accumulates against transparency
+// rather than against the map — then the finished layer is blended over the map with
+// the layer's opacity. This reproduces the editor, where every effect lives on its
+// own DOM canvas. Without it, additive effects 'lighter' straight onto bright map
+// pixels and blow out, and layer opacity is applied per-particle instead of to the
+// whole layer.
+let layerCanvas: HTMLCanvasElement | null = null
+let layerCtx: CanvasRenderingContext2D | null = null
+
+function renderEffectIsolated(
+  mainCtx: CanvasRenderingContext2D,
+  layer: ExpandedEffectLayer,
+  time: number,
+  imageCache: Map<string, HTMLImageElement>,
+  canvasW: number,
+  canvasH: number,
+): void {
+  if (!layerCanvas || layerCanvas.width !== canvasW || layerCanvas.height !== canvasH) {
+    layerCanvas = document.createElement('canvas')
+    layerCanvas.width = canvasW
+    layerCanvas.height = canvasH
+    layerCtx = layerCanvas.getContext('2d')
+  }
+  const fx = layerCtx
+  if (!fx) {
+    // Fallback: draw directly if an offscreen context couldn't be created.
+    renderEffect(mainCtx, layer, time, imageCache, layer.opacity)
+    return
+  }
+
+  // Render the effect at full strength onto the transparent layer, using the main
+  // canvas's current transform so it lands in the same place (position + rotation).
+  const m = mainCtx.getTransform()
+  fx.setTransform(1, 0, 0, 1, 0, 0)
+  fx.globalAlpha = 1
+  fx.globalCompositeOperation = 'source-over'
+  fx.clearRect(0, 0, canvasW, canvasH)
+  fx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f)
+  renderEffect(fx, layer, time, imageCache, 1)
+
+  // Composite the finished layer over the scene with the layer's opacity, normal blend.
+  mainCtx.save()
+  mainCtx.setTransform(1, 0, 0, 1, 0, 0)
+  mainCtx.globalAlpha = layer.opacity
+  mainCtx.globalCompositeOperation = 'source-over'
+  mainCtx.drawImage(layerCanvas, 0, 0)
+  mainCtx.restore()
+}
+
+// Render effect with time-based animation. `opacity` is the alpha the effect draws
+// at; isolated rendering passes 1 here and applies the layer opacity when the
+// offscreen layer is composited (see renderEffectIsolated), exactly like the editor.
 function renderEffect(
   ctx: CanvasRenderingContext2D,
   layer: ExpandedEffectLayer,
   time: number,
-  imageCache: Map<string, HTMLImageElement>
+  imageCache: Map<string, HTMLImageElement>,
+  opacity: number
 ): void {
   const { position, size, effectId, settings } = layer
   const color = (settings?.color as string) || '#ff6b00'
@@ -796,7 +966,7 @@ function renderEffect(
       ctx,
       timeMs: time,
       bounds: { x: position.x, y: position.y, width: size.width, height: size.height },
-      opacity: layer.opacity,
+      opacity,
       settings,
     })
     ctx.restore()

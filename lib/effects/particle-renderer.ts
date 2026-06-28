@@ -813,6 +813,147 @@ const sparklerBurstSystem: ParticleSystem = {
   },
 }
 
+// ===== Water pack — flowing current + caustic light web =====
+
+// ── Flowing water: highlight streaks riding a closed-form flow field ────────────
+// A current of additive highlight streaks advected along the `direction` axis. The
+// flow field is STATIC (sampled, never integrated), so the live preview and the
+// exporter agree frame-for-frame. Each streak lives in flow-space (u along the
+// current, v across it): u cycles over the box diagonal L and wraps so the whole
+// field drifts seamlessly at any angle; a per-streak sine meander on v gives the
+// water its curling, braided look. A bright `color` highlight rides over a softer,
+// wider `secondaryColor` body; fully additive.
+const waterFlowSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 90, 700, quality)
+    const color = settings.color || '#bae6fd'
+    const body = settings.secondaryColor || '#38bdf8'
+    const alpha = intensityAlpha(settings)
+    const glow = (settings.glowIntensity ?? 60) / 100
+    const speed = lerp(0.05, 0.3, (settings.speed ?? 50) / 100)
+    const tSec = timeMs / 1000
+    const rad = ((settings.direction ?? 90) * Math.PI) / 180
+    const fdx = Math.cos(rad), fdy = Math.sin(rad)   // flow axis
+    const pdx = -fdy, pdy = fdx                       // perpendicular axis
+    const cx = bx + W / 2, cy = by + H / 2
+    const L = Math.hypot(W, H) + 80                   // covers the box at any angle
+
+    const SEG = 7 // segments per streamline — enough to read as a smooth curve
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.lineCap = 'round'
+    ctx.lineJoin = 'round'
+
+    // A streamline is a short curve traced back along the flow axis; the lateral
+    // meander is sampled at each point *along* its length so the line bends with the
+    // current instead of staying a straight dash. Tracing the same closed-form curve
+    // helper for both the wide body and the bright core keeps them registered.
+    const trace = (u0: number, vBase: number, rVar: number, rPhase: number, lenU: number) => {
+      ctx.beginPath()
+      for (let s = 0; s <= SEG; s++) {
+        const uu = u0 - (s / SEG) * lenU
+        const mv = Math.sin(uu * 0.02 + vBase * 0.02 + tSec * (0.5 + rVar) + rPhase * 6.28) * lerp(6, 20, rVar)
+        const v = vBase + mv
+        const px = cx + fdx * uu + pdx * v
+        const py = cy + fdy * uu + pdy * v
+        if (s === 0) ctx.moveTo(px, py)
+        else ctx.lineTo(px, py)
+      }
+    }
+
+    for (let i = 0; i < count; i++) {
+      const rVar = hash(i * 13.7 + 5.3)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const u0 = ((hash(i) + tSec * speed * lerp(0.7, 1.3, rVar)) % 1) * L - L / 2
+      const vBase = (hash(i * 3.9 + 1.1) - 0.5) * L
+      const lenU = lerp(20, 52, rVar) * (0.7 + glow * 0.6)
+      // Edge fade hides the wrap where the streamline enters/leaves at u = ±L/2.
+      const edge = Math.max(0, Math.min(1, Math.min((u0 + L / 2) / 50, (L / 2 - u0 + lenU) / 50)))
+      if (edge <= 0) continue
+      // Soft, wide translucent body — many of these overlap into a flowing sheet.
+      ctx.strokeStyle = body
+      ctx.lineWidth = lerp(2, 4.5, rVar)
+      ctx.globalAlpha = opacity * alpha * edge * 0.22
+      trace(u0, vBase, rVar, rPhase, lenU)
+      ctx.stroke()
+      // Bright thin highlight riding the same curve.
+      ctx.strokeStyle = color
+      ctx.lineWidth = lerp(0.6, 1.5, rVar)
+      ctx.globalAlpha = opacity * alpha * edge * (0.45 + 0.45 * rVar)
+      trace(u0, vBase, rVar, rPhase, lenU * 0.85)
+      ctx.stroke()
+    }
+    ctx.restore()
+  },
+}
+
+// ── Caustics: rippling underwater light web from a closed-form interference field ─
+// The bright filaments are the ridges of a sum-of-sines wave field sampled on a grid
+// and splatted as additive glow blobs; raising the field to a power sharpens those
+// ridges into the characteristic caustic webbing. Everything is an analytic function
+// of absolute time, so it loops and matches between preview and export. density sets
+// the grid fineness (eased down by the preview quality factor), speed the ripple
+// rate, intensity the contrast, glowIntensity the brightness.
+const causticsSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const color = settings.color || '#7dd3fc'
+    const tint = settings.secondaryColor || '#e0f2fe'
+    const alpha = intensityAlpha(settings)
+    const glow = (settings.glowIntensity ?? 70) / 100
+    const tSec = (timeMs / 1000) * lerp(0.3, 1.2, (settings.speed ?? 45) / 100)
+    const sharp = lerp(2.5, 5.5, (settings.intensity ?? 80) / 100)
+    const dens = (settings.density ?? 55) / 100
+    // Derive the grid step from a roughly FIXED cell budget rather than the layer
+    // size, so a large or high-resolution layer can't explode the per-frame cost.
+    // (That cost is what previously made caustics heavy enough to starve the
+    // real-time exporter.) Preview quality shrinks the budget further under load.
+    const targetCells = lerp(200, 560, dens) * (quality || 1)
+    const step = Math.max(6, Math.sqrt((W * H) / targetCells))
+    const a = lerp(0.05, 0.12, dens) / (settings.scale || 1)
+    const sprite = glowSprite(color)
+    const sprite2 = glowSprite(tint)
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+
+    for (let gx = bx; gx <= bx + W; gx += step) {
+      for (let gy = by; gy <= by + H; gy += step) {
+        // Jitter the sample point so the grid never reads as straight rows.
+        const jx = gx + Math.sin(gy * 0.05 + tSec) * step * 0.3
+        const jy = gy + Math.cos(gx * 0.05 - tSec) * step * 0.3
+        const n =
+          Math.sin(jx * a + tSec) +
+          Math.sin(jy * a * 1.1 - tSec * 0.9) +
+          Math.sin((jx + jy) * a * 0.7 + tSec * 1.2) +
+          Math.sin((jx - jy) * a * 0.9 - tSec * 0.7)
+        const vv = n / 4
+        if (vv <= 0) continue
+        const bright = Math.pow(vv, sharp)
+        if (bright < 0.05) continue // skip near-dark cells — saves draws on heavy frames
+        const size = step * lerp(0.5, 1.3, bright)
+        ctx.globalAlpha = opacity * alpha * glow * bright
+        ctx.drawImage(sprite, jx - size, jy - size, size * 2, size * 2)
+        // Brightest crests get a cool-white core for sparkle.
+        if (bright > 0.5) {
+          const s2 = size * 0.5
+          ctx.globalAlpha = opacity * alpha * (bright - 0.5) * 1.4
+          ctx.drawImage(sprite2, jx - s2, jy - s2, s2 * 2, s2 * 2)
+        }
+      }
+    }
+    ctx.restore()
+  },
+}
+
 const SYSTEMS: Record<string, ParticleSystem> = {
   'particle-rain': rainSystem,
   'particle-snow': snowSystem,
@@ -827,6 +968,8 @@ const SYSTEMS: Record<string, ParticleSystem> = {
   'particle-snow-top': snowTopSystem,
   'particle-leaves-top': leavesTopSystem,
   'particle-embers-top': embersTopSystem,
+  'particle-water-flow': waterFlowSystem,
+  'particle-caustics': causticsSystem,
   // Light Source pack — procedural replacements for the radial glow/star sprites.
   'lightsource-glowing-orb': glowingOrbSystem,
   'lightsource-soft-star-glow': softStarGlowSystem,

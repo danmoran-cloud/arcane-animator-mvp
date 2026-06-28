@@ -47,6 +47,7 @@ export type EffectId =
   | 'particle-rain' | 'particle-snow' | 'particle-embers' | 'particle-fog' | 'particle-fireflies'
   | 'particle-dust' | 'particle-smoke' | 'particle-bubbles' | 'particle-sparkles'
   | 'particle-rain-top' | 'particle-snow-top' | 'particle-leaves-top' | 'particle-embers-top'
+  | 'particle-water-flow' | 'particle-caustics'
   // VECTOR EFFECTS PACK (procedural magic circles + portals) — Phase 4
   | 'vector-pentagram' | 'vector-hexagram' | 'vector-heptagram' | 'vector-arcane-circle' | 'vector-rune-circle'
   | 'vector-portal' | 'vector-fire-portal'
@@ -1446,6 +1447,24 @@ export const effectsLibrary: EffectDefinition[] = [
     icon: 'sparkles',
     description: 'Procedural sparkles — twinkling additive points that flash',
     defaultSettings: { speed: 50, intensity: 85, density: 50, color: '#bfdbfe', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-water-flow',
+    name: 'Flowing Water (Particles)',
+    pack: 'particles',
+    renderMode: 'terrain',
+    icon: 'droplets',
+    description: 'Procedural flowing water — highlight streaks riding a directional current, live direction/speed',
+    defaultSettings: { speed: 50, intensity: 70, density: 55, color: '#bae6fd', secondaryColor: '#38bdf8', direction: 90, glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'particle-caustics',
+    name: 'Caustics (Particles)',
+    pack: 'particles',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Procedural underwater caustics — a rippling light web from a closed-form wave field',
+    defaultSettings: { speed: 45, intensity: 80, density: 55, color: '#7dd3fc', secondaryColor: '#e0f2fe', glowIntensity: 70, scale: 1 },
   },
 
   // ===== VECTOR EFFECTS PACK (procedural magic circles + portals) =====
