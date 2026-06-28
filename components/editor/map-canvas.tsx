@@ -77,6 +77,11 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
       <p className="text-muted-foreground/70 text-xs mt-4 max-w-md text-center">
         For best results, a 16:9 widescreen map works great.
       </p>
+
+      <p className="text-xs text-muted-foreground mt-8 mb-2">
+        Share builds, get help, and swap maps with other DMs
+      </p>
+      <DiscordLink variant="button" label="Join us on Discord" />
     </div>
   )
 }
