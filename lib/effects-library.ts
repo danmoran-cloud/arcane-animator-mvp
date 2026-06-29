@@ -51,6 +51,15 @@ export type EffectId =
   // VECTOR EFFECTS PACK (procedural magic circles + portals) — Phase 4
   | 'vector-pentagram' | 'vector-hexagram' | 'vector-heptagram' | 'vector-arcane-circle' | 'vector-rune-circle'
   | 'vector-portal' | 'vector-fire-portal'
+  | 'camp-fire'
+  | 'lava-bubbles'
+  | 'lava-burst'
+  | 'lava-cracks'
+  | 'lava-current'
+  | 'lava-slow'
+  | 'lava-whirlpool'
+  | 'lava-splashes'
+  | 'lava-vents'
   // NEW_EFFECT_IDS
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
@@ -1327,6 +1336,87 @@ export const effectsLibrary: EffectDefinition[] = [
     icon: 'sparkles',
     description: 'Fire Torch sprite animation',
     defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff6600', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'camp-fire',
+    name: 'Camp Fire',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Camp Fire sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff9500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-bubbles',
+    name: 'Lava Bubbles',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Lava Bubbles sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-burst',
+    name: 'Lava Burst',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Lava Burst sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-cracks',
+    name: 'Lava Cracks',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Lava Cracks sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-current',
+    name: 'Lava Current',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Lava Current sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-slow',
+    name: 'Molten Flow',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Slow molten lava flow sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-whirlpool',
+    name: 'Lava Whirlpool',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Lava Whirlpool sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-splashes',
+    name: 'Lava Splashes',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Lava Splashes sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
+  },
+  {
+    id: 'lava-vents',
+    name: 'Lava Vents',
+    pack: 'new',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Lava Vents sprite animation',
+    defaultSettings: { speed: 50, intensity: 80, density: 50, color: '#ff5500', glowIntensity: 60, scale: 1 },
   },
   // NEW_EFFECT_DEFS
 

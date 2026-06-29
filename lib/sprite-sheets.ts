@@ -124,4 +124,13 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
   'torch-2': { url: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/fire1_64-kpuvZ5egbmbnm855kp1iCwuhNz9LAZ.png', cols: 10, rows: 6, frames: 60, blend: 'screen', fps: 24 },
   'blue-portal': { url: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Effect95-NLQsM059PmMoiyKgtrIJzfzdTZPNaP.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
   'fire-portal': { url: 'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Explosion21-a4r8cvpEimrFAY0R7JQtNKmhl57tll.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'camp-fire': { url: '/effects/new/camp-fire.png', cols: 10, rows: 6, frames: 60 },
+  'lava-bubbles': { url: '/effects/new/lava-flow-bubbles.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'lava-burst': { url: '/effects/new/lava-flow-burst.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'lava-cracks': { url: '/effects/new/lava-flow-crack-patterns.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'lava-current': { url: '/effects/new/lava-flow-current.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'lava-slow': { url: '/effects/new/lava-flow-slow.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'lava-whirlpool': { url: '/effects/new/lava-flow-whirlpool.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'lava-splashes': { url: '/effects/new/lava-splashes.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
+  'lava-vents': { url: '/effects/new/lava-vents.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
 }
