@@ -639,6 +639,9 @@ export function EditorProvider({ children }: { children: ReactNode }) {
       visible: true,
       locked: false,
       zIndex: state.project?.layers.length || 0,
+      blendMode: 'normal',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
     dispatch({ type: 'ADD_LAYER', layer })
     dispatch({ type: 'SELECT_LAYER', layerId: layer.id })

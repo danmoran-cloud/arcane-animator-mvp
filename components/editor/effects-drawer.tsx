@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { 
-  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Cpu, Flame, Mountain, CircleDot, Waves, Rocket, CloudRain, Skull, Gem, Droplets, CloudFog, Sparkle, Lamp
+import {
+  ChevronDown, ChevronRight, Plus, Cloud, Sparkles, Flame, Mountain, CircleDot, Waves, CloudRain, Skull, Gem, Droplets, CloudFog, Sparkle, Lamp, Sun, Wind, Snowflake, Leaf
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -19,9 +19,7 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'mountain': Mountain,
   'sparkles': Sparkles,
   'circle-dot': CircleDot,
-  'cpu': Cpu,
   'waves': Waves,
-  'rocket': Rocket,
   'cloud-rain': CloudRain,
   'skull': Skull,
   'gem': Gem,
@@ -29,6 +27,10 @@ const packIconMap: Record<string, React.ComponentType<{ className?: string; styl
   'cloud-fog': CloudFog,
   'sparkle': Sparkle,
   'lamp': Lamp,
+  'sun': Sun,
+  'wind': Wind,
+  'snowflake': Snowflake,
+  'leaf': Leaf,
 }
 
 interface EffectsDrawerProps {
@@ -116,20 +118,16 @@ function PackSection({
 
 export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
   const [expandedPacks, setExpandedPacks] = useState<Record<EffectPack, boolean>>({
-    core: false,
-    atmospheric: false,
-    terrain: false,
-    fantasy: false,
-    scifi: false,
-    launch: false,
-    caustics: false,
-    cemetery: false,
-    subterranean: false,
-    lightsource: false,
-    'lightsource-revised': false,
-    new: false,
-    particles: false,
-    vector: false,
+    light: false,
+    fire: false,
+    water: false,
+    ice: false,
+    earth: false,
+    air: false,
+    nature: false,
+    necrotic: false,
+    divine: false,
+    magic: false,
   })
   
   const togglePack = (pack: EffectPack) => {
@@ -148,7 +146,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <div className="flex-1 overflow-y-auto">
         <div className="py-1">
-          {(['particles', 'vector', 'new', 'lightsource', 'lightsource-revised', 'subterranean', 'cemetery', 'launch', 'caustics'] as EffectPack[]).map((pack) => (
+          {(['light', 'fire', 'water', 'ice', 'earth', 'air', 'nature', 'divine', 'magic', 'necrotic'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}

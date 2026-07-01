@@ -954,6 +954,545 @@ const causticsSystem: ParticleSystem = {
   },
 }
 
+// ===== New themed systems — fire / spectral / creatures / divine light =====
+
+// ── Flames: rising procedural fire — flickering tongues anchored along the base ──
+// Each flame lick is a vertical column of additive glow blobs from the base up to a
+// flickering height; a hot `color` core sits inside a wider `secondaryColor` body.
+// Height/waver are sin(time) so preview and export match. Recolour for green /
+// purple / holy / hellfire variants.
+const flamesSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 6, 60, quality)
+    const core = settings.color || '#ffd24a'
+    const body = settings.secondaryColor || '#ff6a00'
+    const alpha = intensityAlpha(settings)
+    const glow = (settings.glowIntensity ?? 85) / 100
+    const spd = lerp(0.6, 2.2, (settings.speed ?? 55) / 100)
+    const tSec = timeMs / 1000
+    const coreSprite = glowSprite(core)
+    const bodySprite = glowSprite(body)
+    const SEG = 7
+    const maxH = H * lerp(0.4, 0.9, (settings.intensity ?? 80) / 100) * (settings.scale || 1)
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+
+    for (let i = 0; i < count; i++) {
+      const rLane = hash(i)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const rVar = hash(i * 13.7 + 5.3)
+      const rWidth = hash(i * 3.1 + 9.4)
+      const anchorX = bx + rLane * W
+      const flick = 0.6 + 0.4 * Math.sin(tSec * spd * (1 + rVar) + rPhase * 6.28)
+      const flameH = maxH * lerp(0.5, 1, rVar) * flick
+      const baseW = lerp(8, 22, rWidth) * glow
+      for (let s = 0; s <= SEG; s++) {
+        const u = s / SEG // 0 base → 1 tip
+        const taper = 1 - u
+        const waver = Math.sin(tSec * spd * 1.6 + rPhase * 6.28 + u * 3) * u * lerp(6, 18, rVar)
+        const px = anchorX + waver
+        const py = by + H - u * flameH
+        const size = baseW * (0.35 + 0.65 * taper)
+        // Wide outer flame body.
+        ctx.globalAlpha = opacity * alpha * 0.5 * taper
+        ctx.drawImage(bodySprite, px - size, py - size, size * 2, size * 2)
+        // Hot core near the base.
+        if (u < 0.6) {
+          const cs = size * 0.55
+          ctx.globalAlpha = opacity * alpha * (0.6 - u) * 1.3
+          ctx.drawImage(coreSprite, px - cs, py - cs, cs * 2, cs * 2)
+        }
+      }
+    }
+    ctx.restore()
+  },
+}
+
+// ── Wisps: ghostly additive trails wandering across the layer ───────────────────
+// Each wisp follows a closed-form wandering path; the tail is that same path sampled
+// back in time, drawn as shrinking/fading glow blobs (a comet trail). Additive and
+// slow — recolour for ghost wisps / souls / will-o'-wisp.
+const wispsSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 4, 32, quality)
+    const color = settings.color || '#a7f3d0'
+    const alpha = intensityAlpha(settings)
+    const glow = (settings.glowIntensity ?? 80) / 100
+    const spd = lerp(0.05, 0.25, (settings.speed ?? 35) / 100)
+    const tSec = timeMs / 1000
+    const sprite = glowSprite(color)
+    const TAIL = 9
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+
+    for (let i = 0; i < count; i++) {
+      const rx = hash(i * 3.1 + 1.2), ry = hash(i * 5.4 + 2.6)
+      const fx = hash(i * 7.7 + 3.9), fy = hash(i * 11.3 + 4.4)
+      const rPhase = hash(i * 13.9 + 5.1)
+      const rSize = hash(i * 2.2 + 8.1)
+      const pulse = 0.5 + 0.5 * Math.sin(tSec * 2 + rPhase * 6.28)
+      const head = lerp(5, 13, rSize) * glow * (0.7 + 0.3 * pulse)
+      for (let s = 0; s < TAIL; s++) {
+        const ph = (tSec - s * 0.09) * spd
+        const px = bx + (0.5 + 0.42 * Math.sin(ph * (0.7 + fx) + rx * 6.28)) * W
+        const py = by + (0.5 + 0.42 * Math.sin(ph * (0.5 + fy) + ry * 6.28 + 1.7)) * H
+        const k = 1 - s / TAIL
+        const size = head * (0.3 + 0.7 * k)
+        ctx.globalAlpha = opacity * alpha * k * k * (0.4 + 0.6 * pulse)
+        ctx.drawImage(sprite, px - size, py - size, size * 2, size * 2)
+      }
+    }
+    ctx.restore()
+  },
+}
+
+// ── Flying creatures: winged wanderers (butterflies / bees / dragonflies) ───────
+// One parameterised system. Each creature follows a closed-form wandering path,
+// turns to face its analytic velocity, and flaps its wings (open/close driven by
+// |sin|). Solid bodies (non-additive); a small palette keeps a swarm from reading
+// flat. settings.color, if set, is prepended to the palette.
+interface CreatureOpts {
+  countMin: number; countMax: number
+  bodyLen: number; wingLen: number; wings: 2 | 4
+  flap: number          // wing-flap frequency
+  wanderX: number; wanderY: number // path frequencies (per creature axis)
+  palette: string[]
+  wingAspect?: number   // wing chord/span ratio (1 = round, <1 = long & thin)
+}
+function makeCreatureSystem(opts: CreatureOpts): ParticleSystem {
+  return {
+    draw(ctx, b, timeMs, opacity, settings, quality) {
+      const { x: bx, y: by, width: W, height: H } = b
+      const count = countFrom(settings, opts.countMin, opts.countMax, quality)
+      const alpha = intensityAlpha(settings)
+      const spd = lerp(0.4, 1.8, (settings.speed ?? 50) / 100)
+      const scale = settings.scale || 1
+      const tSec = timeMs / 1000
+      const palette = settings.color ? [settings.color, ...opts.palette] : opts.palette
+
+      ctx.save()
+      ctx.beginPath()
+      ctx.rect(bx, by, W, H)
+      ctx.clip()
+
+      for (let i = 0; i < count; i++) {
+        const rx = hash(i * 3.1 + 1.2), ry = hash(i * 5.4 + 2.6)
+        const fx = hash(i * 7.7 + 3.9), fy = hash(i * 11.3 + 4.4)
+        const rVar = hash(i * 2.2 + 8.1)
+        const t = tSec * spd
+        const ax = t * opts.wanderX * (0.7 + fx) + rx * 6.28
+        const ay = t * opts.wanderY * (0.6 + fy) + ry * 6.28 + 1.7
+        // Darting species (high flap) get a little high-frequency jitter.
+        const jitter = opts.flap > 6 ? Math.sin(t * 9 + i) * 0.03 : 0
+        const px = bx + (0.5 + (0.42 + jitter) * Math.sin(ax)) * W
+        const py = by + (0.5 + (0.42 + jitter) * Math.sin(ay)) * H
+        // Heading from the analytic path velocity.
+        const vx = Math.cos(ax) * opts.wanderX * (0.7 + fx) * W
+        const vy = Math.cos(ay) * opts.wanderY * (0.6 + fy) * H
+        const heading = Math.atan2(vy, vx)
+        const flap = Math.abs(Math.sin(tSec * opts.flap * (0.8 + rVar)))
+        const sz = scale * lerp(0.8, 1.2, rVar)
+        const color = palette[i % palette.length]
+
+        ctx.save()
+        ctx.translate(px, py)
+        ctx.rotate(heading + Math.PI / 2) // body points along travel
+        ctx.globalAlpha = opacity * alpha
+        ctx.fillStyle = color
+        const wl = opts.wingLen * sz
+        const wa = opts.wingAspect ?? 1
+        const wspread = 0.25 + 0.75 * flap // closed → open
+        for (const side of [-1, 1]) {
+          ctx.save()
+          ctx.scale(side * wspread, 1)
+          ctx.beginPath()
+          ctx.ellipse(wl * 0.6, -wl * 0.2, wl, wl * 0.6 * wa, 0, 0, Math.PI * 2)
+          ctx.fill()
+          if (opts.wings === 4) {
+            ctx.beginPath()
+            ctx.ellipse(wl * 0.5, wl * 0.7, wl * 0.7, wl * 0.45 * wa, 0, 0, Math.PI * 2)
+            ctx.fill()
+          }
+          ctx.restore()
+        }
+        // Body along the travel axis.
+        ctx.fillStyle = 'rgba(20,20,28,0.9)'
+        ctx.beginPath()
+        ctx.ellipse(0, 0, opts.bodyLen * 0.22 * sz, opts.bodyLen * sz, 0, 0, Math.PI * 2)
+        ctx.fill()
+        ctx.restore()
+      }
+      ctx.restore()
+    },
+  }
+}
+const butterfliesSystem = makeCreatureSystem({
+  countMin: 3, countMax: 26, bodyLen: 5, wingLen: 7, wings: 4, flap: 4,
+  wanderX: 0.9, wanderY: 0.7, palette: ['#fb923c', '#f472b6', '#facc15', '#60a5fa', '#a78bfa'],
+})
+// Bees: small, fast erratic flap (jitter kicks in above flap>6), warm amber wings.
+const beesSystem = makeCreatureSystem({
+  countMin: 4, countMax: 30, bodyLen: 3.5, wingLen: 4, wings: 2, flap: 9,
+  wanderX: 1.5, wanderY: 1.3, palette: ['#fbbf24', '#f59e0b', '#fcd34d'],
+})
+// Dragonflies: long thin wings (low aspect), darting horizontal hover, iridescent.
+const dragonfliesSystem = makeCreatureSystem({
+  countMin: 3, countMax: 20, bodyLen: 8, wingLen: 9, wings: 4, flap: 7, wingAspect: 0.32,
+  wanderX: 1.2, wanderY: 0.5, palette: ['#67e8f9', '#5eead4', '#a7f3d0', '#7dd3fc'],
+})
+
+// ── Light beams (god rays): soft volumetric shafts crossing the layer at an angle ─
+// Parallel additive shafts rotated to `direction`; each is the radial glow sprite
+// stretched into a long, thin shaft (soft sides, fading ends) that slowly drifts
+// across the perpendicular span and shimmers in brightness. Reads as sun rays /
+// radiant beams; recolour for holy gold or eerie green.
+const lightBeamsSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 4, 18, quality)
+    const color = settings.color || '#fde9a8'
+    const alpha = intensityAlpha(settings)
+    const glow = (settings.glowIntensity ?? 70) / 100
+    const spd = lerp(0.01, 0.06, (settings.speed ?? 35) / 100)
+    const tSec = timeMs / 1000
+    const sprite = glowSprite(color)
+    const cx = bx + W / 2, cy = by + H / 2
+    const angle = ((settings.direction ?? 215) * Math.PI) / 180
+    const L = Math.hypot(W, H) + 80 // shaft length covers the box at any angle
+    const spanW = Math.hypot(W, H)  // perpendicular spread to fill the box
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.translate(cx, cy)
+    ctx.rotate(angle)
+
+    for (let i = 0; i < count; i++) {
+      const rPos = hash(i * 3.1 + 1.2)
+      const rW = hash(i * 5.4 + 2.6)
+      const rPhase = hash(i * 13.9 + 5.1)
+      // Slow lateral drift across the perpendicular span, wrapping seamlessly.
+      const off = (((rPos + tSec * spd * (0.6 + rW)) % 1) - 0.5) * spanW
+      const shimmer = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(tSec * (0.6 + rW) + rPhase * 6.28))
+      const halfW = lerp(10, 34, rW) * glow
+      ctx.globalAlpha = opacity * alpha * 0.5 * shimmer
+      ctx.drawImage(sprite, off - halfW, -L / 2, halfW * 2, L)
+    }
+    ctx.restore()
+  },
+}
+
+// ── Fire geysers: periodic eruptions — fire columns that shoot up then subside ──
+// Each geyser site cycles on its own phase: a smooth eruption envelope drives a
+// flame column up to a crown of flung sparks, then the site rests. Additive, hot
+// core inside a wider body like the flames system.
+const fireGeyserSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 2, 9, quality)
+    const core = settings.color || '#ffd24a'
+    const body = settings.secondaryColor || '#ff6a00'
+    const alpha = intensityAlpha(settings)
+    const glow = (settings.glowIntensity ?? 85) / 100
+    const rate = lerp(0.12, 0.45, (settings.speed ?? 55) / 100)
+    const tSec = timeMs / 1000
+    const coreSprite = glowSprite(core)
+    const bodySprite = glowSprite(body)
+    const SEG = 9
+    const maxH = H * lerp(0.5, 0.95, (settings.intensity ?? 80) / 100) * (settings.scale || 1)
+    const ACTIVE = 0.62 // fraction of the cycle spent erupting; the rest is dormant
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+
+    for (let i = 0; i < count; i++) {
+      const rLane = hash(i)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const rVar = hash(i * 13.7 + 5.3)
+      const rWidth = hash(i * 3.1 + 9.4)
+      const anchorX = bx + (0.08 + 0.84 * rLane) * W
+      const prog = (rPhase + tSec * rate * lerp(0.7, 1.3, rVar)) % 1
+      if (prog >= ACTIVE) continue
+      const erupt = Math.sin((Math.PI * prog) / ACTIVE) // 0 → 1 → 0
+      if (erupt <= 0.02) continue
+      const colH = maxH * erupt
+      const baseW = lerp(10, 24, rWidth) * glow
+      for (let s = 0; s <= SEG; s++) {
+        const u = s / SEG
+        const taper = 1 - u * 0.85
+        const waver = Math.sin(tSec * 6 + rPhase * 6.28 + u * 4) * u * lerp(4, 12, rVar)
+        const px = anchorX + waver
+        const py = by + H - u * colH
+        const size = baseW * taper
+        ctx.globalAlpha = opacity * alpha * 0.5 * taper * erupt
+        ctx.drawImage(bodySprite, px - size, py - size, size * 2, size * 2)
+        if (u < 0.55) {
+          const cs = size * 0.55
+          ctx.globalAlpha = opacity * alpha * (0.55 - u) * 1.4 * erupt
+          ctx.drawImage(coreSprite, px - cs, py - cs, cs * 2, cs * 2)
+        }
+      }
+      // Crown: sparks flung above the column top, scattering and flickering.
+      const crownY = by + H - colH
+      const sparks = 7
+      for (let k = 0; k < sparks; k++) {
+        const rk = hash(i * 17.3 + k * 2.1)
+        const rk2 = hash(i * 5.9 + k * 3.7)
+        const spread = (rk - 0.5) * baseW * 3
+        const lift = rk2 * colH * 0.35 * erupt
+        const px = anchorX + spread
+        const py = crownY - lift + Math.sin(tSec * 8 + k) * 3
+        const flick = 0.4 + 0.6 * Math.abs(Math.sin(tSec * 10 + k * 2.3))
+        const cs = lerp(1.2, 3, rk2) * glow
+        ctx.globalAlpha = opacity * alpha * erupt * flick
+        ctx.drawImage(coreSprite, px - cs, py - cs, cs * 2, cs * 2)
+      }
+    }
+    ctx.restore()
+  },
+}
+
+// ── Burning ash: glowing embers raining DOWN, cooling and flickering as they fall ─
+// Like snow but additive and warm: each fleck falls with sway/wind, a hot core
+// inside a soft glow, dimming toward the ground as it "cools". Recolour for grey
+// cinders or hotter orange.
+const burningAshSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 40, 320, quality)
+    const color = settings.color || '#ff7a1a'
+    const alpha = intensityAlpha(settings)
+    const fall = lerp(0.08, 0.3, (settings.speed ?? 40) / 100)
+    const wind = (((settings.direction ?? 185) - 180) / 90) * 50
+    const tSec = timeMs / 1000
+    const sprite = glowSprite(color)
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+
+    for (let i = 0; i < count; i++) {
+      const rVar = hash(i * 13.7 + 5.3)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const t01 = (rPhase + tSec * fall * lerp(0.6, 1.4, rVar)) % 1
+      const sway = Math.sin(tSec * (0.6 + rVar) + rPhase * 6.28) * lerp(8, 24, rVar)
+      const px = bx + hash(i) * W + sway + wind * t01
+      const py = by + t01 * (H + 40) - 20
+      const flick = 0.5 + 0.5 * Math.abs(Math.sin(tSec * (7 + rVar * 5) + i))
+      const cool = 1 - t01 * 0.55 // dim toward the ground
+      const size = lerp(1.4, 4, hash(i * 3.1 + 9.4))
+      const edge = Math.max(0, Math.min(1, Math.min(t01 * 6, (1 - t01) * 6)))
+      ctx.globalAlpha = opacity * alpha * flick * cool * edge
+      ctx.drawImage(sprite, px - size, py - size, size * 2, size * 2)
+    }
+    ctx.restore()
+  },
+}
+
+// ── Angel feathers: soft feathers drifting down, swaying and flipping edge-on ─────
+// Side-view fall (like snow) with a drawn feather — a vane traced by two curves over
+// a central shaft. A slow flip (scaleY) and rotation make them tumble; a soft fade
+// in/out hides the loop seam. Non-additive.
+const feathersSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 5, 48, quality)
+    const color = settings.color || '#f8fafc'
+    const alpha = intensityAlpha(settings)
+    const fall = lerp(0.03, 0.14, (settings.speed ?? 35) / 100)
+    const wind = (((settings.direction ?? 185) - 180) / 90) * 40
+    const tSec = timeMs / 1000
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+
+    for (let i = 0; i < count; i++) {
+      const rVar = hash(i * 13.7 + 5.3)
+      const rPhase = hash(i * 7.13 + 1.7)
+      const t01 = (rPhase + tSec * fall * lerp(0.6, 1.4, rVar)) % 1
+      const sway = Math.sin(tSec * (0.4 + rVar) + rPhase * 6.28) * lerp(10, 30, rVar)
+      const px = bx + hash(i) * W + sway + wind * t01
+      const py = by + t01 * (H + 50) - 25
+      const len = lerp(7, 15, hash(i * 3.1 + 9.4))
+      const spin = tSec * lerp(0.4, 1.2, rVar) * (rVar > 0.5 ? 1 : -1) + rPhase * 6.28
+      const flip = Math.abs(Math.sin(tSec * (1 + rVar) + rPhase * 6.28)) // edge-on tumble
+      const edge = Math.max(0, Math.min(1, Math.min(t01 * 6, (1 - t01) * 6)))
+      const a = opacity * alpha * (0.55 + 0.45 * flip) * edge
+
+      ctx.save()
+      ctx.translate(px, py)
+      ctx.rotate(spin)
+      ctx.scale(0.35 + 0.65 * flip, 1)
+      const w = len * 0.5
+      // Vane.
+      ctx.globalAlpha = a
+      ctx.fillStyle = color
+      ctx.beginPath()
+      ctx.moveTo(0, -len)
+      ctx.quadraticCurveTo(w, -len * 0.2, 0, len)
+      ctx.quadraticCurveTo(-w, -len * 0.2, 0, -len)
+      ctx.fill()
+      // Shaft.
+      ctx.globalAlpha = a * 0.5
+      ctx.strokeStyle = 'rgba(148,163,184,0.7)'
+      ctx.lineWidth = 0.7
+      ctx.beginPath()
+      ctx.moveTo(0, -len)
+      ctx.lineTo(0, len)
+      ctx.stroke()
+      ctx.restore()
+    }
+    ctx.restore()
+  },
+}
+
+// ── Floating skulls: bobbing skulls drifting with a spooky aura ──────────────────
+// Stylised bone skull (cranium + jaw + sockets + nasal + teeth) drawn at wandering,
+// bobbing positions. settings.color tints a soft additive aura behind each skull
+// (default sickly green); the bone is fixed.
+const skullsSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const count = countFrom(settings, 2, 14, quality)
+    const aura = settings.color || '#bbf7d0'
+    const bone = '#e8e6df'
+    const alpha = intensityAlpha(settings)
+    const wander = lerp(0.04, 0.18, (settings.speed ?? 35) / 100)
+    const scale = settings.scale || 1
+    const tSec = timeMs / 1000
+    const auraSprite = glowSprite(aura)
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+
+    for (let i = 0; i < count; i++) {
+      const rx = hash(i * 3.1 + 1.2), ry = hash(i * 5.4 + 2.6)
+      const fx = hash(i * 7.7 + 3.9), fy = hash(i * 11.3 + 4.4)
+      const rPhase = hash(i * 13.9 + 5.1)
+      const rVar = hash(i * 2.2 + 8.1)
+      const t = tSec * wander
+      const px = bx + (0.5 + 0.42 * Math.sin(t * (0.7 + fx) + rx * 6.28)) * W
+      const bob = Math.sin(tSec * (0.8 + rVar) + rPhase * 6.28) * lerp(4, 12, rVar)
+      const py = by + (0.5 + 0.4 * Math.sin(t * (0.5 + fy) + ry * 6.28 + 1.7)) * H + bob
+      const r = lerp(8, 16, rVar) * scale
+      const tilt = Math.sin(tSec * 0.7 + rPhase * 6.28) * 0.12
+
+      ctx.save()
+      ctx.translate(px, py)
+      // Aura.
+      ctx.globalCompositeOperation = 'lighter'
+      const ar = r * 2
+      ctx.globalAlpha = opacity * alpha * 0.45 * ((settings.glowIntensity ?? 70) / 100)
+      ctx.drawImage(auraSprite, -ar, -ar, ar * 2, ar * 2)
+      ctx.globalCompositeOperation = 'source-over'
+      ctx.rotate(tilt)
+      ctx.globalAlpha = opacity * alpha
+      // Cranium + jaw.
+      ctx.fillStyle = bone
+      ctx.beginPath()
+      ctx.ellipse(0, -r * 0.1, r, r * 1.05, 0, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.ellipse(0, r * 0.7, r * 0.6, r * 0.5, 0, 0, Math.PI * 2)
+      ctx.fill()
+      // Eye sockets + nasal.
+      ctx.fillStyle = 'rgba(20,24,20,0.92)'
+      ctx.beginPath()
+      ctx.ellipse(-r * 0.42, -r * 0.15, r * 0.3, r * 0.34, 0.2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.ellipse(r * 0.42, -r * 0.15, r * 0.3, r * 0.34, -0.2, 0, Math.PI * 2)
+      ctx.fill()
+      ctx.beginPath()
+      ctx.moveTo(0, r * 0.05)
+      ctx.lineTo(-r * 0.13, r * 0.35)
+      ctx.lineTo(r * 0.13, r * 0.35)
+      ctx.closePath()
+      ctx.fill()
+      // Teeth.
+      ctx.strokeStyle = 'rgba(20,24,20,0.6)'
+      ctx.lineWidth = Math.max(0.6, r * 0.05)
+      for (let k = -2; k <= 2; k++) {
+        ctx.beginPath()
+        ctx.moveTo(k * r * 0.18, r * 0.5)
+        ctx.lineTo(k * r * 0.18, r * 0.92)
+        ctx.stroke()
+      }
+      ctx.restore()
+    }
+    ctx.restore()
+  },
+}
+
+// ── Divine halo: a glowing tilted ring of light hovering and pulsing ─────────────
+// A ring of additive glow splats traced around a tilted ellipse, with a soft inner
+// glow, a bright highlight arc sweeping around, and a gentle vertical bob. Centred
+// (localized). Recolour for gold / white / eerie variants.
+const divineHaloSystem: ParticleSystem = {
+  draw(ctx, b, timeMs, opacity, settings, quality) {
+    const { x: bx, y: by, width: W, height: H } = b
+    const color = settings.color || '#fde9a8'
+    const alpha = intensityAlpha(settings)
+    const glow = (settings.glowIntensity ?? 85) / 100
+    const tSec = timeMs / 1000
+    const cx = bx + W / 2
+    const bob = Math.sin(tSec * lerp(0.4, 1.4, (settings.speed ?? 35) / 100)) * H * 0.04
+    const cy = by + H / 2 + bob
+    const Rx = Math.min(W, H) * 0.4
+    const Ry = Rx * 0.42 // tilted-away perspective
+    const sprite = glowSprite(color)
+    const pulse = 0.8 + 0.2 * Math.sin(tSec * lerp(1, 3, (settings.speed ?? 35) / 100))
+    const N = Math.max(24, Math.round(48 * (quality || 1)))
+    const thick = Rx * 0.1 * glow
+
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(bx, by, W, H)
+    ctx.clip()
+    ctx.globalCompositeOperation = 'lighter'
+
+    // Soft inner glow.
+    const ig = Rx * 0.7
+    ctx.globalAlpha = opacity * alpha * 0.25 * glow * pulse
+    ctx.drawImage(sprite, cx - ig, cy - ig, ig * 2, ig * 2)
+
+    // Ring of glow splats, with a highlight arc sweeping around.
+    const sweep = tSec * lerp(0.4, 1.6, (settings.speed ?? 35) / 100)
+    for (let k = 0; k < N; k++) {
+      const ang = (k / N) * Math.PI * 2
+      const px = cx + Math.cos(ang) * Rx
+      const py = cy + Math.sin(ang) * Ry
+      // Brightest where the sweep highlight currently is.
+      const hi = 0.5 + 0.5 * Math.cos(ang - sweep)
+      const s = thick * (0.7 + 0.6 * hi) * pulse
+      ctx.globalAlpha = opacity * alpha * (0.4 + 0.6 * hi)
+      ctx.drawImage(sprite, px - s, py - s, s * 2, s * 2)
+    }
+    ctx.restore()
+  },
+}
+
 const SYSTEMS: Record<string, ParticleSystem> = {
   'particle-rain': rainSystem,
   'particle-snow': snowSystem,
@@ -970,6 +1509,52 @@ const SYSTEMS: Record<string, ParticleSystem> = {
   'particle-embers-top': embersTopSystem,
   'particle-water-flow': waterFlowSystem,
   'particle-caustics': causticsSystem,
+  // New themed systems (Phase 5) — each is the base for several colour presets.
+  'particle-flames': flamesSystem,
+  'particle-wisps': wispsSystem,
+  'particle-butterflies': butterfliesSystem,
+  'particle-godrays': lightBeamsSystem,
+  // ── Colour / parameter presets — reuse a base system, differ only in defaults ──
+  // snow
+  'particle-heavy-snow': snowSystem,
+  'particle-blizzard': snowSystem,
+  'particle-ash': snowSystem,
+  // dust
+  'particle-dust-storm': dustSystem,
+  'particle-golden-motes': dustSystem,
+  // sparkles
+  'particle-frost-sparkle': sparklesSystem,
+  'particle-holy-sparkles': sparklesSystem,
+  // smoke
+  'particle-necrotic-smoke': smokeSystem,
+  'particle-sulfur-smoke': smokeSystem,
+  'particle-red-smoke': smokeSystem,
+  // embers
+  'particle-hellfire-sparks': embersSystem,
+  // bubbles
+  'particle-lava-bubbles': bubblesSystem,
+  // fog
+  'particle-spectral-mist': fogSystem,
+  'particle-sacred-mist': fogSystem,
+  // flames
+  'particle-green-flames': flamesSystem,
+  'particle-purple-flames': flamesSystem,
+  'particle-holy-fire': flamesSystem,
+  // wisps
+  'particle-souls': wispsSystem,
+  // creatures
+  'particle-bees': beesSystem,
+  'particle-dragonflies': dragonfliesSystem,
+  // bespoke new systems
+  'particle-fire-geyser': fireGeyserSystem,
+  'particle-burning-ash': burningAshSystem,
+  'particle-feathers': feathersSystem,
+  'particle-skulls': skullsSystem,
+  'particle-divine-halo': divineHaloSystem,
+  // top-down presets (reuse the overhead-perspective systems)
+  'particle-rain-top-heavy': rainTopSystem,
+  'particle-blizzard-top': snowTopSystem,
+  'particle-embers-top-heavy': embersTopSystem,
   // Light Source pack — procedural replacements for the radial glow/star sprites.
   'lightsource-glowing-orb': glowingOrbSystem,
   'lightsource-soft-star-glow': softStarGlowSystem,

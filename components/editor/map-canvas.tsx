@@ -179,6 +179,7 @@ function EffectLayerRenderer({
         transform: `rotate(${layer.rotation}deg)`,
         opacity: layer.opacity,
         zIndex: layer.zIndex,
+        mixBlendMode: layer.blendMode && layer.blendMode !== 'normal' ? layer.blendMode : undefined,
       }}
       onMouseDown={(e) => {
         if (e.button === 0) {

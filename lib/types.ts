@@ -42,6 +42,11 @@ export interface ExclusionZone {
   points: Position[]
 }
 
+// Canvas blend modes a layer may composite with (subset of GlobalCompositeOperation
+// that also maps cleanly to CSS mix-blend-mode for the live preview). 'normal' =
+// source-over (the default, no blending).
+export type LayerBlendMode = 'normal' | 'screen' | 'multiply' | 'overlay' | 'soft-light' | 'color-dodge' | 'lighten'
+
 // Effect layer (animated)
 export interface ExpandedEffectLayer extends BaseLayer {
   type: 'effect'
@@ -50,6 +55,10 @@ export interface ExpandedEffectLayer extends BaseLayer {
   settings: Partial<EffectSettings>
   // Regions the effect must NOT render in (e.g. a house on the map).
   exclusions?: ExclusionZone[]
+  // How this layer composites over what's beneath it (preview + export).
+  blendMode?: LayerBlendMode
+  createdAt?: string
+  updatedAt?: string
 }
 
 export type GridType = 'square' | 'hex'

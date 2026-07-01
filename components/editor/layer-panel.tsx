@@ -1,22 +1,77 @@
 'use client'
 
 import { useState } from 'react'
-import { 
+import {
   Eye, EyeOff, Lock, Unlock, Link, Unlink, Trash2, Copy,
-  ChevronUp, ChevronDown,
+  ChevronUp, ChevronDown, ChevronRight, RotateCcw, Shuffle, Sliders,
   Flame, Cloud, Snowflake, Droplets, Waves, Zap, Wind,
   Sparkles, CircleDot, Gem, Sun, Skull, Ghost,
   Monitor, Lightbulb, Shield, Binary, Atom, Plane, Image, Map, Grid3X3, Hexagon, Maximize2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEditor } from '@/lib/editor-store'
-import { getEffectById, EFFECT_PACKS, type EffectPack } from '@/lib/effects-library'
-import type { Layer, ExpandedEffectLayer } from '@/lib/types'
+import { getEffectById, EFFECT_PACKS, type EffectPack, type EffectSettings } from '@/lib/effects-library'
+import type { Layer, ExpandedEffectLayer, LayerBlendMode } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import { ScrollArea } from '@/components/ui/scroll-area'
+
+const BLEND_MODES: LayerBlendMode[] = ['normal', 'screen', 'lighten', 'multiply', 'overlay', 'soft-light', 'color-dodge']
+
+// Optional/advanced settings keys whose label + range drive the conditional Advanced
+// sliders. A control only renders if the effect's defaults declare that key.
+const ADVANCED_KEYS: { key: keyof EffectSettings; label: string; min: number; max: number; step: number }[] = [
+  { key: 'direction', label: 'Direction', min: 0, max: 360, step: 1 },
+  { key: 'ringCount', label: 'Ring Count', min: 1, max: 24, step: 1 },
+  { key: 'branching', label: 'Branching', min: 0, max: 100, step: 1 },
+  { key: 'turbulence', label: 'Turbulence', min: 0, max: 100, step: 1 },
+  { key: 'pulseFrequency', label: 'Pulse Frequency', min: 0, max: 100, step: 1 },
+  { key: 'spread', label: 'Spread', min: 0, max: 100, step: 1 },
+]
+
+// A reusable labelled slider row for a 0–100-style effect setting.
+function SettingSlider({ label, value, onChange, min = 0, max = 100, step = 1, suffix }: {
+  label: string; value: number; onChange: (v: number) => void
+  min?: number; max?: number; step?: number; suffix?: string
+}) {
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <Label className="text-[10px] text-muted-foreground">{label}</Label>
+        <span className="text-[10px] text-muted-foreground">{Math.round(value)}{suffix}</span>
+      </div>
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} />
+    </div>
+  )
+}
+
+function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-[10px] text-muted-foreground">{label}</Label>
+      <div className="flex items-center gap-2">
+        <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
+          className="w-8 h-6 rounded border border-border cursor-pointer" />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} className="h-6 text-xs flex-1" />
+      </div>
+    </div>
+  )
+}
+
+// HSL→hex for the Randomize button (vivid, high-lightness colors). h:0-360, s/l:0-100.
+function hslToHex(h: number, s: number, l: number): string {
+  const ln = l / 100
+  const a = (s / 100) * Math.min(ln, 1 - ln)
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12
+    const c = ln - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+    return Math.round(255 * c).toString(16).padStart(2, '0')
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   'cloud-rain': Cloud,
@@ -180,6 +235,7 @@ function LayerRow({
 
 function Inspector({ layer }: { layer: Layer | null }) {
   const { state, updateLayer } = useEditor()
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   // One-click "fill the canvas" — sizes the layer to the full canvas (and resets
   // rotation, since a rotated rect can't cover it). All other props stay manual.
@@ -218,13 +274,45 @@ function Inspector({ layer }: { layer: Layer | null }) {
     })
   }
   
-  const handleSettingsChange = (key: string, value: number | string) => {
+  const handleSettingsChange = (key: string, value: number | string | boolean) => {
     if (layer.type !== 'effect') return
     updateLayer(layer.id, {
       settings: { ...(layer as ExpandedEffectLayer).settings, [key]: value }
     })
   }
-  
+
+  // Read an effect setting with the effect's default as the fallback.
+  const setting = <K extends keyof EffectSettings>(key: K): EffectSettings[K] | undefined => {
+    if (layer.type !== 'effect') return undefined
+    const s = (layer as ExpandedEffectLayer).settings as EffectSettings
+    return (s[key] ?? effectDef?.defaultSettings[key]) as EffectSettings[K] | undefined
+  }
+
+  // Reset all effect settings to the effect's catalog defaults.
+  const handleReset = () => {
+    if (layer.type !== 'effect' || !effectDef) return
+    updateLayer(layer.id, { settings: { ...effectDef.defaultSettings }, blendMode: 'normal' })
+  }
+
+  // Randomize: jitter numeric settings and re-hue the colors for quick variation.
+  const handleRandomize = () => {
+    if (layer.type !== 'effect' || !effectDef) return
+    const base = { ...effectDef.defaultSettings, ...(layer as ExpandedEffectLayer).settings } as EffectSettings
+    const next: Record<string, number | string | boolean> = { ...base }
+    const jitter = (v: number) => Math.round(Math.max(0, Math.min(100, v + (Math.random() - 0.5) * 50)))
+    for (const k of ['speed', 'intensity', 'density', 'thickness', 'turbulence', 'branching', 'pulseFrequency', 'spread', 'glowIntensity'] as const) {
+      if (base[k] !== undefined) next[k] = jitter(base[k] as number)
+    }
+    if (base.ringCount !== undefined) next.ringCount = 1 + Math.floor(Math.random() * 18)
+    if (base.direction !== undefined) next.direction = Math.floor(Math.random() * 360)
+    for (const k of ['color', 'secondaryColor', 'glowColor'] as const) {
+      if (base[k] !== undefined) next[k] = hslToHex(Math.floor(Math.random() * 360), 70 + Math.random() * 25, 55 + Math.random() * 20)
+    }
+    updateLayer(layer.id, { settings: next as Partial<EffectSettings> })
+  }
+
+  const effectLayer = layer.type === 'effect' ? (layer as ExpandedEffectLayer) : null
+
   return (
     <ScrollArea className="flex-1 h-full [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
       <div className="p-3 space-y-4">
@@ -334,97 +422,101 @@ function Inspector({ layer }: { layer: Layer | null }) {
         </div>
         
         {/* Effect-specific controls */}
-        {layer.type === 'effect' && effectDef && (
+        {layer.type === 'effect' && effectDef && effectLayer && (
           <div className="space-y-3 pt-2 border-t border-border">
-            <h4 className="text-xs font-semibold text-foreground font-serif tracking-wide">
-              Effect Controls
-            </h4>
-            
-            {/* Speed */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-[10px] text-muted-foreground">Speed</Label>
-                <span className="text-[10px] text-muted-foreground">
-                  {(layer as ExpandedEffectLayer).settings?.speed ?? effectDef.defaultSettings.speed}
-                </span>
-              </div>
-              <Slider
-                value={[(layer as ExpandedEffectLayer).settings?.speed ?? effectDef.defaultSettings.speed]}
-                onValueChange={([v]) => handleSettingsChange('speed', v)}
-                min={0}
-                max={100}
-                step={1}
-              />
-            </div>
-            
-            {/* Intensity */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-[10px] text-muted-foreground">Intensity</Label>
-                <span className="text-[10px] text-muted-foreground">
-                  {(layer as ExpandedEffectLayer).settings?.intensity ?? effectDef.defaultSettings.intensity}
-                </span>
-              </div>
-              <Slider
-                value={[(layer as ExpandedEffectLayer).settings?.intensity ?? effectDef.defaultSettings.intensity]}
-                onValueChange={([v]) => handleSettingsChange('intensity', v)}
-                min={0}
-                max={100}
-                step={1}
-              />
-            </div>
-            
-            {/* Density */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-[10px] text-muted-foreground">Density</Label>
-                <span className="text-[10px] text-muted-foreground">
-                  {(layer as ExpandedEffectLayer).settings?.density ?? effectDef.defaultSettings.density}
-                </span>
-              </div>
-              <Slider
-                value={[(layer as ExpandedEffectLayer).settings?.density ?? effectDef.defaultSettings.density]}
-                onValueChange={([v]) => handleSettingsChange('density', v)}
-                min={0}
-                max={100}
-                step={1}
-              />
-            </div>
-            
-            {/* Color */}
-            <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Color</Label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={(layer as ExpandedEffectLayer).settings?.color ?? effectDef.defaultSettings.color}
-                  onChange={(e) => handleSettingsChange('color', e.target.value)}
-                  className="w-8 h-6 rounded border border-border cursor-pointer"
-                />
-                <Input
-                  value={(layer as ExpandedEffectLayer).settings?.color ?? effectDef.defaultSettings.color}
-                  onChange={(e) => handleSettingsChange('color', e.target.value)}
-                  className="h-6 text-xs flex-1"
-                />
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold text-foreground font-serif tracking-wide">
+                Effect Controls
+              </h4>
+              <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-6 w-6" title="Reset to default" onClick={handleReset}>
+                  <RotateCcw className="w-3 h-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" title="Randomize" onClick={handleRandomize}>
+                  <Shuffle className="w-3 h-3" />
+                </Button>
               </div>
             </div>
-            
-            {/* Glow Intensity (if applicable) */}
+
+            <SettingSlider label="Speed" value={setting('speed') ?? 50} onChange={(v) => handleSettingsChange('speed', v)} />
+            <SettingSlider label="Intensity" value={setting('intensity') ?? 80} onChange={(v) => handleSettingsChange('intensity', v)} />
+            <SettingSlider label="Density" value={setting('density') ?? 50} onChange={(v) => handleSettingsChange('density', v)} />
             {effectDef.defaultSettings.glowIntensity !== undefined && (
+              <SettingSlider label="Glow Strength" value={setting('glowIntensity') ?? 70} onChange={(v) => handleSettingsChange('glowIntensity', v)} />
+            )}
+            {effectDef.defaultSettings.thickness !== undefined && (
+              <SettingSlider label="Thickness" value={setting('thickness') ?? 30} onChange={(v) => handleSettingsChange('thickness', v)} />
+            )}
+
+            <ColorRow label="Color 1" value={setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('color', v)} />
+            <ColorRow label="Color 2" value={setting('secondaryColor') ?? setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('secondaryColor', v)} />
+            <ColorRow label="Glow Color" value={setting('glowColor') ?? setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('glowColor', v)} />
+
+            {/* Scale X / Y */}
+            <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label className="text-[10px] text-muted-foreground">Glow</Label>
-                  <span className="text-[10px] text-muted-foreground">
-                    {(layer as ExpandedEffectLayer).settings?.glowIntensity ?? effectDef.defaultSettings.glowIntensity}
-                  </span>
+                  <Label className="text-[10px] text-muted-foreground">Scale X</Label>
+                  <span className="text-[10px] text-muted-foreground">{(setting('scaleX') ?? 1).toFixed(2)}</span>
                 </div>
-                <Slider
-                  value={[(layer as ExpandedEffectLayer).settings?.glowIntensity ?? effectDef.defaultSettings.glowIntensity ?? 50]}
-                  onValueChange={([v]) => handleSettingsChange('glowIntensity', v)}
-                  min={0}
-                  max={100}
-                  step={1}
-                />
+                <Slider value={[setting('scaleX') ?? 1]} onValueChange={([v]) => handleSettingsChange('scaleX', v)} min={0.1} max={3} step={0.05} />
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-[10px] text-muted-foreground">Scale Y</Label>
+                  <span className="text-[10px] text-muted-foreground">{(setting('scaleY') ?? 1).toFixed(2)}</span>
+                </div>
+                <Slider value={[setting('scaleY') ?? 1]} onValueChange={([v]) => handleSettingsChange('scaleY', v)} min={0.1} max={3} step={0.05} />
+              </div>
+            </div>
+
+            {/* Blend mode */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-muted-foreground">Blend Mode</Label>
+              <select
+                value={effectLayer.blendMode ?? 'normal'}
+                onChange={(e) => updateLayer(layer.id, { blendMode: e.target.value as LayerBlendMode })}
+                className="h-7 w-full rounded-md border border-border bg-background px-2 text-xs capitalize"
+              >
+                {BLEND_MODES.map((m) => (
+                  <option key={m} value={m}>{m.replace('-', ' ')}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Loop */}
+            <div className="flex items-center justify-between">
+              <Label className="text-[10px] text-muted-foreground">Loop</Label>
+              <Switch checked={setting('loop') !== false} onCheckedChange={(v) => handleSettingsChange('loop', v)} />
+            </div>
+
+            {/* Advanced (only when the effect declares advanced keys) */}
+            {ADVANCED_KEYS.some((a) => effectDef.defaultSettings[a.key] !== undefined) && (
+              <div className="pt-1 border-t border-border/60">
+                <button
+                  onClick={() => setAdvancedOpen((o) => !o)}
+                  className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground py-1"
+                >
+                  {advancedOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                  <Sliders className="w-3 h-3" />
+                  Advanced
+                </button>
+                {advancedOpen && (
+                  <div className="space-y-3 pt-1">
+                    {ADVANCED_KEYS.filter((a) => effectDef.defaultSettings[a.key] !== undefined).map((a) => (
+                      <SettingSlider
+                        key={a.key}
+                        label={a.label}
+                        value={(setting(a.key) as number) ?? a.min}
+                        onChange={(v) => handleSettingsChange(a.key, v)}
+                        min={a.min}
+                        max={a.max}
+                        step={a.step}
+                        suffix={a.key === 'direction' ? '°' : ''}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </div>

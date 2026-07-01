@@ -1,6 +1,7 @@
-// Curated Effects Library - Reorganized into Core, Atmospheric, and Terrain Packs
+// Curated Effects Library - organized by element/theme for intuitive browsing
+// (fire, water, ice, earth, air, nature, necrotic, divine, magic, light sources)
 
-export type EffectPack = 'core' | 'atmospheric' | 'terrain' | 'fantasy' | 'scifi' | 'launch' | 'caustics' | 'cemetery' | 'subterranean' | 'lightsource' | 'lightsource-revised' | 'new' | 'particles' | 'vector'
+export type EffectPack = 'light' | 'fire' | 'water' | 'ice' | 'earth' | 'air' | 'nature' | 'necrotic' | 'divine' | 'magic'
 
 export type EffectId = 
   // Core Pack (7) - Localized light sources
@@ -48,6 +49,20 @@ export type EffectId =
   | 'particle-dust' | 'particle-smoke' | 'particle-bubbles' | 'particle-sparkles'
   | 'particle-rain-top' | 'particle-snow-top' | 'particle-leaves-top' | 'particle-embers-top'
   | 'particle-water-flow' | 'particle-caustics'
+  | 'particle-flames' | 'particle-wisps' | 'particle-butterflies' | 'particle-godrays'
+  // Particle presets (recolours / re-tunes of the base systems above)
+  | 'particle-heavy-snow' | 'particle-blizzard' | 'particle-ash'
+  | 'particle-dust-storm' | 'particle-golden-motes'
+  | 'particle-frost-sparkle' | 'particle-holy-sparkles'
+  | 'particle-necrotic-smoke' | 'particle-sulfur-smoke' | 'particle-red-smoke'
+  | 'particle-hellfire-sparks' | 'particle-lava-bubbles'
+  | 'particle-spectral-mist' | 'particle-sacred-mist'
+  | 'particle-green-flames' | 'particle-purple-flames' | 'particle-holy-fire'
+  | 'particle-souls' | 'particle-bees' | 'particle-dragonflies'
+  // Bespoke new systems + top-down presets
+  | 'particle-fire-geyser' | 'particle-burning-ash' | 'particle-feathers'
+  | 'particle-skulls' | 'particle-divine-halo'
+  | 'particle-rain-top-heavy' | 'particle-blizzard-top' | 'particle-embers-top-heavy'
   // VECTOR EFFECTS PACK (procedural magic circles + portals) — Phase 4
   | 'vector-pentagram' | 'vector-hexagram' | 'vector-heptagram' | 'vector-arcane-circle' | 'vector-rune-circle'
   | 'vector-portal' | 'vector-fire-portal'
@@ -60,6 +75,34 @@ export type EffectId =
   | 'lava-whirlpool'
   | 'lava-splashes'
   | 'lava-vents'
+  // VECTOR FX — Divine category (Phase: vector-fx)
+  | 'vfx-divine-holy-halo' | 'vfx-divine-radiant-pulse' | 'vfx-divine-god-rays'
+  | 'vfx-divine-blessing-circle' | 'vfx-divine-falling-golden-motes'
+  | 'vfx-divine-sacred-beam' | 'vfx-divine-angelic-feather-drift'
+  // VECTOR FX — Lava category
+  | 'vfx-lava-flow-lines' | 'vfx-lava-magma-veins' | 'vfx-lava-expanding-cracks'
+  | 'vfx-lava-heat-distortion-rings' | 'vfx-lava-pulse' | 'vfx-lava-ember-spiral'
+  | 'vfx-lava-volcanic-warning-glow'
+  // VECTOR FX — Water category
+  | 'vfx-water-river-flow-lines' | 'vfx-water-whirlpool-spiral' | 'vfx-water-ripple-rings'
+  | 'vfx-water-wave-lines' | 'vfx-water-rain-impact-rings' | 'vfx-water-waterfall-flow-streaks'
+  | 'vfx-water-underwater-caustic-lines'
+  // VECTOR FX — Wind category
+  | 'vfx-wind-gust-lines' | 'vfx-wind-swirling-wind' | 'vfx-wind-tornado-spiral'
+  | 'vfx-wind-directional-field' | 'vfx-wind-leaf-drift-path' | 'vfx-wind-smoke-curl-lines'
+  | 'vfx-wind-blizzard-wind-streaks'
+  // VECTOR FX — Magic category
+  | 'vfx-magic-arcane-circle' | 'vfx-magic-rotating-rune-ring' | 'vfx-magic-mana-stream'
+  | 'vfx-magic-portal-spiral' | 'vfx-magic-spell-targeting-circle' | 'vfx-magic-leyline-current'
+  | 'vfx-magic-energy-beam'
+  // VECTOR FX — Necrotic category
+  | 'vfx-necrotic-shadow-tendrils' | 'vfx-necrotic-corruption-veins' | 'vfx-necrotic-soul-wisps'
+  | 'vfx-necrotic-pulse' | 'vfx-necrotic-black-mist-curl' | 'vfx-necrotic-draining-life-spiral'
+  | 'vfx-necrotic-cursed-rune-ring'
+  // VECTOR FX — Dungeon category
+  | 'vfx-dungeon-dust-motes-path' | 'vfx-dungeon-cracking-floor-lines' | 'vfx-dungeon-trap-warning-glyph'
+  | 'vfx-dungeon-dripping-water-rings' | 'vfx-dungeon-spider-web-growth' | 'vfx-dungeon-falling-debris-lines'
+  | 'vfx-dungeon-ancient-rune-glow'
   // NEW_EFFECT_IDS
 
 export type RenderMode = 'localized' | 'atmospheric' | 'terrain'
@@ -73,7 +116,18 @@ export interface EffectSettings {
   scale: number        // 0.1-3
   direction?: number   // 0-360 degrees
   flickerRate?: number // 0-100 for light effects
-  glowIntensity?: number // 0-100
+  glowIntensity?: number // 0-100 (also "glow strength")
+  // ===== Vector FX controls (all optional; renderers default any value they read) =====
+  glowColor?: string     // glow/shadow color; falls back to `color`
+  scaleX?: number        // 0.1-3 horizontal stretch (default 1)
+  scaleY?: number        // 0.1-3 vertical stretch (default 1)
+  thickness?: number     // 0-100 line/stroke weight
+  branching?: number     // 0-100 branch amount for veins/tendrils/cracks
+  ringCount?: number     // count of rings/ripples/circles
+  turbulence?: number    // 0-100 organic noise/wobble
+  pulseFrequency?: number // 0-100 pulse rate for glowing effects
+  spread?: number        // 0-100 angular/area spread (rays, corruption, webs)
+  loop?: boolean         // animation looping on/off (default true)
 }
 
 export interface EffectDefinition {
@@ -87,89 +141,65 @@ export interface EffectDefinition {
 }
 
 export const EFFECT_PACKS: Record<EffectPack, { name: string; icon: string; color: string; description: string }> = {
-  core: { 
-    name: 'Core', 
-    icon: 'flame', 
-    color: '#f59e0b',
-    description: 'Light sources and illumination'
-  },
-  atmospheric: { 
-    name: 'Atmospheric', 
-    icon: 'cloud', 
-    color: '#64748b',
-    description: 'Weather and environmental overlays'
-  },
-  terrain: { 
-    name: 'Terrain', 
-    icon: 'mountain', 
-    color: '#22c55e',
-    description: 'Ground and surface effects'
-  },
-  fantasy: { 
-    name: 'Fantasy', 
-    icon: 'sparkles', 
-    color: '#8b5cf6',
-    description: 'Magical and mystical effects'
-  },
-  scifi: {
-    name: 'Sci-Fi', 
-    icon: 'cpu', 
-    color: '#06b6d4',
-    description: 'Futuristic technology effects'
-  },
-  launch: { 
-    name: 'Launch Effects', 
-    icon: 'rocket', 
-    color: '#10b981',
-    description: 'Premium animated sprite effects'
-  },
-  caustics: { 
-    name: 'Water Effects', 
-    icon: 'waves', 
-    color: '#38bdf8',
-    description: 'Underwater light caustics'
-  },
-  cemetery: {
-    name: 'Cemetery Effects', 
-    icon: 'skull', 
-    color: '#22c55e',
-    description: 'Spooky graveyard sprite effects'
-  },
-  subterranean: { 
-    name: 'Subterranean Effects', 
-    icon: 'gem', 
-    color: '#22d3ee',
-    description: 'Cave and underground sprite effects'
-  },
-  lightsource: { 
-    name: 'Light Source Effects', 
-    icon: 'lamp', 
-    color: '#fbbf24',
-    description: 'Torches, lanterns, and glowing light sprites'
-  },
-  'lightsource-revised': {
-    name: 'Light Source Revised Effects',
+  light: {
+    name: 'Light Sources',
     icon: 'lamp',
+    color: '#fbbf24',
+    description: 'Torches, lanterns, candles and braziers'
+  },
+  fire: {
+    name: 'Fire & Lava',
+    icon: 'flame',
     color: '#f97316',
-    description: 'Revised torches, lanterns, flames, and glowing light sprites'
+    description: 'Flames, embers, molten lava and volcanic hazards'
   },
-  new: {
-    name: 'Sprite Effects',
-    icon: 'plus',
-    color: '#6366f1',
-    description: 'Sprite-sheet portals and torch effects'
-  },
-  particles: {
-    name: 'Particle Effects',
-    icon: 'sparkles',
+  water: {
+    name: 'Water',
+    icon: 'droplets',
     color: '#38bdf8',
-    description: 'Procedural GPU-ready particles with live controls'
+    description: 'Rivers, rain, waterfalls, bubbles and underwater caustics'
   },
-  vector: {
-    name: 'Magic Circles & Portals',
-    icon: 'circle-dot',
+  ice: {
+    name: 'Ice & Frost',
+    icon: 'snowflake',
+    color: '#93c5fd',
+    description: 'Snow, blizzards, frost and frozen surfaces'
+  },
+  earth: {
+    name: 'Earth & Stone',
+    icon: 'mountain',
+    color: '#a8a29e',
+    description: 'Dust, rubble, cracking floors and collapsing stone'
+  },
+  air: {
+    name: 'Air & Weather',
+    icon: 'wind',
+    color: '#94a3b8',
+    description: 'Wind, storms, fog, smoke and lightning'
+  },
+  nature: {
+    name: 'Nature',
+    icon: 'leaf',
+    color: '#4ade80',
+    description: 'Fireflies, butterflies, bioluminescence and wildlife'
+  },
+  necrotic: {
+    name: 'Necrotic & Undead',
+    icon: 'skull',
+    color: '#84cc16',
+    description: 'Corruption, decay, spirits and graveyard horrors'
+  },
+  divine: {
+    name: 'Divine & Holy',
+    icon: 'sun',
+    color: '#fde68a',
+    description: 'Radiant holy light — halos, god rays and blessings'
+  },
+  magic: {
+    name: 'Arcane & Magic',
+    icon: 'sparkles',
     color: '#c084fc',
-    description: 'Procedural vector magic circles and portals — crisp, recolorable, looping'
+    description: 'Magic circles, portals, runes and arcane energy'
   },
 }
 
@@ -178,7 +208,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'torch',
     name: 'Torch Light',
-    pack: 'core',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Warm flickering light radius',
@@ -196,7 +226,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'torch-2',
     name: 'Torch Flame',
-    pack: 'core',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Animated sprite flame effect',
@@ -214,7 +244,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'campfire',
     name: 'Campfire',
-    pack: 'core',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Large warm glow with spark embers',
@@ -232,7 +262,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lantern',
     name: 'Lantern',
-    pack: 'core',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lightbulb',
     description: 'Steady warm glow with subtle flicker',
@@ -250,7 +280,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'candles',
     name: 'Candles',
-    pack: 'core',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Small dancing flames with soft glow',
@@ -268,7 +298,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'brazier',
     name: 'Brazier',
-    pack: 'core',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Intense fire with large light radius',
@@ -286,7 +316,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'magical-light',
     name: 'Magical Light',
-    pack: 'core',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Cool ethereal glow with sparkles',
@@ -307,7 +337,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'wind',
     name: 'Wind',
-    pack: 'atmospheric',
+    pack: 'air',
     renderMode: 'atmospheric',
     icon: 'wind',
     description: 'Visible gusts with debris',
@@ -323,7 +353,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightning-storm',
     name: 'Lightning Storm',
-    pack: 'atmospheric',
+    pack: 'air',
     renderMode: 'atmospheric',
     icon: 'zap',
     description: 'Dramatic sky flashes with rain',
@@ -343,7 +373,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'water-ripples',
     name: 'Water Surface',
-    pack: 'terrain',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'droplets',
     description: 'Gentle rippling water surface',
@@ -359,7 +389,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'waterfall',
     name: 'Waterfall',
-    pack: 'terrain',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Cascading water with spray mist',
@@ -375,7 +405,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-flow',
     name: 'Lava Flow',
-    pack: 'terrain',
+    pack: 'fire',
     renderMode: 'terrain',
     icon: 'flame',
     description: 'Molten rock with glowing cracks',
@@ -392,7 +422,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'ice-crystals',
     name: 'Ice Crystals',
-    pack: 'terrain',
+    pack: 'ice',
     renderMode: 'terrain',
     icon: 'gem',
     description: 'Frozen surface with shimmer',
@@ -412,7 +442,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'arcane-circles',
     name: 'Arcane Circle',
-    pack: 'fantasy',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle',
     description: 'Rotating magical sigil',
@@ -429,7 +459,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'portals',
     name: 'Portal',
-    pack: 'fantasy',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Swirling dimensional gateway',
@@ -446,7 +476,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'floating-runes',
     name: 'Floating Runes',
-    pack: 'fantasy',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Ancient glowing symbols',
@@ -462,7 +492,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'divine-light',
     name: 'Divine Light',
-    pack: 'fantasy',
+    pack: 'divine',
     renderMode: 'localized',
     icon: 'sun',
     description: 'Heavenly rays from above',
@@ -479,7 +509,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'necrotic-corruption',
     name: 'Necrotic Corruption',
-    pack: 'fantasy',
+    pack: 'necrotic',
     renderMode: 'terrain',
     icon: 'skull',
     description: 'Dark spreading corruption',
@@ -496,7 +526,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'spirit-apparitions',
     name: 'Spirit Apparitions',
-    pack: 'fantasy',
+    pack: 'necrotic',
     renderMode: 'atmospheric',
     icon: 'ghost',
     description: 'Ghostly shapes drifting by',
@@ -512,7 +542,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'blue-portal',
     name: 'Blue Portal',
-    pack: 'new',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Expanding arcane blue ring portal',
@@ -529,7 +559,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'fire-portal',
     name: 'Fire Portal',
-    pack: 'new',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Erupting fiery portal sprite animation',
@@ -548,7 +578,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'holograms',
     name: 'Hologram',
-    pack: 'scifi',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'monitor',
     description: 'Flickering digital projection',
@@ -565,7 +595,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'energy-shields',
     name: 'Energy Shield',
-    pack: 'scifi',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'shield',
     description: 'Hexagonal force field',
@@ -582,7 +612,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'data-streams',
     name: 'Data Stream',
-    pack: 'scifi',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'binary',
     description: 'Cascading digital code',
@@ -597,7 +627,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'reactor-core',
     name: 'Reactor Core',
-    pack: 'scifi',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'atom',
     description: 'Pulsing energy source',
@@ -616,7 +646,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-torch-light',
     name: 'Torch Light',
-    pack: 'launch',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Flickering torch flame',
@@ -625,7 +655,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-lantern-glow',
     name: 'Lantern Glow',
-    pack: 'launch',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Warm hanging lantern light',
@@ -634,7 +664,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-campfire',
     name: 'Campfire',
-    pack: 'launch',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Crackling campfire blaze',
@@ -643,7 +673,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-running-water',
     name: 'Running Water',
-    pack: 'launch',
+    pack: 'water',
     renderMode: 'localized',
     icon: 'droplets',
     description: 'Splashing flowing water',
@@ -652,7 +682,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-arcane-runes',
     name: 'Arcane Runes',
-    pack: 'launch',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Glowing magic rune circles',
@@ -661,7 +691,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-portal',
     name: 'Portal',
-    pack: 'launch',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Swirling magic portal rings',
@@ -670,7 +700,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-lightning',
     name: 'Lightning',
-    pack: 'launch',
+    pack: 'air',
     renderMode: 'localized',
     icon: 'zap',
     description: 'Crackling lightning bolts',
@@ -679,7 +709,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-divine-light',
     name: 'Divine Light',
-    pack: 'launch',
+    pack: 'divine',
     renderMode: 'localized',
     icon: 'sun',
     description: 'Radiant beams of holy light',
@@ -688,7 +718,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-necrotic-corruption',
     name: 'Necrotic Corruption',
-    pack: 'launch',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'skull',
     description: 'Spreading necrotic energy',
@@ -697,7 +727,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'launch-ghost-apparition',
     name: 'Ghost Apparition',
-    pack: 'launch',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'ghost',
     description: 'Spectral ghostly figures',
@@ -708,7 +738,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-shallow-clear',
     name: 'Shallow Clear Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Crisp light ripples in shallow clear water',
@@ -717,7 +747,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-deep-blue',
     name: 'Deep Blue Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Cool caustics in deep blue water',
@@ -726,7 +756,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-tropical-shallow',
     name: 'Tropical Shallow Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Bright turquoise tropical caustics',
@@ -735,7 +765,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-soft-sand',
     name: 'Soft Sand Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Soft diffuse caustics over sand',
@@ -744,7 +774,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-rocky-bottom',
     name: 'Rocky Bottom Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Caustics scattered over rocky bottom',
@@ -753,7 +783,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-fast-moving',
     name: 'Fast Moving Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Rapidly shifting light patterns',
@@ -762,7 +792,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-slow-gentle',
     name: 'Slow Gentle Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Slow, calming light ripples',
@@ -771,7 +801,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-blue-green',
     name: 'Blue Green Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Blended blue-green water caustics',
@@ -780,7 +810,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-sunlit-deep',
     name: 'Sunlit Deep Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Sun rays piercing deep water',
@@ -789,7 +819,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-murky-water',
     name: 'Murky Water Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Hazy caustics in murky green water',
@@ -798,7 +828,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-cave-water',
     name: 'Cave Water Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Stark caustics in dark cave water',
@@ -807,7 +837,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-kelp-forest',
     name: 'Kelp Forest Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Green-tinted caustics through kelp',
@@ -816,7 +846,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-rippling-sand',
     name: 'Rippling Sand Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Radiating caustics over rippled sand',
@@ -825,7 +855,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-wavy-surface',
     name: 'Wavy Surface Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Caustics from a wavy water surface',
@@ -834,7 +864,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'caustics-magic-glow',
     name: 'Magic Glow Caustics',
-    pack: 'caustics',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Glowing magical caustic light',
@@ -847,7 +877,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-will-o-wisps',
     name: "Ghostly Will-o'-Wisps",
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Flickering spirit fire orbs',
@@ -856,7 +886,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-soul-spirits',
     name: 'Soul Spirits',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'ghost',
     description: 'Drifting ghostly soul figures',
@@ -865,7 +895,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-necrotic-aura',
     name: 'Necrotic Aura',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'skull',
     description: 'Swirling dark decaying energy',
@@ -874,7 +904,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-blood-petals',
     name: 'Blood Petals',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'atmospheric',
     icon: 'sparkles',
     description: 'Scattering crimson petals',
@@ -883,7 +913,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-haunted-lantern',
     name: 'Haunted Lantern Light',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Eerie green lantern flame',
@@ -892,7 +922,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-cracked-stone-rise',
     name: 'Cracked Stone Rise',
-    pack: 'cemetery',
+    pack: 'earth',
     renderMode: 'terrain',
     icon: 'mountain',
     description: 'Tombstone rising from the ground',
@@ -901,7 +931,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-skeletal-remains',
     name: 'Skeletal Remains Shift',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'terrain',
     icon: 'skull',
     description: 'Bones clattering and assembling',
@@ -910,7 +940,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-dark-ritual-circle',
     name: 'Dark Ritual Circle',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Glowing red occult summoning circle',
@@ -919,7 +949,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-coffin-burst',
     name: 'Coffin Burst',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Coffin bursting open with debris',
@@ -928,7 +958,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-moonbeam-trees',
     name: 'Moonbeam Through Trees',
-    pack: 'cemetery',
+    pack: 'divine',
     renderMode: 'localized',
     icon: 'sun',
     description: 'Pale volumetric moonlight rays',
@@ -937,7 +967,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-draining-life-vortex',
     name: 'Draining Life Vortex',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Swirling green life-drain vortex',
@@ -946,7 +976,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-candle-flame',
     name: 'Candle Flame Flicker',
-    pack: 'cemetery',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Flickering candle flames',
@@ -955,7 +985,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'cemetery-bats-in-flight',
     name: 'Bats in Flight',
-    pack: 'cemetery',
+    pack: 'necrotic',
     renderMode: 'atmospheric',
     icon: 'ghost',
     description: 'Silhouetted bats flying past',
@@ -966,7 +996,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-cave-drips',
     name: 'Cave Drips',
-    pack: 'subterranean',
+    pack: 'water',
     renderMode: 'localized',
     icon: 'droplets',
     description: 'Dripping water with ripple splashes',
@@ -975,7 +1005,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-stalactite-seep',
     name: 'Stalactite Seep',
-    pack: 'subterranean',
+    pack: 'water',
     renderMode: 'localized',
     icon: 'droplets',
     description: 'Water seeping down stalactites',
@@ -984,7 +1014,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-underground-stream',
     name: 'Underground Stream',
-    pack: 'subterranean',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Flowing subterranean water',
@@ -993,7 +1023,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-crystal-pulse',
     name: 'Crystal Pulse',
-    pack: 'subterranean',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'gem',
     description: 'Pulsing glowing crystal',
@@ -1002,7 +1032,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-bioluminescent-spores',
     name: 'Bioluminescent Spores',
-    pack: 'subterranean',
+    pack: 'nature',
     renderMode: 'atmospheric',
     icon: 'sparkle',
     description: 'Floating glowing spores',
@@ -1011,7 +1041,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-glowing-mushroom-aura',
     name: 'Glowing Mushroom Aura',
-    pack: 'subterranean',
+    pack: 'nature',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Pulsing cave mushroom glow',
@@ -1020,7 +1050,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-bat-swarm',
     name: 'Bat Swarm Silhouettes',
-    pack: 'subterranean',
+    pack: 'necrotic',
     renderMode: 'atmospheric',
     icon: 'ghost',
     description: 'Swarming bat silhouettes',
@@ -1029,7 +1059,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-pebble-collapse',
     name: 'Pebble Collapse',
-    pack: 'subterranean',
+    pack: 'earth',
     renderMode: 'terrain',
     icon: 'mountain',
     description: 'Tumbling falling pebbles',
@@ -1038,7 +1068,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-arcane-cave-energy',
     name: 'Arcane Cave Energy',
-    pack: 'subterranean',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Crackling arcane energy arcs',
@@ -1047,7 +1077,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'subterranean-ambient',
     name: 'Subterranean Ambient',
-    pack: 'subterranean',
+    pack: 'earth',
     renderMode: 'atmospheric',
     icon: 'sparkles',
     description: 'Mixed ambient cave particles',
@@ -1060,7 +1090,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-wall-torch',
     name: 'Wall Torch',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Flickering wall-mounted torch',
@@ -1069,7 +1099,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-ornate-lantern',
     name: 'Ornate Lantern',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Decorative glowing lantern',
@@ -1078,7 +1108,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-iron-lantern',
     name: 'Iron Lantern',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Simple iron-framed lantern',
@@ -1087,7 +1117,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-hanging-lantern',
     name: 'Hanging Lantern',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Swaying suspended lantern',
@@ -1096,7 +1126,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-carriage-lantern',
     name: 'Carriage Lantern',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Tall bright carriage lantern',
@@ -1105,7 +1135,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-campfire',
     name: 'Campfire',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Crackling log campfire',
@@ -1114,7 +1144,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-sparkler-burst',
     name: 'Sparkler Burst',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Radiating spark burst',
@@ -1123,7 +1153,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-candle',
     name: 'Candle',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Single flickering candle',
@@ -1132,7 +1162,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-glowing-orb',
     name: 'Glowing Orb',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkle',
     description: 'Pulsing orb of warm light',
@@ -1141,7 +1171,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-fire-brazier',
     name: 'Fire Brazier',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Flaming metal fire bowl',
@@ -1150,7 +1180,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-rune-light-circle',
     name: 'Rune Light Circle',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Glowing runic light ring',
@@ -1159,7 +1189,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-pendant-light',
     name: 'Pendant Light',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Hanging swaying light orb',
@@ -1168,7 +1198,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-radiant-starburst',
     name: 'Radiant Starburst',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Bright twinkling star burst',
@@ -1177,7 +1207,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-soft-star-glow',
     name: 'Soft Star Glow',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkle',
     description: 'Diffuse soft glowing star',
@@ -1186,7 +1216,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lightsource-sparkle-starburst',
     name: 'Sparkle Starburst',
-    pack: 'lightsource',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Glittering sparkle star burst',
@@ -1196,7 +1226,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-torch',
     name: 'Torch',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Flickering wall torch flame',
@@ -1205,7 +1235,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-fire-glow',
     name: 'Fire Glow',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Soft glowing fire light',
@@ -1214,7 +1244,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-fire-bowl',
     name: 'Fire Bowl',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Burning fire bowl',
@@ -1223,7 +1253,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-carriage-lantern',
     name: 'Carriage Lantern',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Ornate carriage lantern light',
@@ -1232,7 +1262,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-hanging-lantern',
     name: 'Hanging Lantern',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'lamp',
     description: 'Glowing hanging lantern',
@@ -1241,7 +1271,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-candle',
     name: 'Candle',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Flickering candle flame',
@@ -1250,7 +1280,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-glowing-orb',
     name: 'Glowing Orb',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Pulsing glowing orb of light',
@@ -1259,7 +1289,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-campfire',
     name: 'Campfire',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Crackling campfire',
@@ -1268,7 +1298,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-sparkles',
     name: 'Sparkles',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Drifting ember sparkles',
@@ -1277,7 +1307,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-fire-brazier',
     name: 'Fire Brazier',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Blazing fire brazier',
@@ -1286,7 +1316,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-blue-flame',
     name: 'Blue Flame',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Ethereal blue flame',
@@ -1295,7 +1325,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-green-flame',
     name: 'Green Flame',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Eerie green flame',
@@ -1304,7 +1334,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-starburst',
     name: 'Starburst',
-    pack: 'lightsource-revised',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Radiant twinkling starburst',
@@ -1313,7 +1343,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-arcane-circle',
     name: 'Arcane Circle',
-    pack: 'lightsource-revised',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Rotating arcane rune circle',
@@ -1322,7 +1352,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lsr-smoke',
     name: 'Smoke',
-    pack: 'lightsource-revised',
+    pack: 'air',
     renderMode: 'localized',
     icon: 'cloud',
     description: 'Rising plume of smoke',
@@ -1331,7 +1361,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'new-fire-torch',
     name: 'Fire Torch',
-    pack: 'new',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'sparkles',
     description: 'Fire Torch sprite animation',
@@ -1340,7 +1370,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'camp-fire',
     name: 'Camp Fire',
-    pack: 'new',
+    pack: 'light',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Camp Fire sprite animation',
@@ -1349,7 +1379,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-bubbles',
     name: 'Lava Bubbles',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Lava Bubbles sprite animation',
@@ -1358,7 +1388,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-burst',
     name: 'Lava Burst',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Lava Burst sprite animation',
@@ -1367,7 +1397,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-cracks',
     name: 'Lava Cracks',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Lava Cracks sprite animation',
@@ -1376,7 +1406,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-current',
     name: 'Lava Current',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Lava Current sprite animation',
@@ -1385,7 +1415,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-slow',
     name: 'Molten Flow',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Slow molten lava flow sprite animation',
@@ -1394,7 +1424,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-whirlpool',
     name: 'Lava Whirlpool',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Lava Whirlpool sprite animation',
@@ -1403,7 +1433,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-splashes',
     name: 'Lava Splashes',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Lava Splashes sprite animation',
@@ -1412,7 +1442,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'lava-vents',
     name: 'Lava Vents',
-    pack: 'new',
+    pack: 'fire',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Lava Vents sprite animation',
@@ -1424,7 +1454,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-rain',
     name: 'Rain (Particles)',
-    pack: 'particles',
+    pack: 'water',
     renderMode: 'atmospheric',
     icon: 'cloud-rain',
     description: 'Procedural rain — density, direction, speed and color are live',
@@ -1433,7 +1463,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-rain-top',
     name: 'Rain — Top-Down (Particles)',
-    pack: 'particles',
+    pack: 'water',
     renderMode: 'atmospheric',
     icon: 'cloud-rain',
     description: 'Aerial rain seen from above — drops land as expanding ripples',
@@ -1442,7 +1472,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-snow-top',
     name: 'Snow — Top-Down (Particles)',
-    pack: 'particles',
+    pack: 'ice',
     renderMode: 'atmospheric',
     icon: 'snowflake',
     description: 'Aerial snow seen from above — flakes drift across the map on the wind',
@@ -1451,7 +1481,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-leaves-top',
     name: 'Leaves — Top-Down (Particles)',
-    pack: 'particles',
+    pack: 'nature',
     renderMode: 'atmospheric',
     icon: 'leaf',
     description: 'Aerial autumn leaves blowing across the ground, tumbling as they go',
@@ -1460,7 +1490,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-embers-top',
     name: 'Embers — Top-Down (Particles)',
-    pack: 'particles',
+    pack: 'fire',
     renderMode: 'atmospheric',
     icon: 'flame',
     description: 'Aerial embers scattered on the wind — flickering sparks over the ground',
@@ -1469,7 +1499,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-snow',
     name: 'Snow (Particles)',
-    pack: 'particles',
+    pack: 'ice',
     renderMode: 'atmospheric',
     icon: 'snowflake',
     description: 'Procedural snow — drifting flakes with live density, wind and speed',
@@ -1478,7 +1508,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-embers',
     name: 'Embers (Particles)',
-    pack: 'particles',
+    pack: 'fire',
     renderMode: 'atmospheric',
     icon: 'flame',
     description: 'Procedural rising sparks — glowing, flickering, additive',
@@ -1487,7 +1517,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-fog',
     name: 'Fog (Particles)',
-    pack: 'particles',
+    pack: 'air',
     renderMode: 'atmospheric',
     icon: 'cloud',
     description: 'Procedural drifting fog — soft volumetric blobs, live drift and density',
@@ -1496,7 +1526,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-fireflies',
     name: 'Fireflies (Particles)',
-    pack: 'particles',
+    pack: 'nature',
     renderMode: 'atmospheric',
     icon: 'sparkles',
     description: 'Procedural fireflies — wandering glow dots that pulse, additive',
@@ -1505,7 +1535,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-dust',
     name: 'Dust Motes (Particles)',
-    pack: 'particles',
+    pack: 'earth',
     renderMode: 'atmospheric',
     icon: 'sparkle',
     description: 'Procedural floating dust — drifting, twinkling motes',
@@ -1514,7 +1544,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-smoke',
     name: 'Smoke (Particles)',
-    pack: 'particles',
+    pack: 'air',
     renderMode: 'atmospheric',
     icon: 'cloud',
     description: 'Procedural rising smoke — soft plumes that grow and fade',
@@ -1523,7 +1553,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-bubbles',
     name: 'Bubbles (Particles)',
-    pack: 'particles',
+    pack: 'water',
     renderMode: 'atmospheric',
     icon: 'droplets',
     description: 'Procedural rising bubbles — wobbling rings with highlights',
@@ -1532,7 +1562,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-sparkles',
     name: 'Sparkles (Particles)',
-    pack: 'particles',
+    pack: 'magic',
     renderMode: 'atmospheric',
     icon: 'sparkles',
     description: 'Procedural sparkles — twinkling additive points that flash',
@@ -1541,7 +1571,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-water-flow',
     name: 'Flowing Water (Particles)',
-    pack: 'particles',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'droplets',
     description: 'Procedural flowing water — highlight streaks riding a directional current, live direction/speed',
@@ -1550,18 +1580,310 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'particle-caustics',
     name: 'Caustics (Particles)',
-    pack: 'particles',
+    pack: 'water',
     renderMode: 'terrain',
     icon: 'waves',
     description: 'Procedural underwater caustics — a rippling light web from a closed-form wave field',
     defaultSettings: { speed: 45, intensity: 80, density: 55, color: '#7dd3fc', secondaryColor: '#e0f2fe', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'particle-flames',
+    name: 'Flames (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Procedural fire — flickering tongues with a hot core; recolour for green/purple/holy/hellfire',
+    defaultSettings: { speed: 55, intensity: 85, density: 50, color: '#ffd24a', secondaryColor: '#ff6a00', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'particle-wisps',
+    name: 'Wisps (Particles)',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Ghostly drifting wisps with comet trails — additive; recolour for souls / spectral wisps',
+    defaultSettings: { speed: 35, intensity: 70, density: 45, color: '#a7f3d0', glowIntensity: 80, scale: 1 },
+  },
+  {
+    id: 'particle-butterflies',
+    name: 'Butterflies (Particles)',
+    pack: 'nature',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Winged creatures wandering and flapping — base for bees / dragonflies presets',
+    defaultSettings: { speed: 50, intensity: 90, density: 45, color: '#fb923c', scale: 1 },
+  },
+  {
+    id: 'particle-godrays',
+    name: 'Light Beams / God Rays (Particles)',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Soft volumetric light shafts at an angle — sun rays / radiant beams; recolour for holy gold',
+    defaultSettings: { speed: 35, intensity: 70, density: 45, color: '#fde9a8', direction: 215, glowIntensity: 70, scale: 1 },
+  },
+
+  // ===== Particle presets (recolours / re-tunes of the base systems) =====
+  {
+    id: 'particle-heavy-snow',
+    name: 'Heavy Snow (Particles)',
+    pack: 'ice',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Dense snowfall — heavy flakes drifting down',
+    defaultSettings: { speed: 35, intensity: 82, density: 82, color: '#ffffff', direction: 180, scale: 1 },
+  },
+  {
+    id: 'particle-blizzard',
+    name: 'Blizzard (Particles)',
+    pack: 'ice',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Driving blizzard — dense snow blown hard sideways',
+    defaultSettings: { speed: 82, intensity: 85, density: 92, color: '#ffffff', direction: 230, scale: 1 },
+  },
+  {
+    id: 'particle-ash',
+    name: 'Ash (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Grey ash flecks drifting down slowly',
+    defaultSettings: { speed: 24, intensity: 60, density: 58, color: '#9ca3af', direction: 188, scale: 1 },
+  },
+  {
+    id: 'particle-dust-storm',
+    name: 'Dust Storm (Particles)',
+    pack: 'air',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Driving dust / sandstorm — dense tan motes blown across the scene',
+    defaultSettings: { speed: 76, intensity: 70, density: 86, color: '#d6b370', scale: 1 },
+  },
+  {
+    id: 'particle-golden-motes',
+    name: 'Golden Motes (Particles)',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Slow drifting golden flecks — treasure / divine ambience',
+    defaultSettings: { speed: 20, intensity: 65, density: 55, color: '#fcd34d', scale: 1 },
+  },
+  {
+    id: 'particle-frost-sparkle',
+    name: 'Frost Sparkle (Particles)',
+    pack: 'ice',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Icy twinkling sparkles — frost / ice crystals',
+    defaultSettings: { speed: 55, intensity: 85, density: 55, color: '#cffafe', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-holy-sparkles',
+    name: 'Holy Sparkles (Particles)',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Warm golden twinkles — blessing / holy ambience',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#fef9c3', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-necrotic-smoke',
+    name: 'Necrotic Smoke (Particles)',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Sickly green rising smoke',
+    defaultSettings: { speed: 30, intensity: 65, density: 55, color: '#84cc16', scale: 1 },
+  },
+  {
+    id: 'particle-sulfur-smoke',
+    name: 'Sulfur Smoke (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Acrid yellow sulfur smoke rising',
+    defaultSettings: { speed: 30, intensity: 65, density: 55, color: '#ca8a04', scale: 1 },
+  },
+  {
+    id: 'particle-red-smoke',
+    name: 'Red Smoke (Particles)',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Ominous red smoke rising',
+    defaultSettings: { speed: 30, intensity: 65, density: 55, color: '#dc2626', scale: 1 },
+  },
+  {
+    id: 'particle-hellfire-sparks',
+    name: 'Hellfire Sparks (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Fierce red-orange rising sparks — hellfire / demon embers',
+    defaultSettings: { speed: 58, intensity: 88, density: 60, color: '#ef4444', secondaryColor: '#f59e0b', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-lava-bubbles',
+    name: 'Lava Bubbles (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'droplets',
+    description: 'Glowing molten bubbles rising and popping',
+    defaultSettings: { speed: 35, intensity: 80, density: 50, color: '#fb923c', scale: 1 },
+  },
+  {
+    id: 'particle-spectral-mist',
+    name: 'Spectral Mist (Particles)',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Pale green ghostly mist drifting low',
+    defaultSettings: { speed: 18, intensity: 60, density: 55, color: '#a7f3d0', direction: 90, scale: 1 },
+  },
+  {
+    id: 'particle-sacred-mist',
+    name: 'Sacred Mist (Particles)',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'cloud',
+    description: 'Soft golden-white sacred mist drifting low',
+    defaultSettings: { speed: 16, intensity: 60, density: 50, color: '#fef9c3', direction: 90, scale: 1 },
+  },
+  {
+    id: 'particle-green-flames',
+    name: 'Green Flames (Particles)',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Eerie green fire — flickering tongues with a bright core',
+    defaultSettings: { speed: 55, intensity: 85, density: 50, color: '#bbf7d0', secondaryColor: '#16a34a', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'particle-purple-flames',
+    name: 'Purple Flames (Particles)',
+    pack: 'magic',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Arcane purple fire — flickering tongues with a bright core',
+    defaultSettings: { speed: 55, intensity: 85, density: 50, color: '#f5d0fe', secondaryColor: '#9333ea', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'particle-holy-fire',
+    name: 'Holy Fire (Particles)',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Radiant white-gold holy fire',
+    defaultSettings: { speed: 50, intensity: 85, density: 50, color: '#fffbeb', secondaryColor: '#f59e0b', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-souls',
+    name: 'Souls (Particles)',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Pale blue spirit lights wandering with comet trails',
+    defaultSettings: { speed: 28, intensity: 70, density: 40, color: '#dbeafe', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'particle-bees',
+    name: 'Bees (Particles)',
+    pack: 'nature',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Small fast-darting winged insects',
+    defaultSettings: { speed: 65, intensity: 90, density: 50, color: '#fbbf24', scale: 1 },
+  },
+  {
+    id: 'particle-dragonflies',
+    name: 'Dragonflies (Particles)',
+    pack: 'nature',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Iridescent long-winged dragonflies hovering and darting',
+    defaultSettings: { speed: 55, intensity: 90, density: 40, color: '#67e8f9', scale: 1 },
+  },
+
+  // ===== Bespoke new systems + top-down presets =====
+  {
+    id: 'particle-fire-geyser',
+    name: 'Fire Geysers (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Periodic fire eruptions — columns that shoot up with a crown of sparks, then subside',
+    defaultSettings: { speed: 55, intensity: 85, density: 45, color: '#ffd24a', secondaryColor: '#ff6a00', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'particle-burning-ash',
+    name: 'Burning Ash (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Glowing embers raining down, flickering and cooling as they fall',
+    defaultSettings: { speed: 40, intensity: 80, density: 55, color: '#ff7a1a', direction: 185, glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'particle-feathers',
+    name: 'Angel Feathers (Particles)',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Soft feathers drifting down, swaying and tumbling edge-on',
+    defaultSettings: { speed: 35, intensity: 75, density: 40, color: '#f8fafc', direction: 185, scale: 1 },
+  },
+  {
+    id: 'particle-skulls',
+    name: 'Floating Skulls (Particles)',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'skull',
+    description: 'Bobbing bone skulls drifting with a spooky aura — recolour the aura',
+    defaultSettings: { speed: 35, intensity: 80, density: 35, color: '#bbf7d0', glowIntensity: 70, scale: 1 },
+  },
+  {
+    id: 'particle-divine-halo',
+    name: 'Divine Halo (Particles)',
+    pack: 'divine',
+    renderMode: 'localized',
+    icon: 'sparkles',
+    description: 'A glowing tilted ring of light hovering and pulsing with a sweeping highlight',
+    defaultSettings: { speed: 35, intensity: 85, density: 50, color: '#fde9a8', glowIntensity: 85, scale: 1 },
+  },
+  {
+    id: 'particle-rain-top-heavy',
+    name: 'Heavy Rain — Top-Down (Particles)',
+    pack: 'water',
+    renderMode: 'atmospheric',
+    icon: 'cloud-rain',
+    description: 'Dense aerial downpour seen from above — heavy drops with impact ripples',
+    defaultSettings: { speed: 82, intensity: 88, density: 88, color: '#bfdbfe', glowIntensity: 90, scale: 1 },
+  },
+  {
+    id: 'particle-blizzard-top',
+    name: 'Blizzard — Top-Down (Particles)',
+    pack: 'ice',
+    renderMode: 'atmospheric',
+    icon: 'snowflake',
+    description: 'Dense overhead snowfall driving down toward the map',
+    defaultSettings: { speed: 80, intensity: 88, density: 92, color: '#ffffff', scale: 1 },
+  },
+  {
+    id: 'particle-embers-top-heavy',
+    name: 'Heavy Embers — Top-Down (Particles)',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Thick aerial ember storm rising toward the camera',
+    defaultSettings: { speed: 60, intensity: 90, density: 85, color: '#ff7a1a', glowIntensity: 90, scale: 1 },
   },
 
   // ===== VECTOR EFFECTS PACK (procedural magic circles + portals) =====
   {
     id: 'vector-pentagram',
     name: 'Pentagram Circle',
-    pack: 'vector',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Vector 5-point magic circle — rotating rings, star and runes',
@@ -1570,7 +1892,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'vector-hexagram',
     name: 'Hexagram Circle',
-    pack: 'vector',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Vector 6-point magic circle — interlocking triangles and runes',
@@ -1579,7 +1901,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'vector-heptagram',
     name: 'Heptagram Circle',
-    pack: 'vector',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Vector 7-point magic circle — rotating star, rings and runes',
@@ -1588,7 +1910,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'vector-arcane-circle',
     name: 'Arcane Circle',
-    pack: 'vector',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Vector arcane circle — dense rune ring, ticks and concentric rings',
@@ -1597,7 +1919,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'vector-rune-circle',
     name: 'Rune Circle',
-    pack: 'vector',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Vector rune circle — runes around an inner triad',
@@ -1606,7 +1928,7 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'vector-portal',
     name: 'Arcane Portal',
-    pack: 'vector',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'circle-dot',
     description: 'Vector swirling portal — spiral arms, glowing rim and dark core',
@@ -1615,11 +1937,466 @@ export const effectsLibrary: EffectDefinition[] = [
   {
     id: 'vector-fire-portal',
     name: 'Fire Portal',
-    pack: 'vector',
+    pack: 'magic',
     renderMode: 'localized',
     icon: 'flame',
     description: 'Vector fiery portal — flickering swirl with hot rim',
     defaultSettings: { speed: 60, intensity: 90, density: 50, color: '#ff7a1a', secondaryColor: '#ffd166', glowIntensity: 90, scale: 1 },
+  },
+
+  // ===== VECTOR FX — DIVINE (golden/white radiant glow) =====
+  {
+    id: 'vfx-divine-holy-halo',
+    name: 'Holy Halo',
+    pack: 'divine',
+    renderMode: 'localized',
+    icon: 'sun',
+    description: 'A glowing tilted halo ring with a soft inner radiance',
+    defaultSettings: { speed: 25, intensity: 85, density: 50, color: '#fde68a', secondaryColor: '#ffffff', glowColor: '#fff7d6', glowIntensity: 85, thickness: 30, ringCount: 2, scale: 1 },
+  },
+  {
+    id: 'vfx-divine-radiant-pulse',
+    name: 'Radiant Pulse',
+    pack: 'divine',
+    renderMode: 'localized',
+    icon: 'sun',
+    description: 'Concentric rings of light pulsing outward',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#fde68a', secondaryColor: '#ffffff', glowColor: '#fff7d6', glowIntensity: 80, thickness: 24, ringCount: 4, pulseFrequency: 45, scale: 1 },
+  },
+  {
+    id: 'vfx-divine-god-rays',
+    name: 'God Rays',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sun',
+    description: 'A fan of radiant light shafts beaming from a point',
+    defaultSettings: { speed: 25, intensity: 75, density: 50, color: '#fde9a8', secondaryColor: '#ffffff', glowColor: '#fff7d6', glowIntensity: 70, thickness: 40, direction: 160, spread: 60, scale: 1 },
+  },
+  {
+    id: 'vfx-divine-blessing-circle',
+    name: 'Blessing Circle',
+    pack: 'divine',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'A radiant rune circle of protection and blessing',
+    defaultSettings: { speed: 30, intensity: 90, density: 50, color: '#fde68a', secondaryColor: '#fff7d6', glowColor: '#fff7d6', glowIntensity: 80, thickness: 20, ringCount: 16, scale: 1 },
+  },
+  {
+    id: 'vfx-divine-falling-golden-motes',
+    name: 'Falling Golden Motes',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Soft golden flecks of light drifting gently down',
+    defaultSettings: { speed: 35, intensity: 80, density: 55, color: '#fcd34d', secondaryColor: '#fff7d6', glowColor: '#fde68a', glowIntensity: 80, direction: 180, scale: 1 },
+  },
+  {
+    id: 'vfx-divine-sacred-beam',
+    name: 'Sacred Beam',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sun',
+    description: 'A wide column of holy light with a glowing core',
+    defaultSettings: { speed: 30, intensity: 80, density: 50, color: '#fff7d6', secondaryColor: '#fde68a', glowColor: '#fff7d6', glowIntensity: 85, thickness: 55, direction: 90, pulseFrequency: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-divine-angelic-feather-drift',
+    name: 'Angelic Feather Drift',
+    pack: 'divine',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'Luminous feathers drifting and tumbling downward',
+    defaultSettings: { speed: 30, intensity: 80, density: 45, color: '#ffffff', secondaryColor: '#fde68a', glowColor: '#fff7d6', glowIntensity: 75, direction: 185, turbulence: 40, scale: 1 },
+  },
+
+  // ===== VECTOR FX — LAVA (orange/red magma glow) =====
+  {
+    id: 'vfx-lava-flow-lines',
+    name: 'Lava Flow Lines',
+    pack: 'fire',
+    renderMode: 'terrain',
+    icon: 'flame',
+    description: 'Glowing molten streaks flowing downhill along a direction',
+    defaultSettings: { speed: 45, intensity: 85, density: 55, color: '#ffae42', secondaryColor: '#b91c1c', glowColor: '#ff5a1a', glowIntensity: 70, thickness: 35, direction: 180, turbulence: 40, scale: 1 },
+  },
+  {
+    id: 'vfx-lava-magma-veins',
+    name: 'Magma Veins',
+    pack: 'fire',
+    renderMode: 'terrain',
+    icon: 'flame',
+    description: 'A branching network of glowing molten cracks, breathing with heat',
+    defaultSettings: { speed: 30, intensity: 85, density: 50, color: '#ff7a1a', secondaryColor: '#dc2626', glowColor: '#ff3a1a', glowIntensity: 80, thickness: 45, branching: 55, spread: 50, scale: 1 },
+  },
+  {
+    id: 'vfx-lava-expanding-cracks',
+    name: 'Expanding Lava Cracks',
+    pack: 'fire',
+    renderMode: 'terrain',
+    icon: 'flame',
+    description: 'Jagged cracks that grow outward, flare with heat, then loop',
+    defaultSettings: { speed: 35, intensity: 85, density: 55, color: '#ff4500', secondaryColor: '#dc2626', glowColor: '#ff5a1a', glowIntensity: 80, thickness: 45, branching: 50, spread: 60, scale: 1 },
+  },
+  {
+    id: 'vfx-lava-heat-distortion-rings',
+    name: 'Heat Distortion Rings',
+    pack: 'fire',
+    renderMode: 'atmospheric',
+    icon: 'flame',
+    description: 'Wavy concentric rings shimmering with rising heat',
+    defaultSettings: { speed: 40, intensity: 60, density: 50, color: '#ffae42', secondaryColor: '#ff7a1a', glowColor: '#ffae42', glowIntensity: 60, thickness: 25, ringCount: 4, turbulence: 60, scale: 1 },
+  },
+  {
+    id: 'vfx-lava-pulse',
+    name: 'Lava Pulse',
+    pack: 'fire',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'A molten core pulsing with expanding shockwave rings',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#ff5a1a', secondaryColor: '#ffae42', glowColor: '#ff7a1a', glowIntensity: 85, thickness: 30, ringCount: 4, pulseFrequency: 45, scale: 1 },
+  },
+  {
+    id: 'vfx-lava-ember-spiral',
+    name: 'Ember Spiral',
+    pack: 'fire',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'Spiraling arms carrying embers outward, additive glow',
+    defaultSettings: { speed: 40, intensity: 85, density: 50, color: '#ff7a1a', secondaryColor: '#ffd166', glowColor: '#ff5a1a', glowIntensity: 80, thickness: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-lava-volcanic-warning-glow',
+    name: 'Volcanic Warning Glow',
+    pack: 'fire',
+    renderMode: 'localized',
+    icon: 'flame',
+    description: 'A pulsing hazard glow ringed by a bold warning outline',
+    defaultSettings: { speed: 35, intensity: 80, density: 50, color: '#ff3a1a', secondaryColor: '#ffae42', glowColor: '#ff5a1a', glowIntensity: 80, thickness: 40, pulseFrequency: 50, scale: 1 },
+  },
+
+  // ===== VECTOR FX — WATER (blue/cyan flow) =====
+  {
+    id: 'vfx-water-river-flow-lines',
+    name: 'River Flow Lines',
+    pack: 'water',
+    renderMode: 'terrain',
+    icon: 'droplets',
+    description: 'Cool highlight streaks flowing along a current',
+    defaultSettings: { speed: 45, intensity: 70, density: 55, color: '#bae6fd', secondaryColor: '#38bdf8', glowColor: '#7dd3fc', glowIntensity: 50, thickness: 30, direction: 90, turbulence: 40, scale: 1 },
+  },
+  {
+    id: 'vfx-water-whirlpool-spiral',
+    name: 'Whirlpool Spiral',
+    pack: 'water',
+    renderMode: 'localized',
+    icon: 'droplets',
+    description: 'Swirling arms drawn inward toward a dark drain',
+    defaultSettings: { speed: 45, intensity: 80, density: 50, color: '#7dd3fc', secondaryColor: '#38bdf8', glowColor: '#bae6fd', glowIntensity: 50, thickness: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-water-ripple-rings',
+    name: 'Ripple Rings',
+    pack: 'water',
+    renderMode: 'localized',
+    icon: 'droplets',
+    description: 'Concentric ripples expanding outward across the surface',
+    defaultSettings: { speed: 40, intensity: 70, density: 50, color: '#bae6fd', secondaryColor: '#7dd3fc', glowColor: '#7dd3fc', glowIntensity: 45, thickness: 25, ringCount: 4, scale: 1 },
+  },
+  {
+    id: 'vfx-water-wave-lines',
+    name: 'Wave Lines',
+    pack: 'water',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'Stacked sinusoidal swells scrolling across the surface',
+    defaultSettings: { speed: 40, intensity: 70, density: 50, color: '#bae6fd', secondaryColor: '#38bdf8', glowColor: '#7dd3fc', glowIntensity: 40, thickness: 30, turbulence: 50, scale: 1 },
+  },
+  {
+    id: 'vfx-water-rain-impact-rings',
+    name: 'Rain Impact Rings',
+    pack: 'water',
+    renderMode: 'atmospheric',
+    icon: 'droplets',
+    description: 'Scattered ripple rings popping where raindrops land',
+    defaultSettings: { speed: 55, intensity: 70, density: 55, color: '#bae6fd', secondaryColor: '#7dd3fc', glowColor: '#7dd3fc', glowIntensity: 40, thickness: 25, scale: 1 },
+  },
+  {
+    id: 'vfx-water-waterfall-flow-streaks',
+    name: 'Waterfall Flow Streaks',
+    pack: 'water',
+    renderMode: 'terrain',
+    icon: 'droplets',
+    description: 'Fast vertical foam streaks cascading downward',
+    defaultSettings: { speed: 65, intensity: 75, density: 60, color: '#e0f2fe', secondaryColor: '#7dd3fc', glowColor: '#bae6fd', glowIntensity: 45, thickness: 30, direction: 180, turbulence: 25, scale: 1 },
+  },
+  {
+    id: 'vfx-water-underwater-caustic-lines',
+    name: 'Underwater Caustic Lines',
+    pack: 'water',
+    renderMode: 'terrain',
+    icon: 'waves',
+    description: 'A rippling web of underwater light filaments',
+    defaultSettings: { speed: 45, intensity: 75, density: 50, color: '#7dd3fc', secondaryColor: '#e0f2fe', glowColor: '#bae6fd', glowIntensity: 60, thickness: 25, turbulence: 50, scale: 1 },
+  },
+
+  // ===== VECTOR FX — WIND (pale blue/white streaks) =====
+  {
+    id: 'vfx-wind-gust-lines',
+    name: 'Gust Lines',
+    pack: 'air',
+    renderMode: 'atmospheric',
+    icon: 'wind',
+    description: 'Long pale streaks blowing across in a direction',
+    defaultSettings: { speed: 55, intensity: 65, density: 45, color: '#e0f2fe', secondaryColor: '#bae6fd', glowColor: '#bae6fd', glowIntensity: 40, thickness: 25, direction: 90, turbulence: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-wind-swirling-wind',
+    name: 'Swirling Wind',
+    pack: 'air',
+    renderMode: 'localized',
+    icon: 'wind',
+    description: 'Open curling spiral arms — a slow vortex of air',
+    defaultSettings: { speed: 45, intensity: 65, density: 40, color: '#e0f2fe', secondaryColor: '#bae6fd', glowColor: '#bae6fd', glowIntensity: 40, thickness: 25, scale: 1 },
+  },
+  {
+    id: 'vfx-wind-tornado-spiral',
+    name: 'Tornado Spiral',
+    pack: 'air',
+    renderMode: 'localized',
+    icon: 'wind',
+    description: 'A rotating funnel of stacked rings and spiraling strands',
+    defaultSettings: { speed: 55, intensity: 70, density: 45, color: '#cbd5e1', secondaryColor: '#94a3b8', glowColor: '#e0f2fe', glowIntensity: 35, thickness: 25, turbulence: 40, scale: 1 },
+  },
+  {
+    id: 'vfx-wind-directional-field',
+    name: 'Directional Wind Field',
+    pack: 'air',
+    renderMode: 'atmospheric',
+    icon: 'wind',
+    description: 'Dense uniform streamlines flowing one direction',
+    defaultSettings: { speed: 50, intensity: 60, density: 55, color: '#e0f2fe', secondaryColor: '#bae6fd', glowColor: '#bae6fd', glowIntensity: 35, thickness: 20, direction: 90, turbulence: 15, scale: 1 },
+  },
+  {
+    id: 'vfx-wind-leaf-drift-path',
+    name: 'Leaf Drift Path',
+    pack: 'air',
+    renderMode: 'atmospheric',
+    icon: 'wind',
+    description: 'Leaves carried on the wind, tumbling along a direction',
+    defaultSettings: { speed: 40, intensity: 80, density: 40, color: '#a3b18a', secondaryColor: '#c2410c', glowColor: '#84cc16', glowIntensity: 20, direction: 135, turbulence: 50, scale: 1 },
+  },
+  {
+    id: 'vfx-wind-smoke-curl-lines',
+    name: 'Smoke Curl Lines',
+    pack: 'air',
+    renderMode: 'atmospheric',
+    icon: 'wind',
+    description: 'Soft curling wisps meandering upward',
+    defaultSettings: { speed: 35, intensity: 55, density: 45, color: '#cbd5e1', secondaryColor: '#94a3b8', glowColor: '#cbd5e1', glowIntensity: 30, thickness: 35, direction: 0, turbulence: 70, scale: 1 },
+  },
+  {
+    id: 'vfx-wind-blizzard-wind-streaks',
+    name: 'Blizzard Wind Streaks',
+    pack: 'air',
+    renderMode: 'atmospheric',
+    icon: 'wind',
+    description: 'Fast, dense pale streaks driving across the scene',
+    defaultSettings: { speed: 70, intensity: 70, density: 60, color: '#ffffff', secondaryColor: '#e0f2fe', glowColor: '#e0f2fe', glowIntensity: 35, thickness: 18, direction: 110, turbulence: 25, scale: 1 },
+  },
+
+  // ===== VECTOR FX — MAGIC (purple/blue arcane energy) =====
+  {
+    id: 'vfx-magic-arcane-circle',
+    name: 'Arcane Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'A full magic circle: rings, ticks and counter-rotating runes',
+    defaultSettings: { speed: 35, intensity: 90, density: 50, color: '#c084fc', secondaryColor: '#a855f7', glowColor: '#d8b4fe', glowIntensity: 80, thickness: 30, ringCount: 16, scale: 1 },
+  },
+  {
+    id: 'vfx-magic-rotating-rune-ring',
+    name: 'Rotating Rune Ring',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'A single ring of runes spinning slowly',
+    defaultSettings: { speed: 40, intensity: 90, density: 50, color: '#c084fc', secondaryColor: '#a855f7', glowColor: '#d8b4fe', glowIntensity: 80, thickness: 30, ringCount: 14, scale: 1 },
+  },
+  {
+    id: 'vfx-magic-mana-stream',
+    name: 'Mana Stream',
+    pack: 'magic',
+    renderMode: 'terrain',
+    icon: 'sparkles',
+    description: 'Arcane energy flowing along a direction, additive glow',
+    defaultSettings: { speed: 50, intensity: 80, density: 55, color: '#c084fc', secondaryColor: '#60a5fa', glowColor: '#d8b4fe', glowIntensity: 70, thickness: 30, direction: 90, turbulence: 45, scale: 1 },
+  },
+  {
+    id: 'vfx-magic-portal-spiral',
+    name: 'Portal Spiral',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'Energetic spiral arms with a glowing rim and dark core',
+    defaultSettings: { speed: 50, intensity: 90, density: 50, color: '#c084fc', secondaryColor: '#d8b4fe', glowColor: '#d8b4fe', glowIntensity: 85, thickness: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-magic-spell-targeting-circle',
+    name: 'Spell Targeting Circle',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'A rotating targeting reticle locking on a point',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#60a5fa', secondaryColor: '#c084fc', glowColor: '#93c5fd', glowIntensity: 70, thickness: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-magic-leyline-current',
+    name: 'Leyline Current',
+    pack: 'magic',
+    renderMode: 'terrain',
+    icon: 'sparkles',
+    description: 'A branching network of glowing ley lines pulsing with energy',
+    defaultSettings: { speed: 30, intensity: 85, density: 50, color: '#a855f7', secondaryColor: '#60a5fa', glowColor: '#d8b4fe', glowIntensity: 75, thickness: 35, branching: 50, spread: 45, scale: 1 },
+  },
+  {
+    id: 'vfx-magic-energy-beam',
+    name: 'Energy Beam',
+    pack: 'magic',
+    renderMode: 'atmospheric',
+    icon: 'sparkles',
+    description: 'A bright directional energy beam with a pulsing core',
+    defaultSettings: { speed: 40, intensity: 90, density: 50, color: '#d8b4fe', secondaryColor: '#a855f7', glowColor: '#c084fc', glowIntensity: 85, thickness: 35, direction: 90, pulseFrequency: 40, scale: 1 },
+  },
+
+  // ===== VECTOR FX — NECROTIC (black/green/purple corruption) =====
+  {
+    id: 'vfx-necrotic-shadow-tendrils',
+    name: 'Shadow Tendrils',
+    pack: 'necrotic',
+    renderMode: 'localized',
+    icon: 'skull',
+    description: 'Writhing dark tendrils grasping outward',
+    defaultSettings: { speed: 35, intensity: 80, density: 50, color: '#7c3aed', secondaryColor: '#4c1d95', glowColor: '#6d28d9', glowIntensity: 60, thickness: 35, turbulence: 60, scale: 1 },
+  },
+  {
+    id: 'vfx-necrotic-corruption-veins',
+    name: 'Corruption Veins',
+    pack: 'necrotic',
+    renderMode: 'terrain',
+    icon: 'skull',
+    description: 'Spreading sickly veins breathing with decay',
+    defaultSettings: { speed: 25, intensity: 80, density: 50, color: '#84cc16', secondaryColor: '#4d7c0f', glowColor: '#a3e635', glowIntensity: 70, thickness: 40, branching: 60, spread: 55, scale: 1 },
+  },
+  {
+    id: 'vfx-necrotic-soul-wisps',
+    name: 'Soul Wisps',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'skull',
+    description: 'Pale spirit lights rising and fading',
+    defaultSettings: { speed: 30, intensity: 75, density: 45, color: '#bbf7d0', secondaryColor: '#86efac', glowColor: '#bbf7d0', glowIntensity: 80, direction: 0, turbulence: 50, scale: 1 },
+  },
+  {
+    id: 'vfx-necrotic-pulse',
+    name: 'Necrotic Pulse',
+    pack: 'necrotic',
+    renderMode: 'localized',
+    icon: 'skull',
+    description: 'Sickly shockwave rings expanding outward',
+    defaultSettings: { speed: 40, intensity: 80, density: 50, color: '#84cc16', secondaryColor: '#a3e635', glowColor: '#84cc16', glowIntensity: 75, thickness: 30, ringCount: 4, pulseFrequency: 45, scale: 1 },
+  },
+  {
+    id: 'vfx-necrotic-black-mist-curl',
+    name: 'Black Mist Curl',
+    pack: 'necrotic',
+    renderMode: 'atmospheric',
+    icon: 'skull',
+    description: 'Murky curls of decay drifting upward',
+    defaultSettings: { speed: 30, intensity: 60, density: 45, color: '#3f3f46', secondaryColor: '#365314', glowColor: '#3f3f46', glowIntensity: 10, thickness: 40, direction: 0, turbulence: 70, scale: 1 },
+  },
+  {
+    id: 'vfx-necrotic-draining-life-spiral',
+    name: 'Draining Life Spiral',
+    pack: 'necrotic',
+    renderMode: 'localized',
+    icon: 'skull',
+    description: 'A vortex pulling life energy inward',
+    defaultSettings: { speed: 45, intensity: 80, density: 50, color: '#a3e635', secondaryColor: '#65a30d', glowColor: '#bbf7d0', glowIntensity: 70, thickness: 28, scale: 1 },
+  },
+  {
+    id: 'vfx-necrotic-cursed-rune-ring',
+    name: 'Cursed Rune Ring',
+    pack: 'necrotic',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'A baleful rune circle of curse-light',
+    defaultSettings: { speed: 30, intensity: 85, density: 50, color: '#a3e635', secondaryColor: '#7c3aed', glowColor: '#84cc16', glowIntensity: 75, thickness: 28, ringCount: 14, scale: 1 },
+  },
+
+  // ===== VECTOR FX — DUNGEON (gray/white dust and cracks) =====
+  {
+    id: 'vfx-dungeon-dust-motes-path',
+    name: 'Dust Motes Path',
+    pack: 'earth',
+    renderMode: 'atmospheric',
+    icon: 'sparkle',
+    description: 'Fine dust drifting slowly through stale air',
+    defaultSettings: { speed: 25, intensity: 55, density: 50, color: '#cbd5e1', secondaryColor: '#94a3b8', glowColor: '#e2e8f0', glowIntensity: 30, direction: 135, turbulence: 40, scale: 1 },
+  },
+  {
+    id: 'vfx-dungeon-cracking-floor-lines',
+    name: 'Cracking Floor Lines',
+    pack: 'earth',
+    renderMode: 'terrain',
+    icon: 'gem',
+    description: 'Jagged stone cracks spreading across the floor',
+    defaultSettings: { speed: 30, intensity: 70, density: 55, color: '#94a3b8', secondaryColor: '#64748b', glowColor: '#cbd5e1', glowIntensity: 15, thickness: 40, branching: 55, spread: 60, scale: 1 },
+  },
+  {
+    id: 'vfx-dungeon-trap-warning-glyph',
+    name: 'Trap Warning Glyph',
+    pack: 'earth',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'A pulsing warning reticle marking a hidden trap',
+    defaultSettings: { speed: 45, intensity: 85, density: 50, color: '#f87171', secondaryColor: '#fbbf24', glowColor: '#f87171', glowIntensity: 70, thickness: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-dungeon-dripping-water-rings',
+    name: 'Dripping Water Rings',
+    pack: 'water',
+    renderMode: 'atmospheric',
+    icon: 'droplets',
+    description: 'Slow sparse ripples where water drips from above',
+    defaultSettings: { speed: 30, intensity: 65, density: 35, color: '#bae6fd', secondaryColor: '#7dd3fc', glowColor: '#bae6fd', glowIntensity: 35, thickness: 25, scale: 1 },
+  },
+  {
+    id: 'vfx-dungeon-spider-web-growth',
+    name: 'Spider Web Growth',
+    pack: 'earth',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'An orb web spinning out across a corner',
+    defaultSettings: { speed: 35, intensity: 65, density: 50, color: '#e2e8f0', secondaryColor: '#cbd5e1', glowColor: '#f8fafc', glowIntensity: 20, thickness: 25, turbulence: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-dungeon-falling-debris-lines',
+    name: 'Falling Debris Lines',
+    pack: 'earth',
+    renderMode: 'atmospheric',
+    icon: 'gem',
+    description: 'Bits of rubble and grit streaking down',
+    defaultSettings: { speed: 55, intensity: 65, density: 50, color: '#a8a29e', secondaryColor: '#78716c', glowColor: '#d6d3d1', glowIntensity: 10, direction: 180, turbulence: 30, scale: 1 },
+  },
+  {
+    id: 'vfx-dungeon-ancient-rune-glow',
+    name: 'Ancient Rune Glow',
+    pack: 'magic',
+    renderMode: 'localized',
+    icon: 'circle-dot',
+    description: 'A faint, slowly pulsing rune ring carved in stone',
+    defaultSettings: { speed: 20, intensity: 75, density: 50, color: '#fbbf24', secondaryColor: '#f59e0b', glowColor: '#fcd34d', glowIntensity: 70, thickness: 25, ringCount: 12, pulseFrequency: 25, scale: 1 },
   },
 ]
 

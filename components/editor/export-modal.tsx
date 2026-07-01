@@ -919,11 +919,16 @@ function renderEffectIsolated(
   fx.setTransform(m.a, m.b, m.c, m.d, m.e, m.f)
   renderEffect(fx, layer, time, imageCache, 1)
 
-  // Composite the finished layer over the scene with the layer's opacity, normal blend.
+  // Composite the finished layer over the scene with the layer's opacity and its
+  // chosen blend mode (matches the preview's CSS mix-blend-mode). 'normal' maps to
+  // source-over. The blend-mode strings are valid GlobalCompositeOperation values.
   mainCtx.save()
   mainCtx.setTransform(1, 0, 0, 1, 0, 0)
   mainCtx.globalAlpha = layer.opacity
-  mainCtx.globalCompositeOperation = 'source-over'
+  mainCtx.globalCompositeOperation =
+    layer.blendMode && layer.blendMode !== 'normal'
+      ? (layer.blendMode as GlobalCompositeOperation)
+      : 'source-over'
   mainCtx.drawImage(layerCanvas, 0, 0)
   mainCtx.restore()
 }

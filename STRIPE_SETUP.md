@@ -58,6 +58,26 @@ To replay an event without a browser purchase:
 2. Set all four env vars in the production environment, using the **live** `sk_live_…` key, the **dashboard endpoint's** `whsec_…`, and `NEXT_PUBLIC_APP_URL` = your production URL.
 3. Deploy, then run one real-card purchase in live mode to confirm fulfillment end-to-end.
 
+## Rotating keys / switching Stripe accounts
+
+The Stripe **account** is encoded in the keys (the account id appears as the `…<id>…` segment of every `sk_`/`pk_`/`whsec_`). When you swap to a different account (or rotate keys within one), every account-specific value must be replaced **in lockstep across both local and production** — a key from one account and a webhook secret from another will fail signature verification.
+
+What is and isn't account-specific:
+
+- **Account-specific (must update):** `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET` — the local `stripe listen` secret **and** the production dashboard-endpoint secret are *both* tied to the account and are different from each other.
+- **Not account-specific (no change):** token packs (inline `price_data`, no Price/Product IDs), `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL`, and the unused publishable key.
+
+Steps:
+
+1. **Local** — in `.env.local`, set `STRIPE_SECRET_KEY` to the new `sk_test_…`. Get the new local signing secret (no need to start the full listener):
+   ```
+   stripe listen --api-key <NEW_STRIPE_SECRET_KEY> --print-secret
+   ```
+   Put that `whsec_…` in `STRIPE_WEBHOOK_SECRET`, then restart `next dev`. Confirm with `stripe trigger checkout.session.completed --api-key <NEW_STRIPE_SECRET_KEY>` (expect the `checkout.session.completed` event to reach 400 "Missing metadata" while all other events return 200 — that proves the signature verifies).
+2. **Production** — in the deployment's environment, set `STRIPE_SECRET_KEY` to the new key. Then in the **new account's** Stripe Dashboard create a fresh webhook endpoint (`https://<your-domain>/api/webhooks/stripe`, event `checkout.session.completed`) and copy *its* signing secret into the production `STRIPE_WEBHOOK_SECRET`. The old account's endpoint/secret are now dead — delete or ignore them.
+
+> The CLI may be logged into a different account than your new keys. Always pass `--api-key <NEW_STRIPE_SECRET_KEY>` to `stripe listen`/`stripe trigger` so the local secret and forwarded events come from the right account, regardless of `stripe login` state.
+
 ## Database dependencies
 
 The webhook and token features depend on Supabase objects that live in the project **but are not in repo migrations**: tables `profiles` (with `token_balance`), `token_purchases`, `exports`, `coupons`, `coupon_redemptions`, `referrals`; and RPCs `increment_token_balance`, `deduct_tokens_for_export`, `mark_referral_purchased`, `award_referral_reward`. Verify they exist with [`supabase/verify-tokens-schema.sql`](supabase/verify-tokens-schema.sql) before relying on payments in a new environment.
