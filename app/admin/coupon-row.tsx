@@ -49,14 +49,22 @@ export function CouponRow({ coupon }: { coupon: Coupon }) {
   const run = async (fn: () => Promise<{ success: boolean; error?: string }>) => {
     setBusy(true)
     setError(null)
-    const result = await fn()
-    setBusy(false)
-    if (result.success) {
-      router.refresh()
-      return true
+    try {
+      const result = await fn()
+      if (result.success) {
+        router.refresh()
+        return true
+      }
+      setError(result.error || 'Something went wrong')
+      return false
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong')
+      return false
+    } finally {
+      // Always clear the busy flag so the row's controls never get stuck
+      // disabled if the action throws.
+      setBusy(false)
     }
-    setError(result.error || 'Something went wrong')
-    return false
   }
 
   const handleToggle = () => run(() => toggleCouponActive(coupon.id, !coupon.is_active))
