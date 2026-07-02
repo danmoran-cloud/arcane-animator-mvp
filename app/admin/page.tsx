@@ -14,10 +14,13 @@ import {
   TrendingUp,
   Gift,
   Plus,
-  Share2
+  Share2,
+  ShieldCheck
 } from 'lucide-react'
 import { CreateCouponForm } from './create-coupon-form'
+import { CouponRow } from './coupon-row'
 import { ManageUserTokensForm } from './manage-user-tokens-form'
+import { ManageAdminsForm } from './manage-admins-form'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -31,13 +34,15 @@ export default async function AdminPage() {
   // Check if user is admin
   const { data: profile } = await supabase
     .from('profiles')
-    .select('is_admin')
+    .select('is_admin, role')
     .eq('id', user.id)
     .single()
 
   if (!profile?.is_admin) {
     redirect('/')
   }
+
+  const isSuperAdmin = profile.role === 'superadmin'
 
   // Fetch stats - Using service role queries would be better but for now we use admin RLS
   const { count: totalUsers } = await supabase
@@ -270,6 +275,25 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
 
+        {/* Admin Role Management — superadmin only */}
+        {isSuperAdmin && (
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5" />
+                Admin Access
+              </CardTitle>
+              <CardDescription>
+                Look up a user by email and set their access level. Admins can manage tokens and
+                coupons; Super Admins can also manage roles.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ManageAdminsForm currentUserId={user.id} />
+            </CardContent>
+          </Card>
+        )}
+
         {/* Coupons Section */}
         <Card className="mt-6">
           <CardHeader>
@@ -287,28 +311,11 @@ export default async function AdminPage() {
 
             <Separator className="my-6" />
 
-            <h3 className="font-medium mb-3">Active Coupons</h3>
+            <h3 className="font-medium mb-3">Coupons</h3>
             {coupons && coupons.length > 0 ? (
               <div className="space-y-3">
                 {coupons.map((coupon: any) => (
-                  <div key={coupon.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                    <div>
-                      <code className="font-mono font-bold">{coupon.code}</code>
-                      <p className="text-sm text-muted-foreground">
-                        {coupon.token_amount} tokens • {coupon.uses_count}/{coupon.max_uses || '∞'} uses
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant={coupon.is_active ? 'default' : 'secondary'}>
-                        {coupon.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
-                      {coupon.expires_at && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Expires: {new Date(coupon.expires_at).toLocaleDateString()}
-                        </p>
-                      )}
-                    </div>
-                  </div>
+                  <CouponRow key={coupon.id} coupon={coupon} />
                 ))}
               </div>
             ) : (

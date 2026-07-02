@@ -3,11 +3,16 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+export type Role = 'user' | 'admin' | 'superadmin'
+
+export const ASSIGNABLE_ROLES: Role[] = ['user', 'admin', 'superadmin']
+
 interface AdminUser {
   id: string
   email: string | null
   display_name: string | null
   token_balance: number
+  role: Role
 }
 
 // Verify the caller is a signed-in admin. Returns the user on success, or an
@@ -27,6 +32,22 @@ async function requireAdmin(): Promise<{ error: string } | { userId: string }> {
   return { userId: user.id }
 }
 
+// Verify the caller is a superadmin — the only tier allowed to change roles.
+async function requireSuperAdmin(): Promise<{ error: string } | { userId: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'superadmin') return { error: 'Unauthorized' }
+  return { userId: user.id }
+}
+
 export async function findUserByEmail(
   email: string,
 ): Promise<{ user?: AdminUser; error?: string }> {
@@ -37,7 +58,7 @@ export async function findUserByEmail(
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('profiles')
-    .select('id, email, display_name, token_balance')
+    .select('id, email, display_name, token_balance, role')
     .ilike('email', email.trim())
     .limit(1)
     .maybeSingle()
@@ -45,6 +66,38 @@ export async function findUserByEmail(
   if (error) return { error: error.message }
   if (!data) return { error: 'No user found with that email' }
   return { user: data as AdminUser }
+}
+
+export async function setUserRole(
+  userId: string,
+  role: Role,
+): Promise<{ success?: boolean; user?: AdminUser; error?: string }> {
+  const auth = await requireSuperAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  if (!ASSIGNABLE_ROLES.includes(role)) {
+    return { error: 'Invalid role' }
+  }
+
+  // Prevent self-lockout: a superadmin cannot demote their own account.
+  if (userId === auth.userId && role !== 'superadmin') {
+    return { error: 'You cannot change your own role' }
+  }
+
+  // Service role: RLS blocks editing another user's profile via the auth client.
+  // The is_admin flag is kept in sync by a DB trigger on role changes.
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('profiles')
+    .update({ role })
+    .eq('id', userId)
+    .select('id, email, display_name, token_balance, role')
+    .single()
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin')
+  return { success: true, user: data as AdminUser }
 }
 
 export async function setUserTokenBalance(
@@ -117,26 +170,60 @@ export async function createCoupon(data: {
 }
 
 export async function toggleCouponActive(couponId: string, isActive: boolean) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { success: false, error: auth.error }
+
   const supabase = await createClient()
-  
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return { success: false, error: 'Not authenticated' }
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile?.is_admin) {
-    return { success: false, error: 'Unauthorized' }
-  }
-
   const { error } = await supabase
     .from('coupons')
     .update({ is_active: isActive })
+    .eq('id', couponId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/admin')
+  return { success: true }
+}
+
+export async function updateCouponExpiry(couponId: string, expiresAt: string | null) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { success: false, error: auth.error }
+
+  // Normalize an empty/blank value to null (no expiry). A provided value must
+  // parse to a valid date.
+  let normalized: string | null = null
+  if (expiresAt && expiresAt.trim()) {
+    const parsed = new Date(expiresAt)
+    if (Number.isNaN(parsed.getTime())) {
+      return { success: false, error: 'Invalid expiry date' }
+    }
+    normalized = parsed.toISOString()
+  }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('coupons')
+    .update({ expires_at: normalized })
+    .eq('id', couponId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath('/admin')
+  return { success: true }
+}
+
+export async function deleteCoupon(couponId: string) {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { success: false, error: auth.error }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('coupons')
+    .delete()
     .eq('id', couponId)
 
   if (error) {

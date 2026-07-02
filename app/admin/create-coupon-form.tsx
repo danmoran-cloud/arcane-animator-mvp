@@ -12,6 +12,7 @@ export function CreateCouponForm() {
   const [code, setCode] = useState('')
   const [tokenAmount, setTokenAmount] = useState('5')
   const [maxUses, setMaxUses] = useState('')
+  const [expiresAt, setExpiresAt] = useState('')
   const [oneUsePerUser, setOneUsePerUser] = useState(true)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
@@ -29,6 +30,7 @@ export function CreateCouponForm() {
       tokenAmount: parseInt(tokenAmount),
       maxUses: maxUses ? parseInt(maxUses) : undefined,
       oneUsePerUser,
+      expiresAt: expiresAt || undefined,
     })
 
     if (result.success) {
@@ -36,6 +38,7 @@ export function CreateCouponForm() {
       setCode('')
       setTokenAmount('5')
       setMaxUses('')
+      setExpiresAt('')
       router.refresh()
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to create coupon' })
@@ -76,6 +79,15 @@ export function CreateCouponForm() {
             placeholder="Unlimited"
             value={maxUses}
             onChange={(e) => setMaxUses(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="expiresAt">Expires (blank = never)</Label>
+          <Input
+            id="expiresAt"
+            type="date"
+            value={expiresAt}
+            onChange={(e) => setExpiresAt(e.target.value)}
           />
         </div>
         <div className="space-y-2">
