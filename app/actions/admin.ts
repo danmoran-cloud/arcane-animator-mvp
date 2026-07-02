@@ -2,10 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-
-export type Role = 'user' | 'admin' | 'superadmin'
-
-export const ASSIGNABLE_ROLES: Role[] = ['user', 'admin', 'superadmin']
+import { ASSIGNABLE_ROLES, type Role } from '@/lib/roles'
 
 interface AdminUser {
   id: string
@@ -173,18 +170,19 @@ export async function toggleCouponActive(couponId: string, isActive: boolean) {
   const auth = await requireAdmin()
   if ('error' in auth) return { success: false, error: auth.error }
 
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('coupons')
-    .update({ is_active: isActive })
-    .eq('id', couponId)
+  try {
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from('coupons')
+      .update({ is_active: isActive })
+      .eq('id', couponId)
 
-  if (error) {
-    return { success: false, error: error.message }
+    if (error) return { success: false, error: error.message }
+    // The client refreshes the route itself; no in-action revalidate render.
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Update failed' }
   }
-
-  revalidatePath('/admin')
-  return { success: true }
 }
 
 export async function updateCouponExpiry(couponId: string, expiresAt: string | null) {
@@ -202,36 +200,36 @@ export async function updateCouponExpiry(couponId: string, expiresAt: string | n
     normalized = parsed.toISOString()
   }
 
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('coupons')
-    .update({ expires_at: normalized })
-    .eq('id', couponId)
+  try {
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from('coupons')
+      .update({ expires_at: normalized })
+      .eq('id', couponId)
 
-  if (error) {
-    return { success: false, error: error.message }
+    if (error) return { success: false, error: error.message }
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Update failed' }
   }
-
-  revalidatePath('/admin')
-  return { success: true }
 }
 
 export async function deleteCoupon(couponId: string) {
   const auth = await requireAdmin()
   if ('error' in auth) return { success: false, error: auth.error }
 
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('coupons')
-    .delete()
-    .eq('id', couponId)
+  try {
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from('coupons')
+      .delete()
+      .eq('id', couponId)
 
-  if (error) {
-    return { success: false, error: error.message }
+    if (error) return { success: false, error: error.message }
+    return { success: true }
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : 'Delete failed' }
   }
-
-  revalidatePath('/admin')
-  return { success: true }
 }
 
 export async function grantTokensToUser(userId: string, amount: number, reason: string) {

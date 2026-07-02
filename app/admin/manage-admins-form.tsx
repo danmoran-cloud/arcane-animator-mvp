@@ -13,7 +13,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { findUserByEmail, setUserRole, type Role } from '@/app/actions/admin'
+import { findUserByEmail, setUserRole } from '@/app/actions/admin'
+import type { Role } from '@/lib/roles'
 
 interface FoundUser {
   id: string
