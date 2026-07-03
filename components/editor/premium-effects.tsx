@@ -47,7 +47,10 @@ function RainEffect({ settings, width, height }: { settings: EffectSettings; wid
             marginLeft: -ripple.size / 2,
             marginTop: -ripple.size / 2,
             borderColor: settings.color,
-            animation: `rain-ripple ${ripple.duration * (100 / settings.speed)}s ease-out infinite`,
+            animationName: 'rain-ripple',
+            animationDuration: `${ripple.duration * (100 / settings.speed)}s`,
+            animationTimingFunction: 'ease-out',
+            animationIterationCount: 'infinite',
             animationDelay: `${ripple.delay}s`,
           }}
         />
@@ -84,7 +87,10 @@ function FogEffect({ settings, width, height }: { settings: EffectSettings; widt
             height: `${patch.size}%`,
             background: `radial-gradient(circle, ${settings.color} 0%, transparent 70%)`,
             opacity: patch.opacity * (settings.intensity / 100),
-            animation: `fog-drift-topdown ${15 / patch.speed * (100 / settings.speed)}s ease-in-out infinite`,
+            animationName: 'fog-drift-topdown',
+            animationDuration: `${15 / patch.speed * (100 / settings.speed)}s`,
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
             animationDelay: `${i * 3}s`,
             filter: 'blur(20px)',
           }}
@@ -181,7 +187,10 @@ function CampfireEffect({ settings, width, height }: { settings: EffectSettings;
           width: '80%',
           height: '80%',
           background: `radial-gradient(circle, ${settings.color}50 0%, ${settings.color}20 50%, transparent 70%)`,
-          animation: 'campfire-glow 1.5s ease-in-out infinite',
+          animationName: 'campfire-glow',
+          animationDuration: '1.5s',
+          animationTimingFunction: 'ease-in-out',
+          animationIterationCount: 'infinite',
           animationDelay: '0.2s',
         }}
       />
@@ -211,98 +220,14 @@ function CampfireEffect({ settings, width, height }: { settings: EffectSettings;
             top: `${40 + Math.sin(i * Math.PI / 3) * 15}%`,
             '--drift-x': `${(Math.random() - 0.5) * 20}px`,
             '--drift-y': `${(Math.random() - 0.5) * 20}px`,
-            animation: `ember-float ${2 + Math.random()}s ease-in-out infinite`,
+            animationName: 'ember-float',
+            animationDuration: `${2 + Math.random()}s`,
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
             animationDelay: `${i * 0.3}s`,
             boxShadow: `0 0 4px ${settings.secondaryColor || '#ffcc00'}`,
           } as React.CSSProperties}
         />
-      ))}
-    </div>
-  )
-}
-
-// Water ripples effect - TOP DOWN: concentric circles (already correct)
-function WaterRipplesEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
-  const rippleSources = useMemo(() => 
-    Array.from({ length: Math.floor(settings.density / 25) + 3 }, (_, i) => ({
-      id: i,
-      x: 10 + Math.random() * 80,
-      y: 10 + Math.random() * 80,
-      delay: i * 1.3,
-      size: 24 + Math.random() * 28,
-    })),
-  [settings.density])
-
-  const tint = settings.color || '#3b82f6'
-  const speedFactor = 100 / (settings.speed || 50)
-
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <style>{`
-        @keyframes water-ripple-expand {
-          0% { transform: scale(0.2); opacity: 0.7; }
-          100% { transform: scale(3.5); opacity: 0; }
-        }
-        @keyframes water-surface-shift {
-          0% { background-position: 0% 0%, 0% 0%; }
-          50% { background-position: 100% 50%, -50% 100%; }
-          100% { background-position: 0% 0%, 0% 0%; }
-        }
-        @keyframes water-sheen {
-          0%, 100% { opacity: 0.25; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
-
-      {/* Water surface base fill */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(180deg, ${tint}66 0%, ${tint}99 100%)`,
-        }}
-      />
-
-      {/* Animated caustic/wave texture */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `radial-gradient(ellipse at 30% 40%, ${settings.secondaryColor || '#ffffff'}33 0%, transparent 45%), radial-gradient(ellipse at 70% 60%, ${tint}55 0%, transparent 50%)`,
-          backgroundSize: '120% 120%, 140% 140%',
-          mixBlendMode: 'screen',
-          animation: `water-surface-shift ${8 * speedFactor}s ease-in-out infinite`,
-        }}
-      />
-
-      {/* Surface sheen sweep */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background: `linear-gradient(115deg, transparent 35%, ${settings.secondaryColor || '#ffffff'}40 50%, transparent 65%)`,
-          animation: `water-sheen ${5 * speedFactor}s ease-in-out infinite`,
-        }}
-      />
-
-      {/* Expanding ripple rings */}
-      {rippleSources.map((source) => (
-        <div key={source.id}>
-          {[0, 1].map((ring) => (
-            <div
-              key={ring}
-              className="absolute rounded-full border-2"
-              style={{
-                left: `${source.x}%`,
-                top: `${source.y}%`,
-                width: source.size,
-                height: source.size * 0.7,
-                marginLeft: -source.size / 2,
-                marginTop: -(source.size * 0.7) / 2,
-                borderColor: `${settings.secondaryColor || '#ffffff'}aa`,
-                animation: `water-ripple-expand ${4 * speedFactor}s ease-out infinite`,
-                animationDelay: `${source.delay + ring * 1.2}s`,
-              }}
-            />
-          ))}
-        </div>
       ))}
     </div>
   )
@@ -401,49 +326,11 @@ function SmokeEffect({ settings, width, height }: { settings: EffectSettings; wi
             width: puff.size,
             height: puff.size,
             background: `radial-gradient(circle, ${settings.color}, transparent 70%)`,
-            animation: `smoke-expand-topdown ${4 * (100 / settings.speed)}s ease-out infinite`,
+            animationName: 'smoke-expand-topdown',
+            animationDuration: `${4 * (100 / settings.speed)}s`,
+            animationTimingFunction: 'ease-out',
+            animationIterationCount: 'infinite',
             animationDelay: `${puff.delay}s`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-// Wind effect - TOP DOWN: streaks across surface
-function WindEffect({ settings, width, height }: { settings: EffectSettings; width: number; height: number }) {
-  const particles = useMemo(() => 
-    Array.from({ length: Math.floor(settings.density / 5) + 15 }, (_, i) => ({
-      id: i,
-      y: Math.random() * 100,
-      delay: Math.random() * 2,
-      length: 20 + Math.random() * 40,
-      speed: 0.7 + Math.random() * 0.6,
-    })),
-  [settings.density])
-
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <style>{`
-        @keyframes wind-streak {
-          0% { transform: translateX(-50px); opacity: 0; }
-          20% { opacity: 0.5; }
-          80% { opacity: 0.5; }
-          100% { transform: translateX(${width + 50}px); opacity: 0; }
-        }
-      `}</style>
-      {particles.map((particle) => (
-        <div
-          key={particle.id}
-          className="absolute rounded-full"
-          style={{
-            left: -50,
-            top: `${particle.y}%`,
-            width: particle.length,
-            height: 2,
-            backgroundColor: settings.color,
-            animation: `wind-streak ${2 / particle.speed * (100 / settings.speed)}s linear infinite`,
-            animationDelay: `${particle.delay}s`,
           }}
         />
       ))}
@@ -521,7 +408,10 @@ function ArcaneCirclesEffect({ settings, width, height }: { settings: EffectSett
               top: `${50 + Math.sin(angle) * radius}%`,
               transform: 'translate(-50%, -50%)',
               color: settings.color,
-              animation: 'rune-pulse 2s ease-in-out infinite',
+              animationName: 'rune-pulse',
+              animationDuration: '2s',
+              animationTimingFunction: 'ease-in-out',
+              animationIterationCount: 'infinite',
               animationDelay: `${i * 0.2}s`,
             }}
           >
@@ -671,91 +561,11 @@ function LightningStormEffect({ settings }: { settings: EffectSettings; width: n
             width: 10,
             height: 10,
             borderColor: '#60a5fa40',
-            animation: `storm-ripple 1s ease-out infinite`,
+            animationName: 'storm-ripple',
+            animationDuration: '1s',
+            animationTimingFunction: 'ease-out',
+            animationIterationCount: 'infinite',
             animationDelay: `${Math.random() * 2}s`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-// Lava Flow - molten rock with glowing cracks
-function LavaFlowEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <style>{`
-        @keyframes lava-glow {
-          0%, 100% { opacity: 0.7; }
-          50% { opacity: 1; }
-        }
-        @keyframes lava-crack {
-          0%, 100% { opacity: 0.6; filter: brightness(1); }
-          50% { opacity: 1; filter: brightness(1.3); }
-        }
-      `}</style>
-      {/* Base glow */}
-      <div
-        className="absolute inset-0 rounded-lg"
-        style={{
-          background: `radial-gradient(circle, ${settings.color} 0%, ${settings.secondaryColor || '#ff8c00'}60 50%, transparent 80%)`,
-          animation: `lava-glow ${2 * (100 / settings.speed)}s ease-in-out infinite`,
-        }}
-      />
-      {/* Glowing cracks */}
-      {Array.from({ length: 6 }, (_, i) => (
-        <div
-          key={i}
-          className="absolute"
-          style={{
-            left: `${15 + (i % 3) * 30}%`,
-            top: `${20 + Math.floor(i / 3) * 40}%`,
-            width: 3,
-            height: 15,
-            background: settings.secondaryColor || '#ff8c00',
-            transform: `rotate(${i * 30}deg)`,
-            boxShadow: `0 0 10px ${settings.color}`,
-            animation: `lava-crack ${1.5}s ease-in-out infinite`,
-            animationDelay: `${i * 0.2}s`,
-          }}
-        />
-      ))}
-    </div>
-  )
-}
-
-// Ice Crystals - frozen shimmer
-function IceCrystalsEffect({ settings }: { settings: EffectSettings; width: number; height: number }) {
-  return (
-    <div className="absolute inset-0 overflow-hidden">
-      <style>{`
-        @keyframes ice-shimmer {
-          0%, 100% { opacity: 0.4; filter: brightness(1); }
-          50% { opacity: 0.7; filter: brightness(1.2); }
-        }
-      `}</style>
-      {/* Frozen surface */}
-      <div
-        className="absolute inset-2 rounded-lg"
-        style={{
-          background: `linear-gradient(135deg, ${settings.color}30, ${settings.secondaryColor || '#ffffff'}50, ${settings.color}30)`,
-        }}
-      />
-      {/* Crystal points */}
-      {Array.from({ length: 8 }, (_, i) => (
-        <div
-          key={i}
-          className="absolute"
-          style={{
-            left: `${15 + (i % 4) * 22}%`,
-            top: `${20 + Math.floor(i / 4) * 45}%`,
-            width: 8,
-            height: 8,
-            background: settings.secondaryColor || '#ffffff',
-            clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-            boxShadow: `0 0 8px ${settings.color}`,
-            animation: `ice-shimmer ${2}s ease-in-out infinite`,
-            animationDelay: `${i * 0.2}s`,
           }}
         />
       ))}
@@ -788,23 +598,17 @@ export function PremiumEffectRenderer({ effectId, settings, width, height, exclu
     'brazier': CampfireEffect, // Similar to campfire
     'magical-light': TorchEffect,
     // Atmospheric Pack (rain/snow/fog/mist/dust-storm/blizzard moved to the Particle pack)
-    'wind': WindEffect,
     'lightning-storm': LightningStormEffect,
     // Terrain Pack (swamp-bubbles/smoke-vents moved to the Particle pack)
-    'water-ripples': WaterRipplesEffect,
     'waterfall': WaterfallEffect,
-    'lava-flow': LavaFlowEffect,
-    'ice-crystals': IceCrystalsEffect,
     // Fantasy Pack
     'arcane-circles': ArcaneCirclesEffect,
     'portals': PortalsEffect,
     'floating-runes': ArcaneCirclesEffect,
-    'divine-light': TorchEffect,
     'necrotic-corruption': SmokeEffect,
     'spirit-apparitions': FogEffect,
     // blue-portal / fire-portal now render via the registry — see SPRITE_SHEETS
     // Sci-Fi Pack
-    'holograms': PortalsEffect,
     'energy-shields': ArcaneCirclesEffect,
     'data-streams': RainEffect,
     'reactor-core': CampfireEffect,

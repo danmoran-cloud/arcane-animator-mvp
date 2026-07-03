@@ -212,42 +212,6 @@ const lavaFlowLines: VfxSystem = {
   },
 }
 
-// Magma Veins — a glowing branching network of molten cracks, breathing with heat.
-const magmaVeins: VfxSystem = {
-  draw(ctx, b, timeMs, opacity, settings) {
-    const p = readVfx(settings)
-    const cx = b.x + b.width / 2, cy = b.y + b.height / 2
-    const reach = Math.min(b.width, b.height) * 0.34
-    withGlow(ctx, { glowColor: p.glowColor, glowPx: 12 * p.glow, additive: true }, () => {
-      branchingVeins(ctx, cx, cy, {
-        timeMs, color: p.color, lineWidth: Math.max(1.5, reach * 0.03 * (0.5 + p.thickness)),
-        alpha: opacity * p.alpha, roots: Math.round(lerp(4, 9, p.density)), depth: 4,
-        length: reach, spread: lerp(0.3, 1.0, p.spread), branching: p.branching, glowPulse: true,
-      })
-    })
-  },
-}
-
-// Expanding Lava Cracks — jagged cracks that grow outward, flare, then loop.
-const expandingLavaCracks: VfxSystem = {
-  draw(ctx, b, timeMs, opacity, settings) {
-    const p = readVfx(settings)
-    const cx = b.x + b.width / 2, cy = b.y + b.height / 2
-    const reach = Math.min(b.width, b.height) * 0.42
-    const tSec = timeMs / 1000
-    const cycle = (tSec * lerp(0.1, 0.4, p.speed)) % 1
-    const grow = Math.min(1, cycle * 1.4)
-    const flare = Math.max(0, 1 - Math.abs(cycle - 0.7) * 4) // brief glow surge as cracks complete
-    withGlow(ctx, { glowColor: p.glowColor, glowPx: (8 + 16 * flare) * p.glow, additive: true }, () => {
-      branchingVeins(ctx, cx, cy, {
-        timeMs, color: p.color, lineWidth: Math.max(1.5, reach * 0.035 * (0.5 + p.thickness)),
-        alpha: opacity * p.alpha * (0.7 + 0.3 * flare), roots: Math.round(lerp(5, 10, p.density)), depth: 3,
-        length: reach, spread: lerp(0.4, 1.1, p.spread), branching: p.branching, grow, jagged: true,
-      })
-    })
-  },
-}
-
 // Heat Distortion Rings — wavy concentric rings rising/shimmering with heat.
 const heatDistortionRings: VfxSystem = {
   draw(ctx, b, timeMs, opacity, settings) {
@@ -805,24 +769,6 @@ const dustMotesPath: VfxSystem = {
   },
 }
 
-// Cracking Floor Lines — jagged stone cracks spreading across the floor.
-const crackingFloorLines: VfxSystem = {
-  draw(ctx, b, timeMs, opacity, settings) {
-    const p = readVfx(settings)
-    const cx = b.x + b.width / 2, cy = b.y + b.height / 2
-    const reach = Math.min(b.width, b.height) * 0.46
-    const cycle = ((timeMs / 1000) * lerp(0.08, 0.3, p.speed)) % 1
-    const grow = Math.min(1, cycle * 1.4)
-    withGlow(ctx, { glowColor: p.glowColor, glowPx: 2 * p.glow, additive: false }, () => {
-      branchingVeins(ctx, cx, cy, {
-        timeMs, color: p.color, lineWidth: Math.max(1, reach * 0.03 * (0.5 + p.thickness)),
-        alpha: opacity * p.alpha, roots: Math.round(lerp(4, 9, p.density)), depth: 3,
-        length: reach, spread: lerp(0.5, 1.2, p.spread), branching: p.branching, grow, jagged: true,
-      })
-    })
-  },
-}
-
 // Trap Warning Glyph — a pulsing warning reticle marking a trap.
 const trapWarningGlyph: VfxSystem = {
   draw(ctx, b, timeMs, opacity, settings) {
@@ -913,8 +859,6 @@ const SYSTEMS: Record<string, VfxSystem> = {
   'vfx-divine-angelic-feather-drift': angelicFeatherDrift,
   // Lava
   'vfx-lava-flow-lines': lavaFlowLines,
-  'vfx-lava-magma-veins': magmaVeins,
-  'vfx-lava-expanding-cracks': expandingLavaCracks,
   'vfx-lava-heat-distortion-rings': heatDistortionRings,
   'vfx-lava-pulse': lavaPulse,
   'vfx-lava-ember-spiral': emberSpiral,
@@ -953,7 +897,6 @@ const SYSTEMS: Record<string, VfxSystem> = {
   'vfx-necrotic-cursed-rune-ring': cursedRuneRing,
   // Dungeon
   'vfx-dungeon-dust-motes-path': dustMotesPath,
-  'vfx-dungeon-cracking-floor-lines': crackingFloorLines,
   'vfx-dungeon-trap-warning-glyph': trapWarningGlyph,
   'vfx-dungeon-dripping-water-rings': drippingWaterRings,
   'vfx-dungeon-spider-web-growth': spiderWebGrowth,

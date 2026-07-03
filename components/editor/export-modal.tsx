@@ -1006,62 +1006,12 @@ function renderEffect(
       break
     }
 
-    case 'water-ripples': {
-      // Filled water surface base
-      const waterGradient = ctx.createLinearGradient(position.x, position.y, position.x, position.y + size.height)
-      waterGradient.addColorStop(0, color + '66')
-      waterGradient.addColorStop(1, color + '99')
-      ctx.fillStyle = waterGradient
-      ctx.fillRect(position.x, position.y, size.width, size.height)
-
-      // Caustic highlights
-      const caustic = ctx.createRadialGradient(
-        position.x + size.width * 0.35, position.y + size.height * 0.4, 0,
-        position.x + size.width * 0.35, position.y + size.height * 0.4, size.width * 0.5
-      )
-      caustic.addColorStop(0, (secondaryColor || '#ffffff') + '33')
-      caustic.addColorStop(1, 'transparent')
-      ctx.fillStyle = caustic
-      ctx.fillRect(position.x, position.y, size.width, size.height)
-
-      // Expanding ripple rings
-      ctx.strokeStyle = (secondaryColor || '#ffffff') + 'aa'
-      ctx.lineWidth = 2
-      for (let i = 0; i < 4; i++) {
-        const rippleRadius = ((normalizedTime * 50 + i * 30) % radius)
-        const alpha = 1 - rippleRadius / radius
-        ctx.globalAlpha = layer.opacity * alpha
-        ctx.beginPath()
-        ctx.ellipse(centerX, centerY, rippleRadius, rippleRadius * 0.7, 0, 0, Math.PI * 2)
-        ctx.stroke()
-      }
-      ctx.globalAlpha = layer.opacity
-      break
-    }
-
     case 'lightning-storm': {
       // Random lightning flashes
       const flashPhase = (normalizedTime * 2) % 1
       if (flashPhase < 0.05 || (flashPhase > 0.1 && flashPhase < 0.12)) {
         ctx.fillStyle = color + 'aa'
         ctx.fillRect(position.x, position.y, size.width, size.height)
-      }
-      break
-    }
-
-    case 'wind': {
-      // Wind streaks
-      ctx.strokeStyle = color + '30'
-      ctx.lineWidth = 2
-      const direction = ((settings?.direction as number) || 90) * Math.PI / 180
-      for (let i = 0; i < 15; i++) {
-        const startX = position.x + ((i * 67 + normalizedTime * 200) % size.width)
-        const startY = position.y + (i * size.height / 15)
-        const length = 30 + (i % 3) * 20
-        ctx.beginPath()
-        ctx.moveTo(startX, startY)
-        ctx.lineTo(startX + Math.cos(direction) * length, startY + Math.sin(direction) * length)
-        ctx.stroke()
       }
       break
     }
@@ -1098,51 +1048,6 @@ function renderEffect(
       break
     }
 
-    case 'lava-flow': {
-      // Glowing lava with cracks
-      const lavaGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
-      lavaGradient.addColorStop(0, secondaryColor + 'cc')
-      lavaGradient.addColorStop(0.5, color + '99')
-      lavaGradient.addColorStop(1, color + '44')
-      ctx.fillStyle = lavaGradient
-      ctx.fillRect(position.x, position.y, size.width, size.height)
-      // Glowing cracks
-      ctx.strokeStyle = secondaryColor + 'ff'
-      ctx.lineWidth = 2
-      for (let i = 0; i < 5; i++) {
-        const crackX = position.x + (i * size.width / 5) + Math.sin(normalizedTime + i) * 10
-        ctx.beginPath()
-        ctx.moveTo(crackX, position.y + size.height * 0.3)
-        ctx.lineTo(crackX + 10, position.y + size.height * 0.5)
-        ctx.lineTo(crackX - 5, position.y + size.height * 0.7)
-        ctx.stroke()
-      }
-      break
-    }
-
-    case 'ice-crystals': {
-      // Frozen shimmer
-      const iceGradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
-      iceGradient.addColorStop(0, color + '60')
-      iceGradient.addColorStop(0.7, color + '30')
-      iceGradient.addColorStop(1, 'transparent')
-      ctx.fillStyle = iceGradient
-      ctx.fillRect(position.x, position.y, size.width, size.height)
-      // Sparkle points
-      ctx.fillStyle = (secondaryColor || '#ffffff') + 'cc'
-      for (let i = 0; i < 8; i++) {
-        const sparklePhase = (normalizedTime * 3 + i * 0.5) % 1
-        if (sparklePhase < 0.3) {
-          const sx = position.x + ((i * 97) % size.width)
-          const sy = position.y + ((i * 61) % size.height)
-          ctx.beginPath()
-          ctx.arc(sx, sy, 2 * sparklePhase * 3, 0, Math.PI * 2)
-          ctx.fill()
-        }
-      }
-      break
-    }
-
     case 'floating-runes': {
       // Floating magical symbols
       ctx.fillStyle = color + 'cc'
@@ -1164,29 +1069,6 @@ function renderEffect(
       runeGlow.addColorStop(0, color + '40')
       runeGlow.addColorStop(1, 'transparent')
       ctx.fillStyle = runeGlow
-      ctx.fillRect(position.x, position.y, size.width, size.height)
-      break
-    }
-
-    case 'divine-light': {
-      // Heavenly rays from above
-      const rayCount = 8
-      ctx.strokeStyle = color + '40'
-      ctx.lineWidth = radius * 0.1
-      for (let i = 0; i < rayCount; i++) {
-        const angle = (i / rayCount) * Math.PI * 2 + normalizedTime * 0.2
-        const rayLength = radius * (0.8 + 0.2 * Math.sin(normalizedTime * 2 + i))
-        ctx.beginPath()
-        ctx.moveTo(centerX, centerY)
-        ctx.lineTo(centerX + Math.cos(angle) * rayLength, centerY + Math.sin(angle) * rayLength)
-        ctx.stroke()
-      }
-      // Bright center
-      const divineGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius * 0.4)
-      divineGlow.addColorStop(0, (secondaryColor || '#ffffff') + 'ee')
-      divineGlow.addColorStop(0.5, color + '88')
-      divineGlow.addColorStop(1, 'transparent')
-      ctx.fillStyle = divineGlow
       ctx.fillRect(position.x, position.y, size.width, size.height)
       break
     }
@@ -1232,30 +1114,6 @@ function renderEffect(
         ctx.fill()
       }
       ctx.globalAlpha = layer.opacity
-      break
-    }
-
-    case 'holograms': {
-      // Flickering scan lines
-      const scanLineCount = 20
-      ctx.strokeStyle = color + '60'
-      ctx.lineWidth = 1
-      for (let i = 0; i < scanLineCount; i++) {
-        const y = position.y + (i * size.height / scanLineCount) + ((normalizedTime * 50) % (size.height / scanLineCount))
-        const flicker = Math.random() > 0.9 ? 0 : 1
-        ctx.globalAlpha = layer.opacity * flicker
-        ctx.beginPath()
-        ctx.moveTo(position.x, y)
-        ctx.lineTo(position.x + size.width, y)
-        ctx.stroke()
-      }
-      ctx.globalAlpha = layer.opacity
-      // Holographic glow
-      const holoGlow = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius)
-      holoGlow.addColorStop(0, color + '30')
-      holoGlow.addColorStop(1, 'transparent')
-      ctx.fillStyle = holoGlow
-      ctx.fillRect(position.x, position.y, size.width, size.height)
       break
     }
 
