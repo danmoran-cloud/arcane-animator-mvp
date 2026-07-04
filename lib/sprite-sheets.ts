@@ -27,33 +27,11 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
   // ===== Magic Effects (1024x1024, transparent alpha) =====
 
   // ===== Light Source Effects (1024x1024, transparent alpha) =====
-  'lightsource-wall-torch': { url: '/effects/light-source/wall-torch.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-ornate-lantern': { url: '/effects/light-source/ornate-lantern.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-iron-lantern': { url: '/effects/light-source/iron-lantern.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-hanging-lantern': { url: '/effects/light-source/hanging-lantern.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-carriage-lantern': { url: '/effects/light-source/carriage-lantern.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-campfire': { url: '/effects/light-source/campfire.png', cols: 5, rows: 5, frames: 25 },
-  'lightsource-candle': { url: '/effects/light-source/candle.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-fire-brazier': { url: '/effects/light-source/fire-brazier.png', cols: 5, rows: 4, frames: 20 },
-  'lightsource-rune-light-circle': { url: '/effects/light-source/rune-light-circle.png', cols: 4, rows: 4, frames: 16 },
   'lightsource-pendant-light': { url: '/effects/light-source/pendant-light.png', cols: 5, rows: 4, frames: 20 },
   // glowing-orb, sparkler-burst, radiant-starburst, soft-star-glow, sparkle-starburst
   // are now procedural particle systems (see lib/effects/particle-renderer.ts).
 
   // ===== Light Source Revised Effects (640x768, 128px cells = uniform 5x6) =====
-  'lsr-torch': { url: '/effects/light-source-revised/torch.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-fire-glow': { url: '/effects/light-source-revised/fire-glow.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-fire-bowl': { url: '/effects/light-source-revised/fire-bowl.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-carriage-lantern': { url: '/effects/light-source-revised/carriage-lantern.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-hanging-lantern': { url: '/effects/light-source-revised/hanging-lantern.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-candle': { url: '/effects/light-source-revised/candle.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-glowing-orb': { url: '/effects/light-source-revised/glowing-orb.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-campfire': { url: '/effects/light-source-revised/campfire.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-sparkles': { url: '/effects/light-source-revised/sparkles.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-fire-brazier': { url: '/effects/light-source-revised/fire-brazier.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-blue-flame': { url: '/effects/light-source-revised/blue-flame.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-green-flame': { url: '/effects/light-source-revised/green-flame.png', cols: 5, rows: 6, frames: 30 },
-  'lsr-starburst': { url: '/effects/light-source-revised/starburst.png', cols: 5, rows: 6, frames: 30 },
   'lsr-smoke': { url: '/effects/light-source-revised/smoke.png', cols: 5, rows: 6, frames: 30 },
 
   // ===== Subterranean Effects (1024x1024, transparent alpha) =====
@@ -73,7 +51,6 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
   'cemetery-cracked-stone-rise': { url: '/effects/cemetery/cracked-stone-rise.png', cols: 5, rows: 5, frames: 25 },
   'cemetery-moonbeam-trees': { url: '/effects/cemetery/moonbeam-through-trees.png', cols: 5, rows: 5, frames: 25 },
   'cemetery-draining-life-vortex': { url: '/effects/cemetery/draining-life-vortex.png', cols: 5, rows: 5, frames: 25 },
-  'cemetery-candle-flame': { url: '/effects/cemetery/candle-flame-flicker.png', cols: 5, rows: 4, frames: 20 },
 
   // ===== Launch Effects (5x6=30, glow + sprite) =====
   'launch-torch-light': { url: '/effects/launch/torch-light.png', cols: 5, rows: 6, frames: 30 },
@@ -106,7 +83,6 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
 
   // ===== New Effects (10x6=60, script-managed by scripts/add-effect.mjs) =====
   // NEW_SHEETS_START
-  'new-fire-torch': { url: '/effects/new/new-fire-torch.png', cols: 10, rows: 6, frames: 60, glow: false, fps: 20, blend: 'screen' },
   // NEW_SHEETS_END
 
   // ===== Blob-hosted single effects (Core torch flame + portal gateways) =====
@@ -122,7 +98,6 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
   'lava-whirlpool': { url: '/effects/new/lava-flow-whirlpool.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
   'lava-splashes': { url: '/effects/new/lava-splashes.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
   'lava-vents': { url: '/effects/new/lava-vents.png', cols: 4, rows: 4, frames: 16, blend: 'screen' },
-  'torch-flame': { url: '/effects/new/torch-flame.png', cols: 5, rows: 6, frames: 30 },
   'lantern-iron': { url: '/effects/new/lantern-iron.png', cols: 5, rows: 6, frames: 30 },
   'lantern-slim': { url: '/effects/new/lantern-slim.png', cols: 5, rows: 6, frames: 30 },
   'lantern-brass': { url: '/effects/new/lantern-brass.png', cols: 5, rows: 6, frames: 30 },

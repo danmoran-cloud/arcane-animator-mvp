@@ -1556,7 +1556,6 @@ const SYSTEMS: Record<string, ParticleSystem> = {
   'particle-blizzard-top': snowTopSystem,
   'particle-embers-top-heavy': embersTopSystem,
   // Light Source pack — procedural replacements for the radial glow/star sprites.
-  'lightsource-glowing-orb': glowingOrbSystem,
   'lightsource-soft-star-glow': softStarGlowSystem,
   'lightsource-radiant-starburst': radiantStarburstSystem,
   'lightsource-sparkle-starburst': sparkleStarburstSystem,

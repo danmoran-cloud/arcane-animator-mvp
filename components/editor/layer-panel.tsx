@@ -11,7 +11,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useEditor } from '@/lib/editor-store'
 import { getEffectById, EFFECT_PACKS, type EffectPack, type EffectSettings } from '@/lib/effects-library'
-import type { Layer, ExpandedEffectLayer, LayerBlendMode } from '@/lib/types'
+import type { Layer, ExpandedEffectLayer, LayerBlendMode, Size } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -237,17 +237,62 @@ function Inspector({ layer }: { layer: Layer | null }) {
   const { state, updateLayer } = useEditor()
   const [advancedOpen, setAdvancedOpen] = useState(false)
 
-  // One-click "fill the canvas" — sizes the layer to the full canvas (and resets
-  // rotation, since a rotated rect can't cover it). All other props stay manual.
-  const handleExpandToCanvas = () => {
-    if (!layer) return
-    const canvas = state.project?.canvasSize
-    if (!canvas) return
-    updateLayer(layer.id, {
+  // One-click "fill the canvas". Effect/grid layers have no image to lose, so they
+  // simply cover the whole canvas. Image layers (map/asset) are instead fit inside
+  // the canvas at their own aspect ratio and centered, so the picture is scaled as
+  // large as possible without cropping (preview object-cover) or distorting (export
+  // drawImage) any of it. Rotation is reset either way (a rotated rect can't align).
+  const fillCanvasExactly = (l: Layer, canvas: Size) => {
+    updateLayer(l.id, {
       position: { x: 0, y: 0 },
       size: { width: canvas.width, height: canvas.height },
       rotation: 0,
     })
+  }
+
+  const handleExpandToCanvas = () => {
+    if (!layer) return
+    const canvas = state.project?.canvasSize
+    if (!canvas) return
+
+    const isImage =
+      (layer.type === 'map' || layer.type === 'asset') &&
+      /^(data:|\/|https?:)/.test(layer.src)
+
+    if (!isImage) {
+      fillCanvasExactly(layer, canvas)
+      return
+    }
+
+    // Read the source image's natural size, then "contain" it within the canvas:
+    // scale by the smaller axis ratio so the whole image fits, and center it.
+    const src = layer.src
+    const layerId = layer.id
+    const img = new window.Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const iw = img.naturalWidth
+      const ih = img.naturalHeight
+      if (!iw || !ih) {
+        // No usable dimensions — fall back to covering the canvas exactly.
+        updateLayer(layerId, {
+          position: { x: 0, y: 0 },
+          size: { width: canvas.width, height: canvas.height },
+          rotation: 0,
+        })
+        return
+      }
+      const scale = Math.min(canvas.width / iw, canvas.height / ih)
+      const width = iw * scale
+      const height = ih * scale
+      updateLayer(layerId, {
+        position: { x: (canvas.width - width) / 2, y: (canvas.height - height) / 2 },
+        size: { width, height },
+        rotation: 0,
+      })
+    }
+    img.onerror = () => fillCanvasExactly({ ...layer, id: layerId } as Layer, canvas)
+    img.src = src
   }
 
   if (!layer) {

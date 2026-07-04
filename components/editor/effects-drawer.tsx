@@ -118,16 +118,23 @@ function PackSection({
 
 export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
   const [expandedPacks, setExpandedPacks] = useState<Record<EffectPack, boolean>>({
-    light: false,
-    fire: false,
-    water: false,
+    'light-sprites': false,
+    'light-procedural': false,
+    'fire-sprites': false,
+
+    'fire-procedural': false,
+    'water-sprites': false,
+
+    'water-procedural': false,
     ice: false,
     earth: false,
     air: false,
     nature: false,
-    necrotic: false,
+    'necrotic-sprites': false,
+    'necrotic-procedural': false,
     divine: false,
-    magic: false,
+    'magic-sprites': false,
+    'magic-procedural': false,
   })
   
   const togglePack = (pack: EffectPack) => {
@@ -146,7 +153,7 @@ export function EffectsDrawer({ onAddEffect }: EffectsDrawerProps) {
       {/* Effects list */}
       <div className="flex-1 overflow-y-auto">
         <div className="py-1">
-          {(['light', 'fire', 'water', 'ice', 'earth', 'air', 'nature', 'divine', 'magic', 'necrotic'] as EffectPack[]).map((pack) => (
+          {(['light-sprites', 'light-procedural', 'fire-sprites', 'fire-procedural', 'water-sprites', 'water-procedural', 'ice', 'earth', 'air', 'nature', 'divine', 'magic-sprites', 'magic-procedural', 'necrotic-sprites', 'necrotic-procedural'] as EffectPack[]).map((pack) => (
             <PackSection
               key={pack}
               pack={pack}
