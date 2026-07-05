@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, Gift } from 'lucide-react'
 import { Logo } from '@/components/logo'
+import { GoogleAuthButton } from '@/components/auth/google-auth-button'
 
 function SignUpForm() {
   const [email, setEmail] = useState('')
@@ -59,14 +60,25 @@ function SignUpForm() {
           <CardTitle className="text-2xl font-serif tracking-wide">Create Account</CardTitle>
           <CardDescription>Start creating animated battle maps</CardDescription>
         </CardHeader>
+        <CardContent className="space-y-4 pb-0">
+          {referralCode && (
+            <div className="p-3 text-sm bg-primary/10 text-primary rounded-lg flex items-center gap-2">
+              <Gift className="w-4 h-4" />
+              Referral applied! You&apos;ll earn 5 bonus tokens after your first token purchase.
+            </div>
+          )}
+          <GoogleAuthButton label="Sign up with Google" referralCode={referralCode} />
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or sign up with email</span>
+            </div>
+          </div>
+        </CardContent>
         <form onSubmit={handleSignUp}>
           <CardContent className="space-y-4">
-            {referralCode && (
-              <div className="p-3 text-sm bg-primary/10 text-primary rounded-lg flex items-center gap-2">
-                <Gift className="w-4 h-4" />
-                Referral applied! You&apos;ll earn 5 bonus tokens after your first token purchase.
-              </div>
-            )}
             {error && (
               <div className="p-3 text-sm text-destructive bg-destructive/10 rounded-lg">
                 {error}

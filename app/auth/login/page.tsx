@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { Logo } from '@/components/logo'
+import { GoogleAuthButton } from '@/components/auth/google-auth-button'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -49,6 +50,17 @@ export default function LoginPage() {
           <CardTitle className="text-2xl font-serif tracking-wide">Welcome Back</CardTitle>
           <CardDescription>Sign in to your Arcane Animator account</CardDescription>
         </CardHeader>
+        <CardContent className="space-y-4 pb-0">
+          <GoogleAuthButton label="Sign in with Google" />
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or continue with email</span>
+            </div>
+          </div>
+        </CardContent>
         <form onSubmit={handleLogin}>
           <CardContent className="space-y-4">
             {error && (
