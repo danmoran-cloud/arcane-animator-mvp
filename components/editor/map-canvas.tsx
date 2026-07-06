@@ -48,9 +48,9 @@ function FloatingParticles() {
 // Empty state component
 function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center">
+    <div className="absolute inset-0 flex flex-col items-center justify-start pt-[6%] overflow-y-auto">
       <FloatingParticles />
-      
+
       <div className="relative mb-8">
         <div className="w-40 h-40 rounded-full border-2 border-primary/20 flex items-center justify-center magical-pulse">
           <Logo size={96} showWordmark={false} />
@@ -1016,7 +1016,7 @@ export function MapCanvas() {
             <EmptyCanvasState onUpload={handleUploadClick} />
           )
         ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="absolute inset-0 flex flex-col items-center justify-start pt-[6%] overflow-y-auto">
             <FloatingParticles />
             <div className="magical-pulse mb-6">
               <Logo size={88} withTagline href={undefined} className="flex-col gap-3 text-center" />

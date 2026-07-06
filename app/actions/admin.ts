@@ -65,6 +65,21 @@ export async function findUserByEmail(
   return { user: data as AdminUser }
 }
 
+export async function listAllUsers(): Promise<{ users?: AdminUser[]; error?: string }> {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  // Service role: admins need to read every profile, not just their own.
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('profiles')
+    .select('id, email, display_name, token_balance, role')
+    .order('email', { ascending: true })
+
+  if (error) return { error: error.message }
+  return { users: (data ?? []) as AdminUser[] }
+}
+
 export async function setUserRole(
   userId: string,
   role: Role,

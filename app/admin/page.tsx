@@ -22,6 +22,11 @@ import { CouponRow } from './coupon-row'
 import { ManageUserTokensForm } from './manage-user-tokens-form'
 import { ManageAdminsForm } from './manage-admins-form'
 
+// Always render fresh on each visit so newly-signed-up users and updated
+// balances/roles show up immediately (no cached/stale snapshot).
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function AdminPage() {
   const supabase = await createClient()
   

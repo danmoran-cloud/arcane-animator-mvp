@@ -17,6 +17,7 @@ import { useRouter } from 'next/navigation'
 interface Profile {
   token_balance: number
   is_admin: boolean
+  display_name: string | null
 }
 
 export function UserMenu() {
@@ -34,7 +35,7 @@ export function UserMenu() {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('token_balance, is_admin')
+          .select('token_balance, is_admin, display_name')
           .eq('id', user.id)
           .single()
         setProfile(profile)
@@ -49,7 +50,7 @@ export function UserMenu() {
       if (session?.user) {
         supabase
           .from('profiles')
-          .select('token_balance, is_admin')
+          .select('token_balance, is_admin, display_name')
           .eq('id', session.user.id)
           .single()
           .then(({ data }) => setProfile(data))
@@ -88,6 +89,10 @@ export function UserMenu() {
     )
   }
 
+  // Prefer the profile display name, then the local-part of the email, then a
+  // generic fallback — so a signed-in user always sees a name, not just an icon.
+  const displayName = profile?.display_name || user.email?.split('@')[0] || 'Account'
+
   return (
     <div className="flex items-center gap-2">
       {/* Token display */}
@@ -102,10 +107,13 @@ export function UserMenu() {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10">
-            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+          <Button variant="ghost" size="sm" className="h-8 gap-1.5 px-1.5 hover:bg-primary/10">
+            <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
               <User className="w-3.5 h-3.5 text-primary" />
             </div>
+            <span className="text-xs font-medium max-w-[120px] truncate hidden sm:inline">
+              {displayName}
+            </span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48 bg-card border-border">

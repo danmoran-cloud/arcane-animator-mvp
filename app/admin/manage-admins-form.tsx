@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { findUserByEmail, setUserRole } from '@/app/actions/admin'
+import { findUserByEmail, listAllUsers, setUserRole } from '@/app/actions/admin'
 import type { Role } from '@/lib/roles'
 
 interface FoundUser {
@@ -41,7 +41,19 @@ export function ManageAdminsForm({ currentUserId }: { currentUserId: string }) {
   const [selectedRole, setSelectedRole] = useState<Role>('user')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Browse-all-users state
+  const [allUsers, setAllUsers] = useState<FoundUser[] | null>(null)
+  const [listLoading, setListLoading] = useState(false)
+  const [filter, setFilter] = useState('')
+
   const router = useRouter()
+
+  const selectUser = (u: FoundUser) => {
+    setFoundUser(u)
+    setSelectedRole(u.role)
+    setMessage(null)
+  }
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,13 +65,32 @@ export function ManageAdminsForm({ currentUserId }: { currentUserId: string }) {
 
     const result = await findUserByEmail(email.trim())
     if (result.user) {
-      setFoundUser(result.user)
-      setSelectedRole(result.user.role)
+      selectUser(result.user)
     } else {
       setMessage({ type: 'error', text: result.error || 'User not found' })
     }
 
     setLoading(false)
+  }
+
+  const handleToggleList = async () => {
+    // Collapse if already open.
+    if (allUsers) {
+      setAllUsers(null)
+      return
+    }
+
+    setListLoading(true)
+    setMessage(null)
+
+    const result = await listAllUsers()
+    if (result.users) {
+      setAllUsers(result.users)
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Failed to load users' })
+    }
+
+    setListLoading(false)
   }
 
   const isSelf = foundUser?.id === currentUserId
@@ -72,9 +103,13 @@ export function ManageAdminsForm({ currentUserId }: { currentUserId: string }) {
 
     const result = await setUserRole(foundUser.id, selectedRole)
     if (result.success && result.user) {
-      setFoundUser(result.user)
-      setSelectedRole(result.user.role)
-      setMessage({ type: 'success', text: `Role updated to ${ROLE_BADGE[result.user.role].label}` })
+      const updated = result.user as FoundUser
+      selectUser(updated)
+      // Reflect the new role in the browse list too, if it's open.
+      setAllUsers((prev) =>
+        prev ? prev.map((u) => (u.id === updated.id ? { ...u, role: updated.role } : u)) : prev,
+      )
+      setMessage({ type: 'success', text: `Role updated to ${ROLE_BADGE[updated.role].label}` })
       router.refresh()
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to update role' })
@@ -82,6 +117,15 @@ export function ManageAdminsForm({ currentUserId }: { currentUserId: string }) {
 
     setLoading(false)
   }
+
+  const filteredUsers = allUsers?.filter((u) => {
+    if (!filter.trim()) return true
+    const q = filter.trim().toLowerCase()
+    return (
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.display_name || '').toLowerCase().includes(q)
+    )
+  })
 
   return (
     <div className="space-y-4">
@@ -99,7 +143,52 @@ export function ManageAdminsForm({ currentUserId }: { currentUserId: string }) {
         <Button type="submit" variant="outline" disabled={loading || !email.trim()}>
           {loading ? 'Searching...' : 'Look up'}
         </Button>
+        <Button type="button" variant="ghost" onClick={handleToggleList} disabled={listLoading}>
+          {listLoading ? 'Loading...' : allUsers ? 'Hide all users' : 'List all users'}
+        </Button>
       </form>
+
+      {allUsers && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Input
+              placeholder="Filter by name or email..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="h-8 flex-1"
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {filteredUsers?.length ?? 0} of {allUsers.length}
+            </span>
+          </div>
+          <div className="max-h-72 overflow-y-auto rounded-md border border-border divide-y divide-border">
+            {filteredUsers && filteredUsers.length > 0 ? (
+              filteredUsers.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => selectUser(u)}
+                  className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                    foundUser?.id === u.id ? 'bg-primary/10' : ''
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{u.display_name || u.email || 'Unknown user'}</p>
+                    {u.display_name && u.email && (
+                      <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                    )}
+                  </div>
+                  <Badge variant={ROLE_BADGE[u.role].variant} className="shrink-0">
+                    {ROLE_BADGE[u.role].label}
+                  </Badge>
+                </button>
+              ))
+            ) : (
+              <p className="px-3 py-4 text-center text-sm text-muted-foreground">No matching users</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {foundUser && (
         <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">

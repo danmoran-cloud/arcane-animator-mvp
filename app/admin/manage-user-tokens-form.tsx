@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { findUserByEmail, setUserTokenBalance } from '@/app/actions/admin'
+import { findUserByEmail, listAllUsers, setUserTokenBalance } from '@/app/actions/admin'
 import { useRouter } from 'next/navigation'
 
 interface FoundUser {
@@ -20,7 +20,19 @@ export function ManageUserTokensForm() {
   const [newBalance, setNewBalance] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+
+  // Browse-all-users state
+  const [allUsers, setAllUsers] = useState<FoundUser[] | null>(null)
+  const [listLoading, setListLoading] = useState(false)
+  const [filter, setFilter] = useState('')
+
   const router = useRouter()
+
+  const selectUser = (u: FoundUser) => {
+    setFoundUser(u)
+    setNewBalance(String(u.token_balance))
+    setMessage(null)
+  }
 
   const handleLookup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,13 +44,32 @@ export function ManageUserTokensForm() {
 
     const result = await findUserByEmail(email.trim())
     if (result.user) {
-      setFoundUser(result.user)
-      setNewBalance(String(result.user.token_balance))
+      selectUser(result.user)
     } else {
       setMessage({ type: 'error', text: result.error || 'User not found' })
     }
 
     setLoading(false)
+  }
+
+  const handleToggleList = async () => {
+    // Collapse if already open.
+    if (allUsers) {
+      setAllUsers(null)
+      return
+    }
+
+    setListLoading(true)
+    setMessage(null)
+
+    const result = await listAllUsers()
+    if (result.users) {
+      setAllUsers(result.users)
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Failed to load users' })
+    }
+
+    setListLoading(false)
   }
 
   const handleUpdate = async () => {
@@ -55,9 +86,13 @@ export function ManageUserTokensForm() {
 
     const result = await setUserTokenBalance(foundUser.id, parsed)
     if (result.success && result.user) {
-      setFoundUser(result.user)
-      setNewBalance(String(result.user.token_balance))
-      setMessage({ type: 'success', text: `Balance updated to ${result.user.token_balance} tokens` })
+      const updated = result.user as FoundUser
+      selectUser(updated)
+      // Reflect the new balance in the browse list too, if it's open.
+      setAllUsers((prev) =>
+        prev ? prev.map((u) => (u.id === updated.id ? { ...u, token_balance: updated.token_balance } : u)) : prev,
+      )
+      setMessage({ type: 'success', text: `Balance updated to ${updated.token_balance} tokens` })
       router.refresh()
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to update balance' })
@@ -65,6 +100,15 @@ export function ManageUserTokensForm() {
 
     setLoading(false)
   }
+
+  const filteredUsers = allUsers?.filter((u) => {
+    if (!filter.trim()) return true
+    const q = filter.trim().toLowerCase()
+    return (
+      (u.email || '').toLowerCase().includes(q) ||
+      (u.display_name || '').toLowerCase().includes(q)
+    )
+  })
 
   return (
     <div className="space-y-4">
@@ -82,7 +126,52 @@ export function ManageUserTokensForm() {
         <Button type="submit" variant="outline" disabled={loading || !email.trim()}>
           {loading ? 'Searching...' : 'Look up'}
         </Button>
+        <Button type="button" variant="ghost" onClick={handleToggleList} disabled={listLoading}>
+          {listLoading ? 'Loading...' : allUsers ? 'Hide all users' : 'List all users'}
+        </Button>
       </form>
+
+      {allUsers && (
+        <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Input
+              placeholder="Filter by name or email..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="h-8 flex-1"
+            />
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {filteredUsers?.length ?? 0} of {allUsers.length}
+            </span>
+          </div>
+          <div className="max-h-72 overflow-y-auto rounded-md border border-border divide-y divide-border">
+            {filteredUsers && filteredUsers.length > 0 ? (
+              filteredUsers.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={() => selectUser(u)}
+                  className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors hover:bg-muted ${
+                    foundUser?.id === u.id ? 'bg-primary/10' : ''
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{u.display_name || u.email || 'Unknown user'}</p>
+                    {u.display_name && u.email && (
+                      <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+                    )}
+                  </div>
+                  <span className="whitespace-nowrap text-xs text-muted-foreground">
+                    {u.token_balance} tokens
+                  </span>
+                </button>
+              ))
+            ) : (
+              <p className="px-3 py-4 text-center text-sm text-muted-foreground">No matching users</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {foundUser && (
         <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
