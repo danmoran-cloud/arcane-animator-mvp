@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -49,50 +49,57 @@ export default async function AdminPage() {
 
   const isSuperAdmin = profile.role === 'superadmin'
 
-  // Fetch stats - Using service role queries would be better but for now we use admin RLS
-  const { count: totalUsers } = await supabase
+  // Dashboard aggregates must read EVERY user's data, but profiles/exports/etc.
+  // are locked down by RLS to each user's own rows. So — having just verified the
+  // caller is an admin above — run the read-only dashboard queries through the
+  // service-role client (same approach as listAllUsers). Without this the stats
+  // only reflect the admin's own row (e.g. Total Users = 1).
+  const admin = createAdminClient()
+
+  // Fetch stats
+  const { count: totalUsers } = await admin
     .from('profiles')
     .select('*', { count: 'exact', head: true })
 
-  const { data: totalTokensData } = await supabase
+  const { data: totalTokensData } = await admin
     .from('profiles')
     .select('token_balance')
 
   const totalTokensInCirculation = totalTokensData?.reduce((sum, p) => sum + (p.token_balance || 0), 0) || 0
 
-  const { count: totalExports } = await supabase
+  const { count: totalExports } = await admin
     .from('exports')
     .select('*', { count: 'exact', head: true })
 
-  const { data: revenueData } = await supabase
+  const { data: revenueData } = await admin
     .from('token_purchases')
     .select('purchase_amount')
 
   const totalRevenue = revenueData?.reduce((sum, p) => sum + (p.purchase_amount || 0), 0) || 0
 
   // Recent purchases
-  const { data: recentPurchases } = await supabase
+  const { data: recentPurchases } = await admin
     .from('token_purchases')
     .select('*, profiles(email, display_name)')
     .order('created_at', { ascending: false })
     .limit(10)
 
   // Recent exports
-  const { data: recentExports } = await supabase
+  const { data: recentExports } = await admin
     .from('exports')
     .select('*, profiles(email, display_name)')
     .order('created_at', { ascending: false })
     .limit(10)
 
   // Active coupons
-  const { data: coupons } = await supabase
+  const { data: coupons } = await admin
     .from('coupons')
     .select('*')
     .order('created_at', { ascending: false })
     .limit(10)
 
   // Referral analytics
-  const { data: allReferrals } = await supabase
+  const { data: allReferrals } = await admin
     .from('referrals')
     .select('id, status, reward_granted, referrer_user_id, created_at')
 
@@ -117,7 +124,7 @@ export default async function AdminPage() {
 
   let topReferrers: { id: string; name: string; total: number; rewarded: number }[] = []
   if (topReferrerIds.length > 0) {
-    const { data: referrerProfiles } = await supabase
+    const { data: referrerProfiles } = await admin
       .from('profiles')
       .select('id, email, display_name')
       .in('id', topReferrerIds.map(([id]) => id))
