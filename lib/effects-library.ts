@@ -26,14 +26,13 @@ export type EffectId =
   | 'caustics-fast-moving' | 'caustics-slow-gentle' | 'caustics-blue-green' | 'caustics-sunlit-deep' | 'caustics-murky-water'
   | 'caustics-cave-water' | 'caustics-kelp-forest' | 'caustics-rippling-sand' | 'caustics-wavy-surface' | 'caustics-magic-glow'
   // Rain Effects Pack removed — superseded by particle-rain
-  // Cemetery Effects Pack (12) - spooky sprite-sheet animations (graveyard-fog/ethereal-mist-swirl → Particle pack)
+  // Cemetery Effects Pack (11) - spooky sprite-sheet animations (graveyard-fog/ethereal-mist-swirl → Particle pack)
   | 'cemetery-will-o-wisps' | 'cemetery-soul-spirits' | 'cemetery-necrotic-aura' | 'cemetery-blood-petals'
-  | 'cemetery-cracked-stone-rise'
   | 'cemetery-moonbeam-trees' | 'cemetery-draining-life-vortex'
-  // Subterranean Effects Pack (10) - cave sprite-sheet animations (cave-mist/crystal-sparkles/dustfall/steam-vent/cave-fireflies → Particle pack)
+  // Subterranean Effects Pack (9) - cave sprite-sheet animations (cave-mist/crystal-sparkles/dustfall/steam-vent/cave-fireflies → Particle pack)
   | 'subterranean-underground-stream'
   | 'subterranean-bioluminescent-spores' | 'subterranean-glowing-mushroom-aura' | 'subterranean-bat-swarm'
-  | 'subterranean-pebble-collapse' | 'subterranean-arcane-cave-energy' | 'subterranean-ambient'
+  | 'subterranean-arcane-cave-energy' | 'subterranean-ambient'
   // Light Source Effects Pack (5) - illumination sprite-sheet animations
   | 'lightsource-sparkler-burst'
   | 'lightsource-pendant-light' | 'lightsource-radiant-starburst' | 'lightsource-soft-star-glow' | 'lightsource-sparkle-starburst'
@@ -833,15 +832,6 @@ export const effectsLibrary: EffectDefinition[] = [
     defaultSettings: { speed: 40, intensity: 70, density: 50, color: '#dc2626', secondaryColor: '#ef4444', glowIntensity: 40, scale: 1 },
   },
   {
-    id: 'cemetery-cracked-stone-rise',
-    name: 'Cracked Stone Rise',
-    pack: 'earth',
-    renderMode: 'terrain',
-    icon: 'mountain',
-    description: 'Tombstone rising from the ground',
-    defaultSettings: { speed: 40, intensity: 70, density: 50, color: '#94a3b8', secondaryColor: '#cbd5e1', glowIntensity: 20, scale: 1 },
-  },
-  {
     id: 'cemetery-moonbeam-trees',
     name: 'Moonbeam Through Trees',
     pack: 'divine',
@@ -896,15 +886,6 @@ export const effectsLibrary: EffectDefinition[] = [
     icon: 'ghost',
     description: 'Swarming bat silhouettes',
     defaultSettings: { speed: 65, intensity: 80, density: 55, color: '#1e293b', secondaryColor: '#475569', glowIntensity: 10, scale: 1 },
-  },
-  {
-    id: 'subterranean-pebble-collapse',
-    name: 'Pebble Collapse',
-    pack: 'earth',
-    renderMode: 'terrain',
-    icon: 'mountain',
-    description: 'Tumbling falling pebbles',
-    defaultSettings: { speed: 55, intensity: 70, density: 50, color: '#a8a29e', secondaryColor: '#d6d3d1', glowIntensity: 15, scale: 1 },
   },
   {
     id: 'subterranean-arcane-cave-energy',

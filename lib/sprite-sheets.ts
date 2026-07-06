@@ -39,7 +39,6 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
   'subterranean-bioluminescent-spores': { url: '/effects/subterranean/bioluminescent-spores.png', cols: 5, rows: 4, frames: 20 },
   'subterranean-glowing-mushroom-aura': { url: '/effects/subterranean/glowing-mushroom-aura.png', cols: 5, rows: 5, frames: 25 },
   'subterranean-bat-swarm': { url: '/effects/subterranean/bat-swarm-silhouettes.png', cols: 5, rows: 6, frames: 30 },
-  'subterranean-pebble-collapse': { url: '/effects/subterranean/pebble-collapse.png', cols: 4, rows: 5, frames: 20 },
   'subterranean-arcane-cave-energy': { url: '/effects/subterranean/arcane-cave-energy.png', cols: 5, rows: 5, frames: 25 },
   'subterranean-ambient': { url: '/effects/subterranean/subterranean-ambient.png', cols: 4, rows: 4, frames: 16 },
 
@@ -48,7 +47,6 @@ export const SPRITE_SHEETS: Record<string, SpriteSheet> = {
   'cemetery-soul-spirits': { url: '/effects/cemetery/soul-spirits.png', cols: 5, rows: 4, frames: 20 },
   'cemetery-necrotic-aura': { url: '/effects/cemetery/necrotic-aura.png', cols: 5, rows: 5, frames: 25 },
   'cemetery-blood-petals': { url: '/effects/cemetery/blood-petals.png', cols: 5, rows: 5, frames: 25 },
-  'cemetery-cracked-stone-rise': { url: '/effects/cemetery/cracked-stone-rise.png', cols: 5, rows: 5, frames: 25 },
   'cemetery-moonbeam-trees': { url: '/effects/cemetery/moonbeam-through-trees.png', cols: 5, rows: 5, frames: 25 },
   'cemetery-draining-life-vortex': { url: '/effects/cemetery/draining-life-vortex.png', cols: 5, rows: 5, frames: 25 },
 
