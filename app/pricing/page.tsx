@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { TOKEN_PACKS, formatPrice } from '@/lib/tokens'
-import { createTokenPurchaseCheckout } from '@/app/actions/stripe'
+import { createTokenPurchaseCheckout, hasUnlimitedPack } from '@/app/actions/stripe'
 import { Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
@@ -22,6 +22,17 @@ const packIcons: Record<string, React.ReactNode> = {
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
+  // Whether the signed-in user already owns unlimited, so we can flag it and
+  // block a second purchase. Undefined until the check resolves.
+  const [ownsUnlimited, setOwnsUnlimited] = useState<boolean | undefined>(undefined)
+
+  useEffect(() => {
+    let active = true
+    hasUnlimitedPack()
+      .then((owned) => { if (active) setOwnsUnlimited(owned) })
+      .catch(() => { if (active) setOwnsUnlimited(false) })
+    return () => { active = false }
+  }, [])
 
   const handlePurchase = async (packId: string) => {
     setLoading(packId)
@@ -61,12 +72,19 @@ export default function PricingPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-          {TOKEN_PACKS.map((pack) => (
-            <Card 
-              key={pack.id} 
-              className={`relative flex flex-col ${pack.popular ? 'border-primary shadow-lg scale-105' : ''}`}
+          {TOKEN_PACKS.map((pack) => {
+            const alreadyOwned = !!pack.unlimited && ownsUnlimited === true
+            return (
+            <Card
+              key={pack.id}
+              className={`relative flex flex-col ${pack.popular ? 'border-primary shadow-lg scale-105' : ''} ${alreadyOwned ? 'border-green-600' : ''}`}
             >
-              {pack.popular && (
+              {alreadyOwned ? (
+                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 hover:bg-green-600">
+                  <Check className="w-3 h-3 mr-1" />
+                  You own this
+                </Badge>
+              ) : pack.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                   Most Popular
                 </Badge>
@@ -127,19 +145,29 @@ export default function PricingPage() {
                   </>
                 )}
               </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
+              <CardFooter className="flex-col gap-2">
+                <Button
+                  className="w-full"
                   size="lg"
                   variant={pack.popular ? 'default' : 'outline'}
                   onClick={() => handlePurchase(pack.id)}
-                  disabled={loading !== null}
+                  disabled={loading !== null || alreadyOwned}
                 >
-                  {loading === pack.id ? 'Loading...' : `Buy ${pack.name}`}
+                  {alreadyOwned
+                    ? 'Already Owned'
+                    : loading === pack.id
+                      ? 'Loading...'
+                      : `Buy ${pack.name}`}
                 </Button>
+                {alreadyOwned && (
+                  <p className="text-xs text-center text-muted-foreground">
+                    Unlimited exports are active on your account.
+                  </p>
+                )}
               </CardFooter>
             </Card>
-          ))}
+            )
+          })}
         </div>
 
         <div className="mt-16 text-center">

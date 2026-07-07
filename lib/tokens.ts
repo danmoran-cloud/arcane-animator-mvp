@@ -36,6 +36,12 @@ export const TOKEN_PACKS: TokenPack[] = [
   },
 ]
 
+// Names of packs that grant unlimited exports. Purchases record `pack_name`
+// (not id), so we detect prior ownership by matching against these — both on
+// the server (to block a second purchase) and in the pricing UI. Deriving this
+// from TOKEN_PACKS keeps it correct if the unlimited pack is renamed or added to.
+export const UNLIMITED_PACK_NAMES = TOKEN_PACKS.filter((p) => p.unlimited).map((p) => p.name)
+
 export type ExportResolution = 'sd' | 'hd'
 
 // Token cost at the baseline of 5 seconds / 30fps. Every step up in duration

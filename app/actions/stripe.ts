@@ -2,8 +2,33 @@
 
 import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
-import { TOKEN_PACKS } from '@/lib/tokens'
+import { TOKEN_PACKS, UNLIMITED_PACK_NAMES } from '@/lib/tokens'
 import { createClient } from '@/lib/supabase/server'
+
+// Whether the user has already bought an unlimited pack. Unlimited is a
+// one-time purchase, so this gates both the checkout action and the pricing UI.
+async function userOwnsUnlimited(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<boolean> {
+  if (UNLIMITED_PACK_NAMES.length === 0) return false
+  const { data } = await supabase
+    .from('token_purchases')
+    .select('id')
+    .eq('user_id', userId)
+    .in('pack_name', UNLIMITED_PACK_NAMES)
+    .limit(1)
+  return !!(data && data.length > 0)
+}
+
+// Read-only ownership check for the pricing page so it can show a "You own this"
+// indicator and disable the buy button before the user reaches checkout.
+export async function hasUnlimitedPack(): Promise<boolean> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return false
+  return userOwnsUnlimited(supabase, user.id)
+}
 
 // Resolve the site's origin for building Stripe redirect URLs.
 // Prefer an explicit override, otherwise derive it from the incoming request
@@ -34,6 +59,12 @@ export async function createTokenPurchaseCheckout(packId: string) {
   const pack = TOKEN_PACKS.find(p => p.id === packId)
   if (!pack) {
     return { error: 'Invalid token pack' }
+  }
+
+  // Unlimited is a one-time purchase — block a second buy server-side so the
+  // guard holds even if the client UI is stale or bypassed.
+  if (pack.unlimited && (await userOwnsUnlimited(supabase, user.id))) {
+    return { error: "You already own the Noble's Pack — unlimited exports are already active on your account." }
   }
 
   try {

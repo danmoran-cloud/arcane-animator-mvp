@@ -2,7 +2,7 @@
 
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
-import { TOKEN_PACKS } from '@/lib/tokens'
+import { TOKEN_PACKS, UNLIMITED_PACK_NAMES } from '@/lib/tokens'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
@@ -65,6 +65,27 @@ export async function POST(req: Request) {
     if (existingPurchase) {
       console.log(`[v0] Checkout session ${session.id} already processed; skipping`)
       return NextResponse.json({ received: true, alreadyProcessed: true })
+    }
+
+    // Belt-and-suspenders: unlimited is a one-time purchase. The checkout action
+    // already blocks creating a second unlimited session, so this should be
+    // unreachable — but if a duplicate ever reaches fulfillment, acknowledge it
+    // (200, so Stripe stops retrying) without crediting the sentinel balance
+    // again. Only guards packs the user does NOT already own.
+    if (pack.unlimited && UNLIMITED_PACK_NAMES.length > 0) {
+      const { data: existingUnlimited } = await supabase
+        .from('token_purchases')
+        .select('id')
+        .eq('user_id', userId)
+        .in('pack_name', UNLIMITED_PACK_NAMES)
+        .limit(1)
+
+      if (existingUnlimited && existingUnlimited.length > 0) {
+        console.warn(
+          `[v0] User ${userId} already owns unlimited; skipping duplicate credit for session ${session.id}`,
+        )
+        return NextResponse.json({ received: true, alreadyOwnedUnlimited: true })
+      }
     }
 
     // Record the purchase
