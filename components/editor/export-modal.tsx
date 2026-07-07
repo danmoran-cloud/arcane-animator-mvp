@@ -65,7 +65,7 @@ const STATUS_MESSAGES: Record<string, string> = {
   rendering: 'Rendering frames...',
   encoding: 'Encoding video...',
   finalizing: 'Finalizing export...',
-  complete: 'Export complete!',
+  complete: 'Rendering complete!',
   error: 'Export failed',
 }
 
@@ -259,7 +259,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
       const url = URL.createObjectURL(blob)
       setDownloadUrl(url)
       setExportedAt(new Date())
-      setProgress({ status: 'complete', progress: 100, message: 'Export complete!' })
+      setProgress({ status: 'complete', progress: 100, message: 'Rendering complete!' })
 
     } catch (error) {
       console.error('[v0] Export error:', error)
@@ -302,7 +302,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
             ) : (
               <Film className="w-5 h-5" />
             )}
-            {progress.status === 'complete' ? 'Export Complete' : 'Export Animated Map'}
+            {progress.status === 'complete' ? 'Rendering Complete' : 'Export Animated Map'}
           </DialogTitle>
           <DialogDescription>
             {progress.status === 'complete'
@@ -539,7 +539,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                 className="w-full bg-primary text-primary-foreground gap-2"
               >
                 <Download className="w-4 h-4" />
-                Download WebM
+                Export File
               </Button>
             )}
 
