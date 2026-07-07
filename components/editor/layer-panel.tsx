@@ -6,11 +6,12 @@ import {
   ChevronUp, ChevronDown, ChevronRight, RotateCcw, Shuffle, Sliders,
   Flame, Cloud, Snowflake, Droplets, Waves, Zap, Wind,
   Sparkles, CircleDot, Gem, Sun, Skull, Ghost,
-  Monitor, Lightbulb, Shield, Binary, Atom, Plane, Image, Map, Grid3X3, Hexagon, Maximize2
+  Monitor, Lightbulb, Shield, Binary, Atom, Plane, Image, Map, Grid3X3, Hexagon, Maximize2,
+  Pin, PinOff, Frame
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useEditor } from '@/lib/editor-store'
-import { getEffectById, EFFECT_PACKS, type EffectPack, type EffectSettings } from '@/lib/effects-library'
+import { getEffectById, getEffectControlSupport, EFFECT_PACKS, type EffectPack, type EffectSettings } from '@/lib/effects-library'
 import type { Layer, ExpandedEffectLayer, LayerBlendMode, Size } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -33,29 +34,33 @@ const ADVANCED_KEYS: { key: keyof EffectSettings; label: string; min: number; ma
 ]
 
 // A reusable labelled slider row for a 0–100-style effect setting.
-function SettingSlider({ label, value, onChange, min = 0, max = 100, step = 1, suffix }: {
+function SettingSlider({ label, value, onChange, min = 0, max = 100, step = 1, suffix, disabled, disabledHint }: {
   label: string; value: number; onChange: (v: number) => void
   min?: number; max?: number; step?: number; suffix?: string
+  disabled?: boolean; disabledHint?: string
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn('space-y-1.5', disabled && 'opacity-40')} title={disabled ? disabledHint : undefined}>
       <div className="flex items-center justify-between">
         <Label className="text-[10px] text-muted-foreground">{label}</Label>
         <span className="text-[10px] text-muted-foreground">{Math.round(value)}{suffix}</span>
       </div>
-      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} />
+      <Slider value={[value]} onValueChange={([v]) => onChange(v)} min={min} max={max} step={step} disabled={disabled} />
     </div>
   )
 }
 
-function ColorRow({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function ColorRow({ label, value, onChange, disabled, disabledHint }: {
+  label: string; value: string; onChange: (v: string) => void
+  disabled?: boolean; disabledHint?: string
+}) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn('space-y-1.5', disabled && 'opacity-40')} title={disabled ? disabledHint : undefined}>
       <Label className="text-[10px] text-muted-foreground">{label}</Label>
       <div className="flex items-center gap-2">
-        <input type="color" value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-8 h-6 rounded border border-border cursor-pointer" />
-        <Input value={value} onChange={(e) => onChange(e.target.value)} className="h-6 text-xs flex-1" />
+        <input type="color" value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled}
+          className={cn('w-8 h-6 rounded border border-border', disabled ? 'cursor-not-allowed' : 'cursor-pointer')} />
+        <Input value={value} onChange={(e) => onChange(e.target.value)} disabled={disabled} className="h-6 text-xs flex-1" />
       </div>
     </div>
   )
@@ -234,8 +239,15 @@ function LayerRow({
 }
 
 function Inspector({ layer }: { layer: Layer | null }) {
-  const { state, updateLayer } = useEditor()
+  const { state, updateLayer, dispatch } = useEditor()
   const [advancedOpen, setAdvancedOpen] = useState(false)
+
+  // Reshape the canvas (and thus the export) to match this layer, dropping it at
+  // the origin to fill the frame. Handy after swapping in a differently-shaped map.
+  const handleFitCanvasToLayer = () => {
+    if (!layer) return
+    dispatch({ type: 'FIT_CANVAS_TO_LAYER', layerId: layer.id })
+  }
 
   // One-click "fill the canvas". Effect/grid layers have no image to lose, so they
   // simply cover the whole canvas. Image layers (map/asset) are instead fit inside
@@ -358,6 +370,13 @@ function Inspector({ layer }: { layer: Layer | null }) {
 
   const effectLayer = layer.type === 'effect' ? (layer as ExpandedEffectLayer) : null
 
+  // Which effect controls actually do something for this effect. Sprite effects
+  // ignore most look controls (they play a baked atlas), so those get greyed out.
+  const support = effectDef
+    ? getEffectControlSupport(effectDef)
+    : { isSprite: false, color: true, secondaryColor: true, glowColor: true, glowIntensity: true, density: true, scaleXY: true, thickness: true, blend: true }
+  const spriteHint = support.isSprite ? 'Not adjustable for sprite effects' : undefined
+
   return (
     <ScrollArea className="flex-1 h-full [&>[data-radix-scroll-area-viewport]]:!overflow-y-scroll">
       <div className="p-3 space-y-4">
@@ -433,6 +452,35 @@ function Inspector({ layer }: { layer: Layer | null }) {
             Expand to Fill Canvas
           </Button>
 
+          {/* Reshape the canvas to this layer — mirror of "Expand to Fill Canvas".
+              Only meaningful for image layers, whose shape should drive the frame. */}
+          {(layer.type === 'map' || layer.type === 'asset') && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-7 gap-1.5 text-xs"
+              onClick={handleFitCanvasToLayer}
+              title="Resize the canvas (and export) to match this layer's shape"
+            >
+              <Frame className="w-3 h-3" />
+              Fit Canvas to Layer
+            </Button>
+          )}
+
+          {/* Pin position — when pinned, the layer can't be dragged/resized/rotated
+              on the canvas (still selectable). Defaults on for the base map so it
+              can't be nudged by accident. */}
+          <Button
+            variant={layer.pinned ? 'secondary' : 'outline'}
+            size="sm"
+            className="w-full h-7 gap-1.5 text-xs"
+            onClick={() => updateLayer(layer.id, { pinned: !layer.pinned })}
+            title={layer.pinned ? 'Position pinned — click to allow moving & resizing' : 'Pin to lock position and size on the canvas'}
+          >
+            {layer.pinned ? <Pin className="w-3 h-3" /> : <PinOff className="w-3 h-3" />}
+            {layer.pinned ? 'Position Pinned' : 'Position Unpinned'}
+          </Button>
+
           {/* Rotation */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
@@ -483,51 +531,71 @@ function Inspector({ layer }: { layer: Layer | null }) {
               </div>
             </div>
 
+            {/* Sprite effects play a pre-baked atlas, so most look controls below
+                do nothing. Detect that and grey out the inert ones (still visible
+                so the layout/teaching stays consistent). */}
+            {spriteHint && (
+              <p className="text-[10px] leading-snug text-muted-foreground/80 italic">
+                This is a sprite effect — greyed controls don&apos;t affect it.
+              </p>
+            )}
+
             <SettingSlider label="Speed" value={setting('speed') ?? 50} onChange={(v) => handleSettingsChange('speed', v)} />
             <SettingSlider label="Intensity" value={setting('intensity') ?? 80} onChange={(v) => handleSettingsChange('intensity', v)} />
-            <SettingSlider label="Density" value={setting('density') ?? 50} onChange={(v) => handleSettingsChange('density', v)} />
+            <SettingSlider label="Density" value={setting('density') ?? 50} onChange={(v) => handleSettingsChange('density', v)}
+              disabled={support.isSprite && !support.density} disabledHint={spriteHint} />
             {effectDef.defaultSettings.glowIntensity !== undefined && (
-              <SettingSlider label="Glow Strength" value={setting('glowIntensity') ?? 70} onChange={(v) => handleSettingsChange('glowIntensity', v)} />
+              <SettingSlider label="Glow Strength" value={setting('glowIntensity') ?? 70} onChange={(v) => handleSettingsChange('glowIntensity', v)}
+                disabled={support.isSprite && !support.glowIntensity} disabledHint={spriteHint} />
             )}
             {effectDef.defaultSettings.thickness !== undefined && (
-              <SettingSlider label="Thickness" value={setting('thickness') ?? 30} onChange={(v) => handleSettingsChange('thickness', v)} />
+              <SettingSlider label="Thickness" value={setting('thickness') ?? 30} onChange={(v) => handleSettingsChange('thickness', v)}
+                disabled={support.isSprite && !support.thickness} disabledHint={spriteHint} />
             )}
 
-            <ColorRow label="Color 1" value={setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('color', v)} />
-            <ColorRow label="Color 2" value={setting('secondaryColor') ?? setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('secondaryColor', v)} />
-            <ColorRow label="Glow Color" value={setting('glowColor') ?? setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('glowColor', v)} />
+            <ColorRow label="Color 1" value={setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('color', v)}
+              disabled={support.isSprite && !support.color} disabledHint={spriteHint} />
+            <ColorRow label="Color 2" value={setting('secondaryColor') ?? setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('secondaryColor', v)}
+              disabled={support.isSprite && !support.secondaryColor} disabledHint={spriteHint} />
+            <ColorRow label="Glow Color" value={setting('glowColor') ?? setting('color') ?? '#ffffff'} onChange={(v) => handleSettingsChange('glowColor', v)}
+              disabled={support.isSprite && !support.glowColor} disabledHint={spriteHint} />
 
             {/* Scale X / Y */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className={cn('grid grid-cols-2 gap-2', support.isSprite && !support.scaleXY && 'opacity-40')}
+              title={support.isSprite && !support.scaleXY ? spriteHint : undefined}>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-[10px] text-muted-foreground">Scale X</Label>
                   <span className="text-[10px] text-muted-foreground">{(setting('scaleX') ?? 1).toFixed(2)}</span>
                 </div>
-                <Slider value={[setting('scaleX') ?? 1]} onValueChange={([v]) => handleSettingsChange('scaleX', v)} min={0.1} max={3} step={0.05} />
+                <Slider value={[setting('scaleX') ?? 1]} onValueChange={([v]) => handleSettingsChange('scaleX', v)} min={0.1} max={3} step={0.05}
+                  disabled={support.isSprite && !support.scaleXY} />
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-[10px] text-muted-foreground">Scale Y</Label>
                   <span className="text-[10px] text-muted-foreground">{(setting('scaleY') ?? 1).toFixed(2)}</span>
                 </div>
-                <Slider value={[setting('scaleY') ?? 1]} onValueChange={([v]) => handleSettingsChange('scaleY', v)} min={0.1} max={3} step={0.05} />
+                <Slider value={[setting('scaleY') ?? 1]} onValueChange={([v]) => handleSettingsChange('scaleY', v)} min={0.1} max={3} step={0.05}
+                  disabled={support.isSprite && !support.scaleXY} />
               </div>
             </div>
 
-            {/* Blend mode */}
-            <div className="space-y-1.5">
-              <Label className="text-[10px] text-muted-foreground">Blend Mode</Label>
-              <select
-                value={effectLayer.blendMode ?? 'normal'}
-                onChange={(e) => updateLayer(layer.id, { blendMode: e.target.value as LayerBlendMode })}
-                className="h-7 w-full rounded-md border border-border bg-background px-2 text-xs capitalize"
-              >
-                {BLEND_MODES.map((m) => (
-                  <option key={m} value={m}>{m.replace('-', ' ')}</option>
-                ))}
-              </select>
-            </div>
+            {/* Blend mode — hidden for sprite effects (baked compositing). */}
+            {support.blend && (
+              <div className="space-y-1.5">
+                <Label className="text-[10px] text-muted-foreground">Blend Mode</Label>
+                <select
+                  value={effectLayer.blendMode ?? 'normal'}
+                  onChange={(e) => updateLayer(layer.id, { blendMode: e.target.value as LayerBlendMode })}
+                  className="h-7 w-full rounded-md border border-border bg-background px-2 text-xs capitalize"
+                >
+                  {BLEND_MODES.map((m) => (
+                    <option key={m} value={m}>{m.replace('-', ' ')}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Loop */}
             <div className="flex items-center justify-between">

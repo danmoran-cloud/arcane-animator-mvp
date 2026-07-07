@@ -1,6 +1,8 @@
 // Curated Effects Library - organized by element/theme for intuitive browsing
 // (fire, water, ice, earth, air, nature, necrotic, divine, magic, light sources)
 
+import { SPRITE_SHEETS } from '@/lib/sprite-sheets'
+
 export type EffectPack = 'light-sprites' | 'light-procedural' | 'fire-sprites' | 'fire-procedural' | 'water-sprites' | 'water-procedural' | 'ice' | 'earth' | 'air' | 'nature' | 'necrotic-sprites' | 'necrotic-procedural' | 'divine' | 'magic-sprites' | 'magic-procedural'
 
 export type EffectId = 
@@ -2103,6 +2105,62 @@ export function getEffectsByPack(pack: EffectPack): EffectDefinition[] {
 
 export function getEffectById(id: string): EffectDefinition | undefined {
   return effectsLibrary.find(e => e.id === id)
+}
+
+/** True when an effect renders from a pre-baked sprite atlas rather than code. */
+export function isSpriteEffect(id: string): boolean {
+  return id in SPRITE_SHEETS
+}
+
+// Which of the effect-control fields actually change a given effect's output.
+// Sprite effects play a pre-baked atlas, so only playback (speed/intensity) and —
+// when the sheet draws an ambient glow/tint wash — the primary color and glow
+// strength do anything. Everything else (2nd/glow color, density, scale X/Y,
+// thickness, vector params) is inert and should be disabled in the UI. Procedural
+// and vector effects support a control if they declare it in their defaults
+// (color is always meaningful for them).
+export interface EffectControlSupport {
+  isSprite: boolean
+  color: boolean
+  secondaryColor: boolean
+  glowColor: boolean
+  glowIntensity: boolean
+  density: boolean
+  scaleXY: boolean
+  thickness: boolean
+  blend: boolean
+}
+
+export function getEffectControlSupport(def: EffectDefinition): EffectControlSupport {
+  const sheet = SPRITE_SHEETS[def.id]
+  if (sheet) {
+    const hasWash = (sheet.glow ?? true) || (sheet.tint ?? false)
+    return {
+      isSprite: true,
+      // Sprites are pre-baked — recoloring them has no visible effect, so the
+      // color pickers are disabled. Glow strength still scales the ambient wash.
+      color: false,
+      glowIntensity: hasWash,
+      secondaryColor: false,
+      glowColor: false,
+      density: false,
+      scaleXY: false,
+      thickness: false,
+      blend: false,
+    }
+  }
+  const d = def.defaultSettings
+  return {
+    isSprite: false,
+    color: true,
+    glowIntensity: d.glowIntensity !== undefined,
+    secondaryColor: d.secondaryColor !== undefined,
+    glowColor: d.glowColor !== undefined,
+    density: true,
+    scaleXY: true,
+    thickness: d.thickness !== undefined,
+    blend: true,
+  }
 }
 
 export function getEffectsByRenderMode(mode: RenderMode): EffectDefinition[] {

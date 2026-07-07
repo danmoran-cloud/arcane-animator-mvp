@@ -28,7 +28,8 @@ type EditorAction =
   | { type: 'LOAD_PROJECT'; project: Project }
   | { type: 'REPLACE_PROJECT'; project: Project }
   | { type: 'UPDATE_PROJECT_NAME'; name: string }
-  | { type: 'ADD_LAYER'; layer: Layer }
+  | { type: 'ADD_LAYER'; layer: Layer; canvasSize?: Size }
+  | { type: 'FIT_CANVAS_TO_LAYER'; layerId: string }
   | { type: 'REMOVE_LAYER'; layerId: string }
   | { type: 'UPDATE_LAYER'; layerId: string; updates: Partial<Layer> }
   | { type: 'MOVE_LAYER'; layerId: string; deltaX: number; deltaY: number }
@@ -69,6 +70,19 @@ function createNewProject(name: string): Project {
     gridSize: 50,
     canvasSize: { width: 1920, height: 1080 },
   }
+}
+
+// Longest edge (px) the canvas is allowed to take when adapting to a map. Keeps
+// the coordinate space (grid SVG, effect buffers) bounded for huge uploads while
+// preserving the map's exact aspect ratio. Export downscales from here anyway.
+export const MAX_CANVAS_EDGE = 2560
+
+// Scale a width/height down so its longest edge is at most maxEdge, preserving
+// aspect ratio. Smaller-than-max images are returned at natural size (rounded).
+export function fitToMaxEdge(width: number, height: number, maxEdge = MAX_CANVAS_EDGE): Size {
+  const longest = Math.max(width, height)
+  const scale = longest > maxEdge ? maxEdge / longest : 1
+  return { width: Math.round(width * scale), height: Math.round(height * scale) }
 }
 
 // Reassign contiguous zIndex values from a back-to-front ordering.
@@ -149,11 +163,46 @@ function baseReducer(state: EditorState, action: EditorAction): EditorState {
         project: {
           ...state.project,
           layers: [...state.project.layers, action.layer],
+          // When adapting the canvas to a freshly-added base map, resize it and
+          // any existing grid layer together so everything stays edge-to-edge.
+          ...(action.canvasSize ? { canvasSize: action.canvasSize } : {}),
+          ...(action.canvasSize
+            ? {
+                layers: [...state.project.layers, action.layer].map(l =>
+                  l.type === 'grid' ? { ...l, size: { ...action.canvasSize! } } : l,
+                ),
+              }
+            : {}),
           updatedAt: new Date().toISOString(),
         },
         selectedLayerId: action.layer.id,
       }
-    
+
+    case 'FIT_CANVAS_TO_LAYER': {
+      if (!state.project) return state
+      const target = state.project.layers.find(l => l.id === action.layerId)
+      if (!target) return state
+      // Shape the canvas to this layer's (capped) size, then drop the layer at
+      // the origin filling the frame edge-to-edge. Any grid layer is resized to
+      // match so it keeps covering the whole canvas.
+      const size = fitToMaxEdge(target.size.width, target.size.height)
+      return {
+        ...state,
+        project: {
+          ...state.project,
+          canvasSize: size,
+          layers: state.project.layers.map((l): Layer => {
+            if (l.id === action.layerId) {
+              return { ...l, position: { x: 0, y: 0 }, size: { ...size }, rotation: 0 }
+            }
+            if (l.type === 'grid') return { ...l, size: { ...size } }
+            return l
+          }),
+          updatedAt: new Date().toISOString(),
+        },
+      }
+    }
+
     case 'REMOVE_LAYER':
       if (!state.project) return state
       return {
@@ -379,7 +428,7 @@ const HISTORY_LIMIT = 60
 // Mutations that change the project and should be undoable.
 const UNDOABLE = new Set<EditorAction['type']>([
   'ADD_LAYER', 'REMOVE_LAYER', 'UPDATE_LAYER', 'MOVE_LAYER', 'DUPLICATE_LAYER',
-  'MOVE_LAYER_ORDER', 'TOGGLE_GRID', 'SET_GRID_TYPE', 'SET_GRID_SIZE',
+  'MOVE_LAYER_ORDER', 'TOGGLE_GRID', 'SET_GRID_TYPE', 'SET_GRID_SIZE', 'FIT_CANVAS_TO_LAYER',
 ])
 
 // Coalesce key for an action. Consecutive actions with the same non-null key fold
@@ -593,21 +642,28 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     img.onload = () => {
       const imgWidth = width || img.naturalWidth || 800
       const imgHeight = height || img.naturalHeight || 600
-      
+
+      // The first base map defines the canvas: adapt the frame to the map's
+      // (capped) dimensions, drop it at the origin, and pin it so it can't be
+      // dragged by accident. Subsequent maps behave like plain overlays.
+      const isFirstMap = !state.project?.layers.some(l => l.type === 'map')
+      const size = isFirstMap ? fitToMaxEdge(imgWidth, imgHeight) : { width: imgWidth, height: imgHeight }
+
       const layer: Layer = {
         id: uuidv4(),
         name,
         type: 'map',
         src,
         position: { x: 0, y: 0 },
-        size: { width: imgWidth, height: imgHeight },
+        size,
         rotation: 0,
         opacity: 1,
         visible: true,
         locked: false,
+        pinned: isFirstMap,
         zIndex: state.project?.layers.length || 0,
       }
-      dispatch({ type: 'ADD_LAYER', layer })
+      dispatch({ type: 'ADD_LAYER', layer, canvasSize: isFirstMap ? size : undefined })
     }
     img.src = src
   }

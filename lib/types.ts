@@ -20,6 +20,7 @@ interface BaseLayer {
   opacity: number
   visible: boolean
   locked: boolean      // When true, this layer moves with all other locked layers
+  pinned?: boolean     // When true, this layer can't be dragged/resized/rotated on the canvas (still selectable). Defaults on for the base map.
   zIndex: number
 }
 

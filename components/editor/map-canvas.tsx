@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, useCallback, useEffect } from 'react'
-import { useEditor } from '@/lib/editor-store'
+import { useEditor, fitToMaxEdge } from '@/lib/editor-store'
 import type { Layer, Position, ExpandedEffectLayer, MapLayer, AssetLayer, GridLayer } from '@/lib/types'
 import { PremiumEffectRenderer } from './premium-effects'
 import { Button } from '@/components/ui/button'
@@ -16,7 +16,6 @@ import {
   Maximize2, 
   Grid3X3, 
   Hexagon,
-  Upload,
   Sparkles,
   RotateCw,
   Minus,
@@ -59,29 +58,24 @@ function EmptyCanvasState({ onUpload }: { onUpload: () => void }) {
 
       <Logo size={28} withTagline href={undefined} className="mb-6" />
 
-      <h3 className="font-serif text-xl text-primary mb-2">
-        Upload a map to begin
-      </h3>
-      <p className="text-muted-foreground text-sm mb-6 max-w-md text-center">
-        Start by uploading your battle map, then add animated effects
-      </p>
-
-      <Button
+      <button
+        type="button"
         onClick={onUpload}
-        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+        className="font-serif text-2xl text-primary underline-offset-4 hover:underline transition-colors"
       >
-        <Upload className="w-4 h-4" />
-        Upload Base Map
-      </Button>
+        Upload a Map to Begin
+      </button>
 
       <p className="text-muted-foreground/70 text-xs mt-4 max-w-md text-center">
-        For best results, a 16:9 widescreen map works great.
+        Any shape works — the canvas adapts to your map, and your export matches it.
       </p>
 
-      <p className="text-xs text-muted-foreground mt-8 mb-2">
-        Share builds, get help, and swap maps with other DMs
-      </p>
-      <DiscordLink variant="button" label="Join us on Discord" />
+      <div className="mt-12 flex flex-col items-center gap-1.5">
+        <p className="text-xs text-muted-foreground">
+          Share builds, get help, and swap maps with other DMs
+        </p>
+        <DiscordLink variant="text" label="Join us on Discord" />
+      </div>
     </div>
   )
 }
@@ -226,7 +220,8 @@ function ImageLayerRenderer({
   return (
     <div
       className={cn(
-        "absolute cursor-move",
+        "absolute",
+        layer.pinned ? "cursor-default" : "cursor-move",
         isSelected && "ring-2 ring-accent shadow-[0_0_24px_rgba(100,150,255,0.5)]",
         layer.locked && "ring-1 ring-primary/30" // Show subtle indicator for linked layers
       )}
@@ -260,8 +255,8 @@ function ImageLayerRenderer({
         </div>
       )}
 
-      {isSelected && !layer.locked && (
-        <TransformHandles 
+      {isSelected && !layer.locked && !layer.pinned && (
+        <TransformHandles
           layer={layer}
           onResizeStart={onResizeStart}
           onRotateStart={onRotateStart}
@@ -376,7 +371,16 @@ export function MapCanvas() {
   const { state, dispatch, createProject, addMapLayer, selectLayer, updateLayer, moveLayer, undo, redo, canUndo, canRedo } = useEditor()
   const containerRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
+
+  // In-app clipboard for Ctrl+C / Ctrl+V. Holds a detached clone so the copy
+  // survives even if the source layer is later deleted. Kept in a ref (not state)
+  // so copying never triggers a re-render.
+  const clipboardRef = useRef<Layer | null>(null)
+  // Latest project in a ref so the (rarely re-bound) keyboard handler always
+  // reads fresh layers without listing the whole project as an effect dep.
+  const projectRef = useRef(state.project)
+  projectRef.current = state.project
+
   const [isPanning, setIsPanning] = useState(false)
   const [isSpaceDown, setIsSpaceDown] = useState(false)
   const [panStart, setPanStart] = useState<Position>({ x: 0, y: 0 })
@@ -432,6 +436,34 @@ export function MapCanvas() {
       // Undo / redo — but not while typing in a field (let it handle its own undo).
       const tag = (e.target as HTMLElement | null)?.tagName
       const inField = tag === 'INPUT' || tag === 'TEXTAREA'
+
+      // Copy / paste layers. Copy stashes a detached clone of the selected layer
+      // (skip the grid — it's a singleton). Paste drops a fresh copy, offset and
+      // on top, and selects it; the clipboard persists so you can paste repeatedly.
+      if (!inField && (e.ctrlKey || e.metaKey) && e.code === 'KeyC') {
+        const src = projectRef.current?.layers.find((l) => l.id === state.selectedLayerId)
+        if (src && src.type !== 'grid') {
+          clipboardRef.current = structuredClone(src)
+        }
+      }
+      if (!inField && (e.ctrlKey || e.metaKey) && e.code === 'KeyV') {
+        const tpl = clipboardRef.current
+        const project = projectRef.current
+        if (tpl && project) {
+          e.preventDefault()
+          const now = new Date().toISOString()
+          const clone = {
+            ...structuredClone(tpl),
+            id: crypto.randomUUID(),
+            name: /\bcopy\b/i.test(tpl.name) ? tpl.name : `${tpl.name} copy`,
+            position: { x: tpl.position.x + 24, y: tpl.position.y + 24 },
+            zIndex: project.layers.length,
+            pinned: false, // a pasted copy shouldn't inherit a pinned lock
+            ...(tpl.type === 'effect' ? { createdAt: now, updatedAt: now } : {}),
+          } as Layer
+          dispatch({ type: 'ADD_LAYER', layer: clone })
+        }
+      }
       if (!inField && (e.ctrlKey || e.metaKey) && e.code === 'KeyZ') {
         e.preventDefault()
         if (e.shiftKey) redo()
@@ -542,12 +574,20 @@ export function MapCanvas() {
 
     let targetId = layerId
     const selected = layers.find(l => l.id === state.selectedLayerId)
-    if (selected && selected.id !== layerId) {
+    // A pinned layer (e.g. the base map) never hijacks a press meant for a
+    // higher overlapping layer — otherwise you could never grab an effect that
+    // sits on top of the map.
+    if (selected && selected.id !== layerId && !selected.pinned) {
       const pt = canvasPointFromEvent(e)
       if (pt && pointInLayerBounds(pt, selected)) targetId = selected.id
     }
 
     if (state.selectedLayerId !== targetId) selectLayer(targetId)
+
+    // Pinned layers are selectable but can't be dragged.
+    const target = layers.find(l => l.id === targetId)
+    if (target?.pinned) return
+
     dragRef.current = { layerId: targetId, lastX: e.clientX, lastY: e.clientY }
     setDraggedLayerId(targetId)
     dispatch({ type: 'SET_DRAGGING', isDragging: true })
@@ -565,8 +605,8 @@ export function MapCanvas() {
   const handleResizeStart = (e: React.MouseEvent, layerId: string, corner: string) => {
     e.stopPropagation()
     const layer = state.project?.layers.find(l => l.id === layerId)
-    if (!layer) return
-    
+    if (!layer || layer.pinned) return
+
     setResizing({ layerId, corner })
     setResizeStart({ x: e.clientX, y: e.clientY })
     setLayerStartPos({ ...layer.position })
@@ -578,8 +618,8 @@ export function MapCanvas() {
   const handleRotateStart = (e: React.MouseEvent, layerId: string) => {
     e.stopPropagation()
     const layer = state.project?.layers.find(l => l.id === layerId)
-    if (!layer) return
-    
+    if (!layer || layer.pinned) return
+
     setRotating(layerId)
     setRotateCenter({
       x: layer.position.x + layer.size.width / 2,
@@ -694,12 +734,16 @@ export function MapCanvas() {
         const img = new window.Image()
         img.crossOrigin = 'anonymous'
         img.onload = () => {
-          const imgWidth = img.naturalWidth
-          const imgHeight = img.naturalHeight
-          
-          // Add the layer with actual image dimensions
+          // Add the layer; the first map also adapts the canvas to its (capped)
+          // dimensions, so fit the view to those same dimensions — not the raw
+          // natural size — to keep zoom/centering aligned with the new frame.
+          const isFirstMap = !state.project?.layers.some((l) => l.type === 'map')
+          const { width: fitWidth, height: fitHeight } = isFirstMap
+            ? fitToMaxEdge(img.naturalWidth, img.naturalHeight)
+            : { width: img.naturalWidth, height: img.naturalHeight }
+
           addMapLayer(src, file.name.replace(/\.[^/.]+$/, ''))
-          
+
           // Get container dimensions and auto-fit
           const container = containerRef.current
           if (container) {
@@ -707,15 +751,15 @@ export function MapCanvas() {
             const padding = 40 // padding around the image
             const availableWidth = rect.width - padding * 2
             const availableHeight = rect.height - padding * 2
-            
-            const scaleX = availableWidth / imgWidth
-            const scaleY = availableHeight / imgHeight
+
+            const scaleX = availableWidth / fitWidth
+            const scaleY = availableHeight / fitHeight
             const fitZoom = Math.min(scaleX, scaleY, 1) // Don't zoom in past 100%
-            
+
             // Center the image
-            const panX = (rect.width - imgWidth * fitZoom) / 2
-            const panY = (rect.height - imgHeight * fitZoom) / 2
-            
+            const panX = (rect.width - fitWidth * fitZoom) / 2
+            const panY = (rect.height - fitHeight * fitZoom) / 2
+
             dispatch({ type: 'SET_ZOOM', zoom: fitZoom })
             dispatch({ type: 'SET_PAN_OFFSET', offset: { x: panX, y: panY } })
           }
@@ -1023,15 +1067,17 @@ export function MapCanvas() {
             </div>
             <button
               type="button"
-              onClick={() => createProject('Untitled Map')}
-              className="font-serif text-lg text-primary underline-offset-4 hover:underline transition-colors mb-2"
+              onClick={() => { createProject('Untitled Map'); fileInputRef.current?.click() }}
+              className="font-serif text-2xl text-primary underline-offset-4 hover:underline transition-colors"
             >
-              Create a Project
+              Upload a Map to Begin
             </button>
-            <p className="text-xs text-muted-foreground mt-4 mb-2">
-              Share builds, get help, and swap maps with other DMs
-            </p>
-            <DiscordLink variant="button" label="Join our Discord" />
+            <div className="mt-12 flex flex-col items-center gap-1.5">
+              <p className="text-xs text-muted-foreground">
+                Share builds, get help, and swap maps with other DMs
+              </p>
+              <DiscordLink variant="text" label="Join our Discord" />
+            </div>
           </div>
         )}
 
