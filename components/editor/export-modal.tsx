@@ -501,7 +501,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
               </div>
               <h3 className="font-serif text-lg text-primary">Your animated map is ready.</h3>
               <p className="text-sm text-muted-foreground text-pretty">
-                Help other Game Masters discover animated maps and earn bonus tokens through referrals.
+                Help other Game Masters discover animated maps and earn bonus exports through referrals.
               </p>
             </div>
 
@@ -538,7 +538,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
               </div>
             </div>
 
-            {/* Referral - earn bonus tokens (above the download button) */}
+            {/* Referral - earn bonus exports (above the download button) */}
             <ShareSection section="referral" />
 
             {/* Download button */}

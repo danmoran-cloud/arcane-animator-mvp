@@ -82,7 +82,7 @@ export function CouponRow({ coupon }: { coupon: Coupon }) {
         <div className="min-w-0">
           <code className="font-mono font-bold">{coupon.code}</code>
           <p className="text-sm text-muted-foreground">
-            {coupon.token_amount} tokens • {coupon.uses_count}/{coupon.max_uses || '∞'} uses
+            {coupon.token_amount} export{coupon.token_amount === 1 ? '' : 's'} • {coupon.uses_count}/{coupon.max_uses || '∞'} uses
           </p>
         </div>
         <div className="flex items-center gap-2">

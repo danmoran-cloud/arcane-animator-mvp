@@ -176,7 +176,7 @@ export default async function AccountPage() {
           <Card>
             <CardHeader>
               <CardTitle>Redeem Coupon</CardTitle>
-              <CardDescription>Have a coupon code? Enter it below to claim your tokens.</CardDescription>
+              <CardDescription>Have a coupon code? Enter it below to claim your exports.</CardDescription>
             </CardHeader>
             <CardContent>
               <RedeemCouponForm userId={user.id} />

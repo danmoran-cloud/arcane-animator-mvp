@@ -22,7 +22,7 @@ export function RedeemCouponForm({ userId }: { userId: string }) {
     const result = await redeemCoupon(code.trim().toUpperCase(), userId)
     
     if (result.success) {
-      setMessage({ type: 'success', text: `Successfully redeemed! +${result.tokens} tokens added.` })
+      setMessage({ type: 'success', text: `Successfully redeemed! +${result.tokens} export${result.tokens === 1 ? '' : 's'} added.` })
       setCode('')
       router.refresh()
     } else {

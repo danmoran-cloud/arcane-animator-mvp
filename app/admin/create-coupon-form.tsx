@@ -61,7 +61,7 @@ export function CreateCouponForm() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="tokenAmount">Token Amount</Label>
+          <Label htmlFor="tokenAmount">Export Amount</Label>
           <Input
             id="tokenAmount"
             type="number"

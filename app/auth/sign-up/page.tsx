@@ -64,7 +64,7 @@ function SignUpForm() {
           {referralCode && (
             <div className="p-3 text-sm bg-primary/10 text-primary rounded-lg flex items-center gap-2">
               <Gift className="w-4 h-4" />
-              Referral applied! You&apos;ll earn 5 bonus tokens after your first token purchase.
+              Referral applied! You&apos;ll earn 5 bonus exports after your first purchase.
             </div>
           )}
           <GoogleAuthButton label="Sign up with Google" referralCode={referralCode} />

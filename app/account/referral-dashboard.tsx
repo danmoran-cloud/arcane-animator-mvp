@@ -77,7 +77,7 @@ export function ReferralDashboard({ referralCode, tokensEarned, stats }: Referra
           Referral Program
         </CardTitle>
         <CardDescription>
-          Share your link. When a friend signs up and makes their first purchase, you both earn 5 bonus tokens.
+          Share your link. When a friend signs up and makes their first purchase, you both earn 5 bonus exports.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -96,7 +96,7 @@ export function ReferralDashboard({ referralCode, tokensEarned, stats }: Referra
           <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-center">
             <Coins className="w-4 h-4 text-primary mx-auto mb-1" />
             <p className="text-2xl font-bold text-primary">{tokensEarned}</p>
-            <p className="text-xs text-muted-foreground">Tokens earned</p>
+            <p className="text-xs text-muted-foreground">Exports earned</p>
           </div>
         </div>
 

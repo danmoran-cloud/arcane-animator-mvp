@@ -5,17 +5,18 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
-  ArrowLeft, 
-  Users, 
-  Coins, 
-  Download, 
+import {
+  ArrowLeft,
+  Users,
+  Coins,
+  Download,
   DollarSign,
   TrendingUp,
   Gift,
   Plus,
   Share2,
-  ShieldCheck
+  ShieldCheck,
+  Gem
 } from 'lucide-react'
 import { CreateCouponForm } from './create-coupon-form'
 import { CouponRow } from './coupon-row'
@@ -77,6 +78,24 @@ export default async function AdminPage() {
 
   const totalRevenue = revenueData?.reduce((sum, p) => sum + (p.purchase_amount || 0), 0) || 0
 
+  // Founding members: users who bought the Founder's Tier. The Stripe webhook
+  // sets profiles.is_founder on that purchase, so it's the durable source of
+  // truth (survives even if a token_purchases row is missing). Ordered by
+  // signup so the earliest founders appear first.
+  const { data: foundingMembers } = await admin
+    .from('profiles')
+    .select('id, email, display_name, created_at')
+    .eq('is_founder', true)
+    .order('created_at', { ascending: true })
+
+  const founderCount = foundingMembers?.length ?? 0
+
+  // All lifetime-unlimited owners (Founders + Noble + admin-comped) for context.
+  const { count: lifetimeUnlimitedCount } = await admin
+    .from('profiles')
+    .select('*', { count: 'exact', head: true })
+    .eq('lifetime_unlimited', true)
+
   // Recent purchases
   const { data: recentPurchases } = await admin
     .from('token_purchases')
@@ -107,7 +126,7 @@ export default async function AdminPage() {
   const rewardedReferrals = allReferrals?.filter((r) => r.reward_granted).length ?? 0
   const pendingReferrals = totalReferrals - rewardedReferrals
   const conversionRate = totalReferrals > 0 ? Math.round((rewardedReferrals / totalReferrals) * 100) : 0
-  // Each rewarded referral grants 5 tokens to referrer + 5 to referred = 10 total
+  // Each rewarded referral grants 5 exports to referrer + 5 to referred = 10 total
   const referralTokensGranted = rewardedReferrals * 10
 
   // Top referrers (count referrals per referrer)
@@ -202,6 +221,53 @@ export default async function AdminPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Founding Members */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="flex items-center gap-2">
+                <Gem className="w-5 h-5 text-amber-500" />
+                Founding Members
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0">
+                  {founderCount} founder{founderCount === 1 ? '' : 's'}
+                </Badge>
+                <Badge variant="secondary">
+                  {lifetimeUnlimitedCount ?? 0} lifetime total
+                </Badge>
+              </div>
+            </div>
+            <CardDescription>
+              Users who purchased the Founder&apos;s Tier. &quot;Lifetime total&quot; also counts Noble and admin-comped unlimited accounts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {foundingMembers && foundingMembers.length > 0 ? (
+              <div className="space-y-3">
+                {foundingMembers.map((member, i) => (
+                  <div key={member.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono text-muted-foreground w-6 text-right">#{i + 1}</span>
+                      <div>
+                        <p className="font-medium">{member.display_name || member.email || 'Unknown user'}</p>
+                        {member.display_name && member.email && (
+                          <p className="text-xs text-muted-foreground">{member.email}</p>
+                        )}
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Joined {new Date(member.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">No founding members yet</p>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Recent Purchases */}

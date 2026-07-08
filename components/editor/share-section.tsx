@@ -12,7 +12,7 @@ interface ShareSectionProps {
   // Optional hosted URL for the exported file (Copy Link button shows only if present)
   hostedUrl?: string | null
   // Which part of the section to render. Defaults to 'all'.
-  // 'referral' renders only the "Earn bonus tokens" referral block.
+  // 'referral' renders only the "Earn bonus exports" referral block.
   // 'social' renders the hosted link + social share buttons.
   section?: 'all' | 'referral' | 'social'
 }
@@ -164,9 +164,9 @@ export function ShareSection({ hostedUrl, section = 'all' }: ShareSectionProps) 
           <div className="flex items-start gap-2">
             <Gift className="w-5 h-5 text-primary shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium">Earn bonus tokens</p>
+              <p className="text-sm font-medium">Earn bonus exports</p>
               <p className="text-xs text-muted-foreground text-pretty">
-                When a friend signs up with your link and makes their first purchase, you both get 5 bonus tokens.
+                When a friend signs up with your link and makes their first purchase, you both get 5 bonus exports.
               </p>
             </div>
           </div>
