@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { hasUnlimitedAccess, type SubscriptionStatus } from '@/lib/subscription'
 import type { Project } from '@/lib/types'
 
 export interface ProjectSummary {
@@ -14,12 +15,9 @@ export interface SaveResult {
   error?: string
 }
 
-// Free/standard users can store up to this many projects. Holders of the
-// Noble's Pack (unlimited tokens) get unlimited saves.
+// Free/standard users can store up to this many projects. Active unlimited
+// subscribers get unlimited saves.
 const MAX_PROJECTS = 10
-// Noble's Pack credits a sentinel balance (9,999,999). Anything this high
-// means the user has unlimited tokens, so we grant unlimited saves too.
-const UNLIMITED_TOKEN_THRESHOLD = 1_000_000
 
 /**
  * Create or update a project for the signed-in user. The client-generated
@@ -34,10 +32,13 @@ export async function saveProject(project: Project): Promise<SaveResult> {
   // NEW project. Updating an existing project is always allowed.
   const { data: profile } = await supabase
     .from('profiles')
-    .select('token_balance')
+    .select('subscription_status, lifetime_unlimited')
     .eq('id', user.id)
     .single()
-  const unlimited = (profile?.token_balance ?? 0) >= UNLIMITED_TOKEN_THRESHOLD
+  const unlimited = hasUnlimitedAccess({
+    lifetimeUnlimited: profile?.lifetime_unlimited,
+    subscriptionStatus: profile?.subscription_status as SubscriptionStatus,
+  })
 
   if (!unlimited) {
     const { data: existing } = await supabase
@@ -56,7 +57,7 @@ export async function saveProject(project: Project): Promise<SaveResult> {
       if ((count ?? 0) >= MAX_PROJECTS) {
         return {
           success: false,
-          error: `You've reached the ${MAX_PROJECTS}-project limit. Delete a project, or get the Noble's Pack for unlimited saves.`,
+          error: `You've reached the ${MAX_PROJECTS}-project limit. Delete a project, or subscribe for unlimited saves.`,
         }
       }
     }
@@ -142,10 +143,13 @@ export async function getSaveQuota(): Promise<{ used: number; limit: number; unl
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('token_balance')
+    .select('subscription_status, lifetime_unlimited')
     .eq('id', user.id)
     .single()
-  const unlimited = (profile?.token_balance ?? 0) >= UNLIMITED_TOKEN_THRESHOLD
+  const unlimited = hasUnlimitedAccess({
+    lifetimeUnlimited: profile?.lifetime_unlimited,
+    subscriptionStatus: profile?.subscription_status as SubscriptionStatus,
+  })
 
   const { count } = await supabase
     .from('projects')

@@ -5,20 +5,23 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { 
-  Coins, 
-  ArrowLeft, 
-  Plus, 
-  Download, 
-  History, 
-  Gift, 
+import {
+  Coins,
+  ArrowLeft,
+  Plus,
+  Download,
+  History,
+  Gift,
   CheckCircle,
   Clock,
-  XCircle
+  XCircle,
+  Gem
 } from 'lucide-react'
-import { formatPrice } from '@/lib/tokens'
+import { formatPrice, SUBSCRIPTION } from '@/lib/tokens'
+import { hasUnlimitedAccess, hasUnlimitedExports, type SubscriptionStatus } from '@/lib/subscription'
 import { ReferralDashboard } from './referral-dashboard'
 import { RedeemCouponForm } from './redeem-coupon-form'
+import { ManageSubscriptionButton } from './manage-subscription-button'
 
 export default async function AccountPage() {
   const supabase = await createClient()
@@ -69,6 +72,17 @@ export default async function AccountPage() {
   const today = new Date().toISOString().split('T')[0]
   const hasFreeExport = !profile?.free_export_date || profile.free_export_date !== today
 
+  // Unlimited-access state. Lifetime (one-time purchase) and subscription are
+  // distinguished so the card can show a renewal + manage button only for subs.
+  const subscriptionStatus = profile?.subscription_status as SubscriptionStatus
+  const lifetimeUnlimited = !!profile?.lifetime_unlimited
+  const subscriptionActive = hasUnlimitedExports(subscriptionStatus)
+  const unlimited = hasUnlimitedAccess({ lifetimeUnlimited, subscriptionStatus })
+  const isFounder = !!profile?.is_founder
+  const renewalDate = profile?.subscription_current_period_end
+    ? new Date(profile.subscription_current_period_end).toLocaleDateString()
+    : null
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container max-w-4xl mx-auto px-4 py-12">
@@ -79,22 +93,35 @@ export default async function AccountPage() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold mb-8">My Account</h1>
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+          <h1 className="text-3xl font-bold">My Account</h1>
+          {isFounder && (
+            <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0 gap-1">
+              <Gem className="w-3.5 h-3.5" />
+              Founding Member
+            </Badge>
+          )}
+        </div>
 
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
-          {/* Token Balance */}
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          {/* Export Balance */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Coins className="w-5 h-5 text-primary" />
-                Token Balance
+                Export Balance
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold text-primary mb-4">
-                {profile?.token_balance || 0}
+                {unlimited ? 'Unlimited' : (profile?.token_balance || 0)}
               </div>
-              {hasFreeExport && (
+              {unlimited ? (
+                <Badge variant="secondary" className="mb-4">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  {lifetimeUnlimited ? 'Lifetime unlimited' : `${SUBSCRIPTION.name} active`}
+                </Badge>
+              ) : hasFreeExport && (
                 <Badge variant="secondary" className="mb-4">
                   <Gift className="w-3 h-3 mr-1" />
                   Free SD export available!
@@ -103,9 +130,45 @@ export default async function AccountPage() {
               <Button asChild className="w-full">
                 <Link href="/pricing">
                   <Plus className="w-4 h-4 mr-2" />
-                  Buy More Tokens
+                  {unlimited ? 'View Plans' : 'Buy More Exports'}
                 </Link>
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Unlimited access */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Unlimited Exports</CardTitle>
+              <CardDescription>
+                {lifetimeUnlimited
+                  ? 'You own lifetime unlimited exports.'
+                  : subscriptionActive
+                    ? `Your ${SUBSCRIPTION.name} gives you unlimited exports.`
+                    : 'Go unlimited — subscribe monthly or buy a lifetime pass.'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {lifetimeUnlimited ? (
+                <p className="text-sm text-muted-foreground">
+                  Lifetime unlimited exports are active on your account — nothing to renew.
+                </p>
+              ) : subscriptionActive ? (
+                <div className="space-y-3">
+                  {renewalDate && (
+                    <p className="text-sm text-muted-foreground">
+                      Renews on <span className="font-medium text-foreground">{renewalDate}</span>
+                    </p>
+                  )}
+                  <ManageSubscriptionButton />
+                </div>
+              ) : (
+                <Button asChild className="w-full">
+                  <Link href="/pricing">
+                    {formatPrice(SUBSCRIPTION.priceInCents)}/mo — or go lifetime
+                  </Link>
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -150,7 +213,9 @@ export default async function AccountPage() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-primary">+{purchase.tokens_added} tokens</p>
+                      <p className="font-medium text-primary">
+                        {purchase.tokens_added > 0 ? `+${purchase.tokens_added} exports` : 'Unlimited'}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {formatPrice(purchase.purchase_amount)}
                       </p>
@@ -192,7 +257,7 @@ export default async function AccountPage() {
                     </div>
                     <div className="text-right">
                       <p className="font-medium">
-                        {exp.total_tokens_used > 0 ? `-${exp.total_tokens_used} tokens` : 'Free'}
+                        {exp.total_tokens_used > 0 ? `-${exp.total_tokens_used} export` : 'Free'}
                       </p>
                       <Badge variant={exp.status === 'completed' ? 'default' : 'secondary'}>
                         {exp.status}

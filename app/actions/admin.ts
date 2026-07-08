@@ -10,7 +10,15 @@ interface AdminUser {
   display_name: string | null
   token_balance: number
   role: Role
+  lifetime_unlimited?: boolean
+  subscription_status?: string | null
+  is_founder?: boolean
 }
+
+// Columns returned for every admin user lookup. Includes unlimited-access state
+// so the admin UI can show who has unlimited exports (balance alone is misleading
+// for lifetime/subscription users).
+const USER_COLS = 'id, email, display_name, token_balance, role, lifetime_unlimited, subscription_status, is_founder'
 
 // Verify the caller is a signed-in admin. Returns the user on success, or an
 // error string. Privileged writes that follow should use createAdminClient().
@@ -55,7 +63,7 @@ export async function findUserByEmail(
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('profiles')
-    .select('id, email, display_name, token_balance, role')
+    .select(USER_COLS)
     .ilike('email', email.trim())
     .limit(1)
     .maybeSingle()
@@ -73,7 +81,7 @@ export async function listAllUsers(): Promise<{ users?: AdminUser[]; error?: str
   const admin = createAdminClient()
   const { data, error } = await admin
     .from('profiles')
-    .select('id, email, display_name, token_balance, role')
+    .select(USER_COLS)
     .order('email', { ascending: true })
 
   if (error) return { error: error.message }
@@ -103,7 +111,7 @@ export async function setUserRole(
     .from('profiles')
     .update({ role })
     .eq('id', userId)
-    .select('id, email, display_name, token_balance, role')
+    .select(USER_COLS)
     .single()
 
   if (error) return { error: error.message }
@@ -129,7 +137,31 @@ export async function setUserTokenBalance(
     .from('profiles')
     .update({ token_balance: Math.floor(newBalance) })
     .eq('id', userId)
-    .select('id, email, display_name, token_balance')
+    .select(USER_COLS)
+    .single()
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin')
+  return { success: true, user: data as AdminUser }
+}
+
+// Grant or revoke lifetime unlimited exports for a user (e.g. comping a Founder
+// or handling support). Does not touch subscriptions — those are managed by
+// Stripe. Revoking here won't cancel an active subscription's access.
+export async function setUserLifetimeUnlimited(
+  userId: string,
+  value: boolean,
+): Promise<{ success?: boolean; user?: AdminUser; error?: string }> {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('profiles')
+    .update({ lifetime_unlimited: value })
+    .eq('id', userId)
+    .select(USER_COLS)
     .single()
 
   if (error) return { error: error.message }

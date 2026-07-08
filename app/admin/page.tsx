@@ -170,7 +170,7 @@ export default async function AdminPage() {
             <CardHeader className="pb-2">
               <CardDescription className="flex items-center gap-2">
                 <Coins className="w-4 h-4" />
-                Tokens in Circulation
+                Export Credits in Circulation
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -260,7 +260,7 @@ export default async function AdminPage() {
                           {exp.status}
                         </Badge>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {exp.total_tokens_used > 0 ? `${exp.total_tokens_used} tokens` : 'Free'}
+                          {exp.total_tokens_used > 0 ? `${exp.total_tokens_used} export` : 'Free'}
                         </p>
                       </div>
                     </div>
@@ -278,9 +278,9 @@ export default async function AdminPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Coins className="w-5 h-5" />
-              User Token Management
+              User Export Management
             </CardTitle>
-            <CardDescription>Look up a user by email and set their token balance</CardDescription>
+            <CardDescription>Look up a user by email, set their export balance, or grant lifetime unlimited</CardDescription>
           </CardHeader>
           <CardContent>
             <ManageUserTokensForm />
@@ -374,7 +374,7 @@ export default async function AdminPage() {
               <div className="rounded-lg bg-primary/10 border border-primary/20 p-4">
                 <p className="text-sm text-muted-foreground flex items-center gap-2">
                   <Coins className="w-4 h-4 text-primary" />
-                  Tokens Granted
+                  Exports Granted
                 </p>
                 <p className="text-2xl font-bold mt-1 text-primary">{referralTokensGranted}</p>
               </div>

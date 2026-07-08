@@ -1,72 +1,101 @@
-// Token pricing and export cost system
+// Export pricing model.
+//
+// Pricing is FLAT: every export costs exactly one token, regardless of
+// resolution, duration, or frame rate. One token therefore equals one export —
+// packs are sold as export bundles. The `tokens` field (and the underlying DB
+// column) is retained as the internal unit; the UI presents it as "exports".
+//
+// Unlimited exports are sold separately as a monthly subscription, not a pack —
+// see SUBSCRIPTION below and lib/subscription.ts.
 
 export interface TokenPack {
   id: string
   name: string
+  // Export credits granted. 0 for unlimited (lifetime) packs, which grant access
+  // via a flag rather than a balance.
   tokens: number
   priceInCents: number
   popular?: boolean
   savings?: string
+  // One-time packs that grant permanent ("lifetime") unlimited exports.
   unlimited?: boolean
+  // Grants "founding member" status (a cosmetic Founder badge) on purchase.
+  founder?: boolean
   tagline?: string
+  // ISO date (inclusive) after which this pack can no longer be purchased — used
+  // for limited-time offers. Enforced server-side and hidden in the UI once past.
+  availableUntil?: string
+  // Small marketing badge shown on the card (e.g. the Founders deadline).
+  badge?: string
 }
 
 export const TOKEN_PACKS: TokenPack[] = [
   {
     id: 'adventurer',
     name: "Adventurer's Pack",
-    tokens: 15,
+    tokens: 10,
     priceInCents: 299, // $2.99
   },
   {
     id: 'hero',
     name: "Hero's Pack",
-    tokens: 60,
-    priceInCents: 999, // $9.99
+    tokens: 20,
+    priceInCents: 499, // $4.99
     popular: true,
     savings: 'Best Value',
   },
   {
+    id: 'founders',
+    name: "Founder's Tier",
+    tokens: 0,
+    priceInCents: 6900, // $69 one-time
+    unlimited: true,
+    founder: true,
+    tagline: 'Lifetime unlimited exports — founding member price.',
+    availableUntil: '2026-09-30',
+    badge: 'Founders — ends Sep 30, 2026',
+  },
+  {
     id: 'noble',
     name: "Noble's Pack",
-    tokens: 9999999, // sentinel "unlimited" balance for fulfillment; UI shows "Unlimited"
-    priceInCents: 1999, // $19.99
+    tokens: 0,
+    priceInCents: 9900, // $99 one-time
     unlimited: true,
-    tagline: 'Boundless creation, forevermore — never purchase tokens again.',
+    tagline: 'Lifetime unlimited exports, yours forever.',
   },
 ]
 
-// Names of packs that grant unlimited exports. Purchases record `pack_name`
-// (not id), so we detect prior ownership by matching against these — both on
-// the server (to block a second purchase) and in the pricing UI. Deriving this
-// from TOKEN_PACKS keeps it correct if the unlimited pack is renamed or added to.
-export const UNLIMITED_PACK_NAMES = TOKEN_PACKS.filter((p) => p.unlimited).map((p) => p.name)
+// Whether a limited-time pack is still purchasable right now.
+export function isPackAvailable(pack: TokenPack, now: Date = new Date()): boolean {
+  if (!pack.availableUntil) return true
+  // Available through the end of the availableUntil day (UTC).
+  const deadline = new Date(`${pack.availableUntil}T23:59:59.999Z`)
+  return now <= deadline
+}
+
+// The unlimited-exports subscription. Recurring monthly; the actual Stripe Price
+// is created in the dashboard and referenced by STRIPE_SUBSCRIPTION_PRICE_ID.
+export const SUBSCRIPTION = {
+  id: 'archmage',
+  name: "Archmage's Pact",
+  priceInCents: 999, // $9.99 / month
+  interval: 'month' as const,
+  tagline: 'Unlimited exports, every month — create without limits.',
+}
 
 export type ExportResolution = 'sd' | 'hd'
 
-// Token cost at the baseline of 5 seconds / 30fps. Every step up in duration
-// adds a token, and 60fps adds one more (see calculateExportCost).
-export const BASE_TOKEN_COST: Record<ExportResolution, number> = {
-  sd: 1,
-  hd: 2,
-}
-
-// Duration options in order. Each step up the ladder costs one extra token.
-export const EXPORT_DURATIONS = [5, 10, 15, 30] as const
-
-// Frame rate at or above which an extra token applies.
+// Retained for the free-daily-export eligibility rule (basic exports only).
 export const HIGH_FRAME_RATE = 60
 
+// Flat pricing: every export costs one token. Parameters are accepted (and
+// ignored) so existing call sites keep working while the cost model is uniform.
 export function calculateExportCost(
-  resolution: ExportResolution,
-  durationSeconds: number,
-  frameRate: number,
+  _resolution?: ExportResolution,
+  _durationSeconds?: number,
+  _frameRate?: number,
 ): number {
-  const base = BASE_TOKEN_COST[resolution] ?? BASE_TOKEN_COST.sd
-  const stepIndex = EXPORT_DURATIONS.indexOf(durationSeconds as (typeof EXPORT_DURATIONS)[number])
-  const durationCost = stepIndex > 0 ? stepIndex : 0
-  const frameRateCost = frameRate >= HIGH_FRAME_RATE ? 1 : 0
-  return base + durationCost + frameRateCost
+  return 1
 }
 
 // One free export per day: SD only, 5 or 10 seconds, standard frame rate.

@@ -4,7 +4,15 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { findUserByEmail, listAllUsers, setUserTokenBalance } from '@/app/actions/admin'
+import { Badge } from '@/components/ui/badge'
+import { Gem, Infinity as InfinityIcon } from 'lucide-react'
+import {
+  findUserByEmail,
+  listAllUsers,
+  setUserTokenBalance,
+  setUserLifetimeUnlimited,
+} from '@/app/actions/admin'
+import { hasUnlimitedAccess, type SubscriptionStatus } from '@/lib/subscription'
 import { useRouter } from 'next/navigation'
 
 interface FoundUser {
@@ -12,6 +20,17 @@ interface FoundUser {
   email: string | null
   display_name: string | null
   token_balance: number
+  lifetime_unlimited?: boolean
+  subscription_status?: string | null
+  is_founder?: boolean
+}
+
+// Whether a user currently has unlimited exports (lifetime or subscription).
+function isUnlimited(u: FoundUser): boolean {
+  return hasUnlimitedAccess({
+    lifetimeUnlimited: u.lifetime_unlimited,
+    subscriptionStatus: u.subscription_status as SubscriptionStatus,
+  })
 }
 
 export function ManageUserTokensForm() {
@@ -90,12 +109,38 @@ export function ManageUserTokensForm() {
       selectUser(updated)
       // Reflect the new balance in the browse list too, if it's open.
       setAllUsers((prev) =>
-        prev ? prev.map((u) => (u.id === updated.id ? { ...u, token_balance: updated.token_balance } : u)) : prev,
+        prev ? prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)) : prev,
       )
-      setMessage({ type: 'success', text: `Balance updated to ${updated.token_balance} tokens` })
+      setMessage({ type: 'success', text: `Balance updated to ${updated.token_balance} exports` })
       router.refresh()
     } else {
       setMessage({ type: 'error', text: result.error || 'Failed to update balance' })
+    }
+
+    setLoading(false)
+  }
+
+  const handleToggleLifetime = async () => {
+    if (!foundUser) return
+    const next = !foundUser.lifetime_unlimited
+
+    setLoading(true)
+    setMessage(null)
+
+    const result = await setUserLifetimeUnlimited(foundUser.id, next)
+    if (result.success && result.user) {
+      const updated = result.user as FoundUser
+      selectUser(updated)
+      setAllUsers((prev) =>
+        prev ? prev.map((u) => (u.id === updated.id ? { ...u, ...updated } : u)) : prev,
+      )
+      setMessage({
+        type: 'success',
+        text: next ? 'Granted lifetime unlimited exports' : 'Revoked lifetime unlimited exports',
+      })
+      router.refresh()
+    } else {
+      setMessage({ type: 'error', text: result.error || 'Failed to update unlimited access' })
     }
 
     setLoading(false)
@@ -161,8 +206,15 @@ export function ManageUserTokensForm() {
                       <p className="truncate text-xs text-muted-foreground">{u.email}</p>
                     )}
                   </div>
-                  <span className="whitespace-nowrap text-xs text-muted-foreground">
-                    {u.token_balance} tokens
+                  <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-muted-foreground">
+                    {u.is_founder && <Gem className="w-3 h-3 text-amber-500" />}
+                    {isUnlimited(u) ? (
+                      <span className="inline-flex items-center gap-1 text-primary">
+                        <InfinityIcon className="w-3 h-3" /> Unlimited
+                      </span>
+                    ) : (
+                      `${u.token_balance} exports`
+                    )}
                   </span>
                 </button>
               ))
@@ -176,16 +228,31 @@ export function ManageUserTokensForm() {
       {foundUser && (
         <div className="rounded-lg border border-border bg-muted/50 p-4 space-y-3">
           <div>
-            <p className="font-medium">{foundUser.display_name || foundUser.email}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium">{foundUser.display_name || foundUser.email}</p>
+              {foundUser.is_founder && (
+                <Badge className="bg-gradient-to-r from-amber-500 to-yellow-400 text-black border-0 gap-1">
+                  <Gem className="w-3 h-3" />
+                  Founder
+                </Badge>
+              )}
+              {isUnlimited(foundUser) && (
+                <Badge variant="secondary" className="gap-1">
+                  <InfinityIcon className="w-3 h-3" />
+                  {foundUser.lifetime_unlimited ? 'Lifetime' : 'Subscription'}
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">{foundUser.email}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Current balance:{' '}
-              <span className="font-semibold text-foreground">{foundUser.token_balance}</span> tokens
+              Export balance:{' '}
+              <span className="font-semibold text-foreground">{foundUser.token_balance}</span> exports
+              {isUnlimited(foundUser) && ' · unlimited exports active'}
             </p>
           </div>
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-2 flex-1 min-w-[180px]">
-              <Label htmlFor="newBalance">New Balance</Label>
+              <Label htmlFor="newBalance">New Balance (exports)</Label>
               <Input
                 id="newBalance"
                 type="number"
@@ -196,6 +263,22 @@ export function ManageUserTokensForm() {
             </div>
             <Button type="button" onClick={handleUpdate} disabled={loading}>
               {loading ? 'Updating...' : 'Set Balance'}
+            </Button>
+          </div>
+          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+            <p className="text-sm text-muted-foreground">
+              Lifetime unlimited exports:{' '}
+              <span className="font-medium text-foreground">
+                {foundUser.lifetime_unlimited ? 'On' : 'Off'}
+              </span>
+            </p>
+            <Button
+              type="button"
+              variant={foundUser.lifetime_unlimited ? 'outline' : 'default'}
+              onClick={handleToggleLifetime}
+              disabled={loading}
+            >
+              {foundUser.lifetime_unlimited ? 'Revoke Lifetime' : 'Grant Lifetime'}
             </Button>
           </div>
         </div>

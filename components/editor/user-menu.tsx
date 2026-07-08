@@ -10,14 +10,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { User, Settings, LogOut, Coins, Shield, CreditCard, Scale } from 'lucide-react'
+import { User, Settings, LogOut, Coins, Shield, CreditCard, Scale, Infinity as InfinityIcon, Gem } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { hasUnlimitedAccess, type SubscriptionStatus } from '@/lib/subscription'
 
 interface Profile {
   token_balance: number
   is_admin: boolean
   display_name: string | null
+  subscription_status: SubscriptionStatus
+  lifetime_unlimited: boolean | null
+  is_founder: boolean | null
 }
 
 export function UserMenu() {
@@ -35,7 +39,7 @@ export function UserMenu() {
       if (user) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('token_balance, is_admin, display_name')
+          .select('token_balance, is_admin, display_name, subscription_status, lifetime_unlimited, is_founder')
           .eq('id', user.id)
           .single()
         setProfile(profile)
@@ -50,7 +54,7 @@ export function UserMenu() {
       if (session?.user) {
         supabase
           .from('profiles')
-          .select('token_balance, is_admin, display_name')
+          .select('token_balance, is_admin, display_name, subscription_status, lifetime_unlimited, is_founder')
           .eq('id', session.user.id)
           .single()
           .then(({ data }) => setProfile(data))
@@ -92,16 +96,30 @@ export function UserMenu() {
   // Prefer the profile display name, then the local-part of the email, then a
   // generic fallback — so a signed-in user always sees a name, not just an icon.
   const displayName = profile?.display_name || user.email?.split('@')[0] || 'Account'
+  const unlimited = hasUnlimitedAccess({
+    lifetimeUnlimited: profile?.lifetime_unlimited,
+    subscriptionStatus: profile?.subscription_status,
+  })
 
   return (
     <div className="flex items-center gap-2">
-      {/* Token display */}
-      <Link 
+      {/* Export balance display */}
+      <Link
         href="/pricing"
         className="flex items-center gap-1.5 px-2 py-1 rounded bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors"
+        title={unlimited ? 'Unlimited exports' : 'Export credits'}
       >
-        <Coins className="w-3.5 h-3.5 text-primary" />
-        <span className="text-xs font-medium text-primary">{profile?.token_balance ?? 0}</span>
+        {unlimited ? (
+          <>
+            <InfinityIcon className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">Unlimited</span>
+          </>
+        ) : (
+          <>
+            <Coins className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">{profile?.token_balance ?? 0}</span>
+          </>
+        )}
       </Link>
 
       {/* User menu */}
@@ -120,6 +138,14 @@ export function UserMenu() {
           <div className="px-2 py-1.5 text-xs text-muted-foreground truncate">
             {user.email}
           </div>
+          {profile?.is_founder && (
+            <div className="px-2 pb-1.5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-400 px-2 py-0.5 text-[10px] font-semibold text-black">
+                <Gem className="w-3 h-3" />
+                Founding Member
+              </span>
+            </div>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild className="gap-2 text-xs cursor-pointer">
             <Link href="/account">
@@ -130,7 +156,7 @@ export function UserMenu() {
           <DropdownMenuItem asChild className="gap-2 text-xs cursor-pointer">
             <Link href="/pricing">
               <CreditCard className="w-3.5 h-3.5" />
-              Buy Tokens
+              Buy Exports
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild className="gap-2 text-xs cursor-pointer">

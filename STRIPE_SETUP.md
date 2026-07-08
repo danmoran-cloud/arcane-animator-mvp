@@ -4,7 +4,13 @@ How payments work in Arcane Animator, and how to configure them for local develo
 
 ## Model
 
-One-time **token packs** (no subscriptions). Packs are defined in code in [`lib/tokens.ts`](lib/tokens.ts) (`TOKEN_PACKS`) and sold via inline `price_data` — there are **no Products or Prices to create in the Stripe dashboard**. Change prices/amounts by editing that file.
+Three ways to pay, all defined in [`lib/tokens.ts`](lib/tokens.ts):
+
+- **One-time export packs** (`TOKEN_PACKS`, `unlimited` false) — Adventurer (10/$2.99) and Hero (20/$4.99). Sold via inline `price_data`, so there are **no Products/Prices to create in the dashboard** for these. Pricing is **flat: 1 export = 1 token**, any resolution/duration/frame rate.
+- **Lifetime unlimited packs** (`TOKEN_PACKS`, `unlimited` true) — Founder's Tier ($69, limited-time via `availableUntil`) and Noble's Pack ($99). Also inline `price_data` (no dashboard Price). Fulfillment sets `profiles.lifetime_unlimited = true` instead of crediting a balance; a duplicate purchase is blocked once the user is already unlimited.
+- **Unlimited-exports subscription** (`SUBSCRIPTION`, $9.99/mo) — a recurring Stripe **Price you must create in the dashboard**, referenced by env var `STRIPE_SUBSCRIPTION_PRICE_ID`.
+
+Unlimited access is granted when `lifetime_unlimited` is true **or** `subscription_status` is `active`/`trialing` (see [`lib/subscription.ts`](lib/subscription.ts) → `hasUnlimitedAccess`).
 
 ## Payment flow
 
@@ -13,11 +19,17 @@ One-time **token packs** (no subscriptions). Packs are defined in code in [`lib/
 3. Stripe sends a `checkout.session.completed` event to the webhook at [`app/api/webhooks/stripe/route.ts`](app/api/webhooks/stripe/route.ts).
 4. The **webhook is the single source of truth**: it verifies the signature, then records a `token_purchases` row and credits `profiles.token_balance`. It is **idempotent** on `stripe_checkout_session_id`, so Stripe's retries never double-credit.
 
+### Subscription flow
+
+1. User clicks Subscribe on `/pricing` → `createSubscriptionCheckout` creates (or reuses) a Stripe **Customer**, stores its id on the profile, and opens a `mode: 'subscription'` Checkout for `STRIPE_SUBSCRIPTION_PRICE_ID`. The user id is stamped on `subscription_data.metadata` so recurring events can resolve the account.
+2. On subscribe/renew/change/cancel, Stripe sends `customer.subscription.created|updated|deleted`. The webhook writes `subscription_status`, `stripe_subscription_id`, `stripe_customer_id`, and `subscription_current_period_end` back to the profile. Access flips on/off purely from `subscription_status`.
+3. Users manage or cancel via the Stripe **billing portal** — `createBillingPortalSession` (the "Manage Subscription" button on `/account`).
+
 The webhook uses a **service-role** Supabase client (`createAdminClient()` in [`lib/supabase/server.ts`](lib/supabase/server.ts)) because it runs with no user session and RLS would otherwise reject its writes.
 
 ## Environment variables
 
-All four are required for purchases to complete:
+The first four are required for purchases; `STRIPE_SUBSCRIPTION_PRICE_ID` is additionally required for the subscription:
 
 | Variable | Where to get it | Notes |
 |---|---|---|
@@ -25,6 +37,7 @@ All four are required for purchases to complete:
 | `STRIPE_WEBHOOK_SECRET` | `stripe listen` (local) **or** the dashboard webhook endpoint (deployed) | `whsec_…` — **differs per environment** (see below) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard → Project Settings → API → `service_role` secret key | Bypasses RLS — server-only, never expose to the browser |
 | `NEXT_PUBLIC_APP_URL` | — | Base URL for success/cancel redirects (e.g. `http://localhost:3000` or your prod URL) |
+| `STRIPE_SUBSCRIPTION_PRICE_ID` | Stripe Dashboard → Product catalog → your $9.99/mo recurring Price | `price_…` — **account-specific** (recreate per Stripe account/mode) |
 
 > The publishable key (`pk_…`) is **not** needed — we use hosted Checkout, so no Stripe code runs in the browser.
 
@@ -47,16 +60,19 @@ The Stripe CLI is required to forward live Stripe events to `localhost`.
 To replay an event without a browser purchase:
 `stripe trigger checkout.session.completed` (note: synthetic events lack our `pack_id`/`user_id` metadata, so the handler returns 400 "Missing metadata" — that still confirms signature verification and connectivity are working).
 
-> The editor's token chip reads a separate mock store and will **not** reflect purchases — verify via `/account` or the database, not the editor chip.
+> To test the subscription locally, also forward the subscription events (they're included by default with `stripe listen`). After `stripe trigger customer.subscription.created`, or a real test subscribe, `/account` shows the active plan and the editor chip shows **Unlimited**.
 
 ## Production setup
 
-1. In the Stripe Dashboard (in **live** mode when going live), create a webhook endpoint:
+1. In the Stripe Dashboard (in **live** mode when going live), create the recurring **Price** for the $9.99/mo subscription (Product catalog → add product → recurring, monthly, $9.99). Copy its `price_…` id into `STRIPE_SUBSCRIPTION_PRICE_ID`.
+2. Create a webhook endpoint:
    - **URL**: `https://<your-domain>/api/webhooks/stripe`
-   - **Events**: `checkout.session.completed`
+   - **Events**: `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`
    - Copy the endpoint's signing secret (`whsec_…`).
-2. Set all four env vars in the production environment, using the **live** `sk_live_…` key, the **dashboard endpoint's** `whsec_…`, and `NEXT_PUBLIC_APP_URL` = your production URL.
-3. Deploy, then run one real-card purchase in live mode to confirm fulfillment end-to-end.
+3. Enable the **billing portal** once per account: Stripe Dashboard → Settings → Billing → Customer portal → activate (allow cancellation and payment-method updates).
+4. Set all env vars in the production environment, using the **live** `sk_live_…` key, the **dashboard endpoint's** `whsec_…`, the live `price_…`, and `NEXT_PUBLIC_APP_URL` = your production URL.
+5. Run [`supabase/add-subscription-columns.sql`](supabase/add-subscription-columns.sql) against the database (once per environment).
+6. Deploy, then run one real-card purchase **and** one subscription in live mode to confirm both flows end-to-end.
 
 ## Rotating keys / switching Stripe accounts
 
@@ -81,6 +97,8 @@ Steps:
 ## Database dependencies
 
 The webhook and token features depend on Supabase objects that live in the project **but are not in repo migrations**: tables `profiles` (with `token_balance`), `token_purchases`, `exports`, `coupons`, `coupon_redemptions`, `referrals`; and RPCs `increment_token_balance`, `deduct_tokens_for_export`, `mark_referral_purchased`, `award_referral_reward`. Verify they exist with [`supabase/verify-tokens-schema.sql`](supabase/verify-tokens-schema.sql) before relying on payments in a new environment.
+
+Unlimited access adds six `profiles` columns (`stripe_customer_id`, `stripe_subscription_id`, `subscription_status`, `subscription_current_period_end`, `lifetime_unlimited`, `is_founder`). Apply them with [`supabase/add-subscription-columns.sql`](supabase/add-subscription-columns.sql) — **the app's export authorization reads `subscription_status` and `lifetime_unlimited`, so they must exist or exports break.**
 
 ## Admin token management
 

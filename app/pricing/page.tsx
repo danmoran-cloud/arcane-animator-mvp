@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { TOKEN_PACKS, formatPrice } from '@/lib/tokens'
-import { createTokenPurchaseCheckout, hasUnlimitedPack } from '@/app/actions/stripe'
-import { Sparkles, Zap, Crown, ArrowLeft, Check } from 'lucide-react'
+import { TOKEN_PACKS, SUBSCRIPTION, formatPrice, isPackAvailable } from '@/lib/tokens'
+import {
+  createTokenPurchaseCheckout,
+  createSubscriptionCheckout,
+  createBillingPortalSession,
+  getSubscriptionStatus,
+  type SubscriptionInfo,
+} from '@/app/actions/stripe'
+import { Sparkles, Zap, Crown, Gem, Infinity as InfinityIcon, ArrowLeft, Check, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
 import { DiscordLink } from '@/components/discord-link'
@@ -16,40 +23,76 @@ import { SiteFooter } from '@/components/site-footer'
 const packIcons: Record<string, React.ReactNode> = {
   adventurer: <Zap className="w-8 h-8" />,
   hero: <Sparkles className="w-8 h-8" />,
+  founders: <Gem className="w-8 h-8" />,
   noble: <Crown className="w-8 h-8" />,
 }
+
+// Result shape shared by the checkout server actions.
+type ActionResult = { url?: string; error?: string; requiresAuth?: boolean }
 
 export default function PricingPage() {
   const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
-  // Whether the signed-in user already owns unlimited, so we can flag it and
-  // block a second purchase. Undefined until the check resolves.
-  const [ownsUnlimited, setOwnsUnlimited] = useState<boolean | undefined>(undefined)
+  // The signed-in user's unlimited-access state. Undefined until resolved.
+  const [status, setStatus] = useState<SubscriptionInfo | undefined>(undefined)
 
   useEffect(() => {
     let active = true
-    hasUnlimitedPack()
-      .then((owned) => { if (active) setOwnsUnlimited(owned) })
-      .catch(() => { if (active) setOwnsUnlimited(false) })
+    getSubscriptionStatus()
+      .then((info) => { if (active) setStatus(info) })
+      .catch(() => { if (active) setStatus(undefined) })
     return () => { active = false }
   }, [])
 
-  const handlePurchase = async (packId: string) => {
-    setLoading(packId)
+  const unlimited = status?.unlimited === true
+  const subscriptionActive = status?.active === true
+  const resolving = status === undefined
+
+  // Branded error surfacing: a sign-in prompt gets an inline "Sign In" action;
+  // everything else is a plain error toast (replaces the old native alert()).
+  const reportError = (result: ActionResult) => {
+    if (!result.error) return
+    if (result.requiresAuth) {
+      toast.error(result.error, {
+        action: { label: 'Sign In', onClick: () => router.push('/auth/login') },
+      })
+    } else {
+      toast.error(result.error)
+    }
+  }
+
+  const runCheckout = async (key: string, action: () => Promise<ActionResult>) => {
+    setLoading(key)
     try {
-      const result = await createTokenPurchaseCheckout(packId)
+      const result = await action()
       if (result.url) {
         router.push(result.url)
-      } else if (result.error) {
-        console.error('[v0] Checkout error:', result.error)
-        alert(result.error)
+      } else {
+        reportError(result)
       }
     } catch (error) {
-      console.error('[v0] Purchase error:', error)
+      console.error('[v0] Checkout error:', error)
+      toast.error('Something went wrong. Please try again.')
     } finally {
       setLoading(null)
     }
   }
+
+  const handlePurchase = (packId: string) => runCheckout(packId, () => createTokenPurchaseCheckout(packId))
+  const handleSubscribe = () =>
+    runCheckout(SUBSCRIPTION.id, () =>
+      subscriptionActive ? createBillingPortalSession() : createSubscriptionCheckout(),
+    )
+
+  const exportPacks = TOKEN_PACKS.filter((p) => !p.unlimited)
+  // While the Founders offer is live, show only it among the lifetime tiers —
+  // Noble (identical access, higher price) is hidden until Founders ends. After
+  // the deadline, limited-time packs drop out and Noble takes over.
+  const foundersAvailable = TOKEN_PACKS.some((p) => p.founder && isPackAvailable(p))
+  const lifetimePacks = TOKEN_PACKS.filter(
+    (p) => p.unlimited && isPackAvailable(p) && (p.founder || !foundersAvailable),
+  )
+  const unlimitedCount = 1 + lifetimePacks.length
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -65,26 +108,21 @@ export default function PricingPage() {
           <div className="flex justify-center mb-6">
             <Logo size={44} withTagline href="/" />
           </div>
-          <h1 className="text-4xl font-serif font-bold tracking-wide mb-4 text-balance">Get Export Tokens</h1>
+          <h1 className="text-4xl font-serif font-bold tracking-wide mb-4 text-balance">Get Exports</h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-pretty">
-            Purchase tokens to export your animated maps as high-quality WebM videos for use in your favorite VTT.
+            Buy a pack of exports, or go unlimited — render your animated maps as high-quality WebM
+            videos for use in your favorite VTT.
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
-          {TOKEN_PACKS.map((pack) => {
-            const alreadyOwned = !!pack.unlimited && ownsUnlimited === true
-            return (
+        {/* Export packs */}
+        <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
+          {exportPacks.map((pack) => (
             <Card
               key={pack.id}
-              className={`relative flex flex-col ${pack.popular ? 'border-primary shadow-lg scale-105' : ''} ${alreadyOwned ? 'border-green-600' : ''}`}
+              className={`relative flex flex-col ${pack.popular ? 'border-primary shadow-lg' : ''}`}
             >
-              {alreadyOwned ? (
-                <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 hover:bg-green-600">
-                  <Check className="w-3 h-3 mr-1" />
-                  You own this
-                </Badge>
-              ) : pack.popular && (
+              {pack.popular && (
                 <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
                   Most Popular
                 </Badge>
@@ -100,93 +138,203 @@ export default function PricingPage() {
                 <div className="mb-4">
                   <span className="text-4xl font-bold">{formatPrice(pack.priceInCents)}</span>
                 </div>
-                {pack.unlimited ? (
-                  <>
-                    <div className="mb-4">
-                      <span className="text-2xl font-semibold text-primary">Unlimited</span>
-                      <span className="text-muted-foreground ml-1">tokens</span>
-                    </div>
-                    {pack.tagline && (
-                      <p className="mb-4 text-sm italic text-muted-foreground text-balance">
-                        {pack.tagline}
-                      </p>
-                    )}
-                    <div className="space-y-2 text-sm text-left">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>Unlimited SD exports</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>Unlimited HD exports</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>Never purchase tokens again</span>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="mb-4">
-                      <span className="text-2xl font-semibold text-primary">{pack.tokens}</span>
-                      <span className="text-muted-foreground ml-1">tokens</span>
-                    </div>
-                    <div className="space-y-2 text-sm text-left">
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>~{Math.floor(pack.tokens / 1)} SD exports</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Check className="w-4 h-4 text-green-500" />
-                        <span>~{Math.floor(pack.tokens / 2)} HD exports</span>
-                      </div>
-                    </div>
-                  </>
-                )}
+                <div className="mb-4">
+                  <span className="text-2xl font-semibold text-primary">{pack.tokens}</span>
+                  <span className="text-muted-foreground ml-1">exports</span>
+                </div>
+                <div className="space-y-2 text-sm text-left">
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>{pack.tokens} exports in any resolution</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>SD or HD, up to 30s, 60fps</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-green-500" />
+                    <span>Exports never expire</span>
+                  </div>
+                </div>
               </CardContent>
-              <CardFooter className="flex-col gap-2">
+              <CardFooter>
                 <Button
                   className="w-full"
                   size="lg"
                   variant={pack.popular ? 'default' : 'outline'}
                   onClick={() => handlePurchase(pack.id)}
-                  disabled={loading !== null || alreadyOwned}
+                  disabled={loading !== null}
                 >
-                  {alreadyOwned
-                    ? 'Already Owned'
-                    : loading === pack.id
-                      ? 'Loading...'
-                      : `Buy ${pack.name}`}
+                  {loading === pack.id ? 'Loading...' : `Buy ${pack.name}`}
                 </Button>
-                {alreadyOwned && (
-                  <p className="text-xs text-center text-muted-foreground">
-                    Unlimited exports are active on your account.
-                  </p>
-                )}
               </CardFooter>
             </Card>
+          ))}
+        </div>
+
+        {/* Unlimited: monthly subscription + lifetime passes */}
+        <div className="mt-16 text-center mb-6">
+          <h2 className="text-2xl font-serif font-bold tracking-wide">Go Unlimited</h2>
+          <p className="text-muted-foreground mt-2">Export as much as you want — subscribe monthly, or buy once and own it forever.</p>
+        </div>
+
+        <div className={`grid gap-6 ${unlimitedCount >= 3 ? 'md:grid-cols-3 max-w-5xl' : 'md:grid-cols-2 max-w-3xl'} mx-auto items-stretch`}>
+          {/* Monthly subscription */}
+          <Card className={`relative flex flex-col ${subscriptionActive ? 'border-green-600' : ''}`}>
+            {subscriptionActive && (
+              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 hover:bg-green-600">
+                <Check className="w-3 h-3 mr-1" />
+                Active
+              </Badge>
+            )}
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto mb-4 p-3 rounded-full bg-muted text-primary">
+                <InfinityIcon className="w-8 h-8" />
+              </div>
+              <CardTitle className="text-xl">{SUBSCRIPTION.name}</CardTitle>
+              <CardDescription>Monthly subscription</CardDescription>
+            </CardHeader>
+            <CardContent className="text-center flex-1">
+              <div className="mb-4">
+                <span className="text-4xl font-bold">{formatPrice(SUBSCRIPTION.priceInCents)}</span>
+                <span className="text-muted-foreground">/mo</span>
+              </div>
+              <div className="mb-4">
+                <span className="text-2xl font-semibold text-primary">Unlimited</span>
+                <span className="text-muted-foreground ml-1">exports</span>
+              </div>
+              <div className="space-y-2 text-sm text-left">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>Unlimited SD &amp; HD exports</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>Unlimited saved projects</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-green-500" />
+                  <span>Cancel anytime</span>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex-col gap-2">
+              <Button
+                className="w-full"
+                size="lg"
+                variant={subscriptionActive ? 'outline' : 'default'}
+                onClick={handleSubscribe}
+                disabled={loading !== null || resolving || (unlimited && !subscriptionActive)}
+              >
+                {loading === SUBSCRIPTION.id
+                  ? 'Loading...'
+                  : subscriptionActive
+                    ? 'Manage Subscription'
+                    : unlimited
+                      ? 'Already Unlimited'
+                      : `Subscribe · ${formatPrice(SUBSCRIPTION.priceInCents)}/mo`}
+              </Button>
+            </CardFooter>
+          </Card>
+
+          {/* Lifetime passes (Founders, Noble) */}
+          {lifetimePacks.map((pack) => {
+            const owned = unlimited
+            const featured = pack.id === 'founders'
+            return (
+              <Card
+                key={pack.id}
+                className={`relative flex flex-col ${owned ? 'border-green-600' : featured ? 'border-primary shadow-lg' : ''}`}
+              >
+                {owned ? (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 hover:bg-green-600">
+                    <Check className="w-3 h-3 mr-1" />
+                    You own this
+                  </Badge>
+                ) : featured && (
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                    Best Deal
+                  </Badge>
+                )}
+                <CardHeader className="text-center pb-2">
+                  <div className={`mx-auto mb-4 p-3 rounded-full ${featured ? 'bg-primary/10 text-primary' : 'bg-muted text-primary'}`}>
+                    {packIcons[pack.id]}
+                  </div>
+                  <CardTitle className="text-xl">{pack.name}</CardTitle>
+                  <CardDescription>One-time · lifetime</CardDescription>
+                </CardHeader>
+                <CardContent className="text-center flex-1">
+                  <div className="mb-4">
+                    <span className="text-4xl font-bold">{formatPrice(pack.priceInCents)}</span>
+                    <span className="text-muted-foreground ml-1">once</span>
+                  </div>
+                  <div className="mb-4">
+                    <span className="text-2xl font-semibold text-primary">Unlimited</span>
+                    <span className="text-muted-foreground ml-1">forever</span>
+                  </div>
+                  {pack.tagline && (
+                    <p className="mb-4 text-sm italic text-muted-foreground text-balance">
+                      {pack.tagline}
+                    </p>
+                  )}
+                  {pack.badge && !owned && (
+                    <div className="mb-4 flex items-center justify-center gap-1.5 text-xs font-medium text-amber-500">
+                      <Clock className="w-3.5 h-3.5" />
+                      {pack.badge}
+                    </div>
+                  )}
+                  <div className="space-y-2 text-sm text-left">
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Unlimited SD &amp; HD exports, forever</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Unlimited saved projects</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Check className="w-4 h-4 text-green-500" />
+                      <span>Pay once — never again</span>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    className="w-full"
+                    size="lg"
+                    variant={featured ? 'default' : 'outline'}
+                    onClick={() => handlePurchase(pack.id)}
+                    disabled={loading !== null || resolving || owned}
+                  >
+                    {owned
+                      ? 'Already Owned'
+                      : loading === pack.id
+                        ? 'Loading...'
+                        : `Buy ${pack.name}`}
+                  </Button>
+                </CardFooter>
+              </Card>
             )
           })}
         </div>
 
         <div className="mt-16 text-center">
-          <h2 className="text-2xl font-bold mb-6">How Tokens Work</h2>
+          <h2 className="text-2xl font-bold mb-6">How Exports Work</h2>
           <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Base Cost</CardTitle>
+                <CardTitle className="text-lg">One Flat Rate</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground">
-                SD: 1 token · HD: 2 tokens (at 5s, 30fps)
+                Every export costs 1 credit — any resolution, duration, or frame rate
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Add-Ons</CardTitle>
+                <CardTitle className="text-lg">Go Unlimited</CardTitle>
               </CardHeader>
               <CardContent className="text-muted-foreground">
-                +1 token per longer duration · +1 token for 60fps
+                Subscribe monthly, or buy a lifetime pass and never think about credits again
               </CardContent>
             </Card>
             <Card>
@@ -201,7 +349,7 @@ export default function PricingPage() {
         </div>
 
         <div className="mt-12 text-center text-sm text-muted-foreground">
-          <p>Tokens never expire. Secure payment powered by Stripe.</p>
+          <p>Exports never expire. Secure payment powered by Stripe.</p>
         </div>
 
         <div className="mt-10 flex flex-col items-center gap-3 border-t border-border pt-8">

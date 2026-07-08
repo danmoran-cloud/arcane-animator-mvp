@@ -430,6 +430,13 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                         <Link href="/auth/login">Sign In</Link>
                       </Button>
                     </div>
+                  ) : authResult.unlimited ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <span className="font-medium text-green-600">
+                        Unlimited exports — this export is free
+                      </span>
+                    </div>
                   ) : (
                     <div className="space-y-3">
                       {/* Daily free allowance status */}
@@ -459,7 +466,9 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Coins className="w-5 h-5 text-primary" />
-                              <span className="font-medium">Cost: {exportCost} tokens</span>
+                              <span className="font-medium">
+                                Cost: {exportCost} {exportCost === 1 ? 'export' : 'exports'}
+                              </span>
                             </div>
                             <span className="text-sm text-muted-foreground">
                               Balance: {authResult.tokenBalance || 0}
@@ -469,7 +478,7 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                             <div className="flex items-center justify-between">
                               <span className="text-sm text-destructive">{authResult.error}</span>
                               <Button asChild size="sm" variant="outline">
-                                <Link href="/pricing">Buy Tokens</Link>
+                                <Link href="/pricing">Buy Exports</Link>
                               </Button>
                             </div>
                           )}
@@ -597,7 +606,9 @@ export function ExportModal({ open, onOpenChange, project }: ExportModalProps) {
                 className="bg-primary text-primary-foreground gap-2"
               >
                 <Film className="w-4 h-4" />
-                {authResult?.freeApplied ? 'Export Free' : `Export (${exportCost} tokens)`}
+                {authResult?.unlimited || authResult?.freeApplied
+                  ? 'Export Free'
+                  : `Export (${exportCost} ${exportCost === 1 ? 'export' : 'exports'})`}
               </Button>
             </>
           )}

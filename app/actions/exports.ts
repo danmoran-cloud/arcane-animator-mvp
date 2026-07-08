@@ -1,7 +1,8 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { calculateExportCost, isFreeExportEligible, BASE_TOKEN_COST } from '@/lib/tokens'
+import { calculateExportCost, isFreeExportEligible } from '@/lib/tokens'
+import { hasUnlimitedAccess, type SubscriptionStatus } from '@/lib/subscription'
 import type { ExportResolution } from '@/lib/export-types'
 
 export interface ExportAuthResult {
@@ -13,6 +14,8 @@ export interface ExportAuthResult {
   dailyFreeAvailable?: boolean
   // Whether the free allowance applies to THIS export (eligible tier + unused).
   freeApplied?: boolean
+  // Whether an active unlimited subscription is covering this export.
+  unlimited?: boolean
   error?: string
 }
 
@@ -31,7 +34,7 @@ export async function checkExportAuthorization(
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('token_balance, free_export_date')
+    .select('token_balance, free_export_date, subscription_status, lifetime_unlimited')
     .eq('id', user.id)
     .single()
 
@@ -42,6 +45,24 @@ export async function checkExportAuthorization(
   const cost = calculateExportCost(resolution, durationSeconds, frameRate)
   const today = new Date().toISOString().split('T')[0]
   const dailyFreeAvailable = !profile.free_export_date || profile.free_export_date !== today
+
+  // Unlimited users (lifetime purchase or active subscription) export without
+  // limit — no token cost, no daily gate.
+  if (hasUnlimitedAccess({
+    lifetimeUnlimited: profile.lifetime_unlimited,
+    subscriptionStatus: profile.subscription_status as SubscriptionStatus,
+  })) {
+    return {
+      authorized: true,
+      userId: user.id,
+      tokenBalance: profile.token_balance,
+      cost: 0,
+      dailyFreeAvailable,
+      freeApplied: false,
+      unlimited: true,
+    }
+  }
+
   const freeApplied =
     dailyFreeAvailable && isFreeExportEligible(resolution, durationSeconds, frameRate)
 
@@ -105,10 +126,33 @@ export async function recordExport(
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient()
 
+  // Flat pricing: one token per export.
   const cost = calculateExportCost(resolution, durationSeconds, frameRate)
-  const baseCost = BASE_TOKEN_COST[resolution] ?? BASE_TOKEN_COST.sd
-  // Everything beyond the base (duration steps + 60fps surcharge).
-  const durationCost = cost - baseCost
+
+  // Re-check unlimited access server-side rather than trusting the client: an
+  // unlimited user exports for free with no deduction, but we still log the export.
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_status, lifetime_unlimited')
+    .eq('id', userId)
+    .single()
+
+  if (hasUnlimitedAccess({
+    lifetimeUnlimited: profile?.lifetime_unlimited,
+    subscriptionStatus: profile?.subscription_status as SubscriptionStatus,
+  })) {
+    await supabase.from('exports').insert({
+      user_id: userId,
+      export_type: 'webm',
+      resolution,
+      duration_seconds: durationSeconds,
+      base_token_cost: 0,
+      duration_token_cost: 0,
+      total_tokens_used: 0,
+      status: 'completed',
+    })
+    return { success: true }
+  }
 
   if (useFreeExport) {
     // Use free export - update the date
@@ -154,8 +198,8 @@ export async function recordExport(
     export_type: 'webm',
     resolution,
     duration_seconds: durationSeconds,
-    base_token_cost: baseCost,
-    duration_token_cost: durationCost,
+    base_token_cost: cost,
+    duration_token_cost: 0,
     total_tokens_used: cost,
     status: 'completed',
   })
