@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Loader2, Gift } from 'lucide-react'
+import { Loader2, Gift, Sparkles } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { GoogleAuthButton } from '@/components/auth/google-auth-button'
+import { SIGNUP_BONUS_TOKENS } from '@/lib/tokens'
 
 function SignUpForm() {
   const [email, setEmail] = useState('')
@@ -61,6 +62,20 @@ function SignUpForm() {
           <CardDescription>Start creating animated battle maps</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pb-0">
+          {/* The headline offer: real exports, free, the moment you sign up. */}
+          <div className="rounded-xl border border-primary/30 bg-gradient-to-br from-primary/15 to-primary/5 p-4 text-center">
+            <div className="flex items-center justify-center gap-1.5 text-primary">
+              <Sparkles className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase tracking-wide">Welcome gift</span>
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <p className="mt-1.5 text-2xl font-serif font-bold text-foreground">
+              {SIGNUP_BONUS_TOKENS} free exports
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Added to your account instantly — no card required. Render your maps to video today.
+            </p>
+          </div>
           {referralCode && (
             <div className="p-3 text-sm bg-primary/10 text-primary rounded-lg flex items-center gap-2">
               <Gift className="w-4 h-4" />

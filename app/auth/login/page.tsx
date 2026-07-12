@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2 } from 'lucide-react'
 import { Logo } from '@/components/logo'
 import { GoogleAuthButton } from '@/components/auth/google-auth-button'
+import { SIGNUP_BONUS_TOKENS } from '@/lib/tokens'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -100,7 +101,8 @@ export default function LoginPage() {
               Don&apos;t have an account?{' '}
               <Link href="/auth/sign-up" className="text-primary hover:underline">
                 Sign up
-              </Link>
+              </Link>{' '}
+              and get {SIGNUP_BONUS_TOKENS} free exports
             </p>
           </CardFooter>
         </form>

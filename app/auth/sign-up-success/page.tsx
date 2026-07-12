@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Mail, Sparkles } from 'lucide-react'
+import { Mail, Sparkles, Wand2 } from 'lucide-react'
 import { Logo } from '@/components/logo'
+import { SIGNUP_BONUS_TOKENS } from '@/lib/tokens'
 
 export default function SignUpSuccessPage() {
   return (
@@ -26,15 +27,21 @@ export default function SignUpSuccessPage() {
           <p className="text-sm text-muted-foreground">
             Click the link in the email to complete your registration and start creating animated battle maps.
           </p>
-          <div className="p-4 bg-muted/50 rounded-lg">
+          <div className="rounded-lg border border-primary/30 bg-primary/10 p-4">
             <div className="flex items-center justify-center gap-2 text-sm">
               <Sparkles className="w-4 h-4 text-primary" />
-              <span>You&apos;ll get started with <strong>free SD exports</strong></span>
+              <span><strong>{SIGNUP_BONUS_TOKENS} free exports</strong> are waiting in your account</span>
             </div>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-2">
-          <Button asChild variant="outline" className="w-full">
+          <Button asChild className="w-full">
+            <Link href="/">
+              <Wand2 className="w-4 h-4 mr-2" />
+              Start Creating
+            </Link>
+          </Button>
+          <Button asChild variant="ghost" className="w-full">
             <Link href="/auth/login">Back to Login</Link>
           </Button>
         </CardFooter>

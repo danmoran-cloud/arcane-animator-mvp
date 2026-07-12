@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { TOKEN_PACKS, SUBSCRIPTION, formatPrice, isPackAvailable } from '@/lib/tokens'
+import { TOKEN_PACKS, SUBSCRIPTION, SIGNUP_BONUS_TOKENS, formatPrice, isPackAvailable } from '@/lib/tokens'
 import {
   createTokenPurchaseCheckout,
   createSubscriptionCheckout,
@@ -14,7 +14,7 @@ import {
   getSubscriptionStatus,
   type SubscriptionInfo,
 } from '@/app/actions/stripe'
-import { Sparkles, Zap, Crown, Gem, Infinity as InfinityIcon, ArrowLeft, Check, Clock } from 'lucide-react'
+import { Sparkles, Zap, Crown, Gem, Infinity as InfinityIcon, ArrowLeft, Check, Clock, Gift, Wand2 } from 'lucide-react'
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
 import { DiscordLink } from '@/components/discord-link'
@@ -114,6 +114,38 @@ export default function PricingPage() {
             videos for use in your favorite VTT.
           </p>
         </div>
+
+        {/* New-user offer: prominent free-exports CTA. Hidden once a user already
+            has unlimited access (they don't need the pitch). */}
+        {!unlimited && (
+          <div className="mb-12 max-w-3xl mx-auto rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/15 to-primary/5 p-6 sm:p-8 text-center">
+            <div className="flex items-center justify-center gap-2 text-primary">
+              <Gift className="w-5 h-5" />
+              <span className="text-sm font-semibold uppercase tracking-wide">New here?</span>
+            </div>
+            <h2 className="mt-2 text-2xl sm:text-3xl font-serif font-bold text-balance">
+              Get {SIGNUP_BONUS_TOKENS} free exports when you sign up
+            </h2>
+            <p className="mt-2 text-muted-foreground text-pretty">
+              No credit card required. Create an account and start rendering your animated maps to
+              video in seconds.
+            </p>
+            <div className="mt-5 flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Button asChild size="lg" className="w-full sm:w-auto">
+                <Link href="/auth/sign-up">
+                  <Gift className="w-4 h-4 mr-2" />
+                  Claim {SIGNUP_BONUS_TOKENS} free exports
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
+                <Link href="/">
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Try the editor
+                </Link>
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Export packs */}
         <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">

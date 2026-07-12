@@ -139,6 +139,12 @@ export function canAffordExport(
 // Referral reward amount
 export const REFERRAL_REWARD_TOKENS = 5
 
+// Free exports granted the moment a new account is created. Enforced in the DB
+// by the grant_signup_bonus_exports trigger (supabase/signup-bonus-exports.sql);
+// this constant exists so marketing copy stays in sync with that grant. Keep the
+// two in step if you change the amount.
+export const SIGNUP_BONUS_TOKENS = 3
+
 // Format price from cents to display string
 export function formatPrice(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`
