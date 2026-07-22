@@ -77,7 +77,7 @@ export function ReferralDashboard({ referralCode, tokensEarned, stats }: Referra
           Referral Program
         </CardTitle>
         <CardDescription>
-          Share your link. When a friend signs up and makes their first purchase, you both earn 5 bonus exports.
+          Share your link. When a friend signs up, you both earn 5 bonus exports — no purchase required.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">

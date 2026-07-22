@@ -182,32 +182,9 @@ export async function POST(req: Request) {
       console.log(`[v0] Successfully added ${pack.tokens} tokens for user ${userId}`)
     }
 
-    // Referral reward: only granted on the user's FIRST completed purchase.
-    // Check whether this is the first paid purchase for the user.
-    const { count: paidCount } = await supabase
-      .from('token_purchases')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gt('purchase_amount', 0)
-
-    if ((paidCount ?? 0) <= 1) {
-      // Mark referral as purchased, then award reward to both parties (idempotent in SQL).
-      const { error: markError } = await supabase.rpc('mark_referral_purchased', {
-        p_referred_user_id: userId,
-      })
-      if (markError) {
-        console.error('[v0] Error marking referral purchased:', markError)
-      }
-
-      const { error: rewardError } = await supabase.rpc('award_referral_reward', {
-        p_referred_user_id: userId,
-      })
-      if (rewardError) {
-        console.error('[v0] Error awarding referral reward:', rewardError)
-      } else {
-        console.log(`[v0] Referral reward processed for referred user ${userId}`)
-      }
-    }
+    // Referral rewards are no longer purchase-gated: they are granted at signup
+    // by the `grant_referral_reward_on_signup` DB trigger (see
+    // supabase/referral-reward-on-signup.sql), so nothing to do here.
   }
 
   return NextResponse.json({ received: true })

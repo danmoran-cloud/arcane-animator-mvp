@@ -166,7 +166,7 @@ export function ShareSection({ hostedUrl, section = 'all' }: ShareSectionProps) 
             <div>
               <p className="text-sm font-medium">Earn bonus exports</p>
               <p className="text-xs text-muted-foreground text-pretty">
-                When a friend signs up with your link and makes their first purchase, you both get 5 bonus exports.
+                When a friend signs up with your link, you both get 5 bonus exports — no purchase required.
               </p>
             </div>
           </div>

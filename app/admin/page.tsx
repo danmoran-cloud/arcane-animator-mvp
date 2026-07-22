@@ -435,7 +435,7 @@ export default async function AdminPage() {
                   Pending
                 </p>
                 <p className="text-2xl font-bold mt-1">{pendingReferrals}</p>
-                <p className="text-xs text-muted-foreground">awaiting first purchase</p>
+                <p className="text-xs text-muted-foreground">not yet rewarded</p>
               </div>
               <div className="rounded-lg bg-primary/10 border border-primary/20 p-4">
                 <p className="text-sm text-muted-foreground flex items-center gap-2">

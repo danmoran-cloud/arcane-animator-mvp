@@ -87,10 +87,9 @@ order by status desc, rc.table_name, rc.column_name;
 -- 3) REQUIRED FUNCTIONS (RPCs) ----------------------------------------------
 with required_functions(name) as (
   values
-    ('increment_token_balance'),     -- used by webhook, coupons, admin grant
-    ('deduct_tokens_for_export'),    -- used by export flow
-    ('mark_referral_purchased'),     -- used by webhook on first purchase
-    ('award_referral_reward')        -- used by webhook on first purchase
+    ('increment_token_balance'),          -- used by webhook, coupons, admin grant
+    ('deduct_tokens_for_export'),         -- used by export flow
+    ('grant_referral_reward_on_signup')   -- trigger fn: grants referral reward at signup
 )
 select
   rf.name as function_name,
