@@ -581,6 +581,29 @@ function Inspector({ layer }: { layer: Layer | null }) {
               </div>
             </div>
 
+            {/* Shape — mask the effect to the full rectangle or an inscribed circle. */}
+            <div className="space-y-1.5">
+              <Label className="text-[10px] text-muted-foreground">Shape</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['square', 'circle'] as const).map((s) => {
+                  const active = (effectLayer.shape ?? 'square') === s
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => updateLayer(layer.id, { shape: s })}
+                      className={cn(
+                        'h-7 rounded-md border text-xs capitalize transition-colors',
+                        active ? 'border-primary bg-muted text-primary' : 'border-border text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {s}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
             {/* Blend mode — hidden for sprite effects (baked compositing). */}
             {support.blend && (
               <div className="space-y-1.5">

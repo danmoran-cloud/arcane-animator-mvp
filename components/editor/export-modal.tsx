@@ -969,6 +969,13 @@ function renderEffect(
   const fastPulse = 0.5 + 0.5 * Math.sin(normalizedTime * Math.PI * 4)
 
   ctx.save()
+  // Circle shape: clip the effect to an inscribed ellipse, matching the preview's
+  // border-radius:50% on the layer container. Intersects with the exclusion clip below.
+  if (layer.shape === 'circle') {
+    ctx.beginPath()
+    ctx.ellipse(centerX, centerY, size.width / 2, size.height / 2, 0, 0, Math.PI * 2)
+    ctx.clip()
+  }
   // Punch out the layer's exclusion zones so the effect skips them (matches preview).
   clipToExclusions(ctx, layer.exclusions, { x: position.x, y: position.y, width: size.width, height: size.height })
 

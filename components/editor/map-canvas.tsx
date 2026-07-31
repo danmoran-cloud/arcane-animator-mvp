@@ -174,6 +174,9 @@ function EffectLayerRenderer({
         opacity: layer.opacity,
         zIndex: layer.zIndex,
         mixBlendMode: layer.blendMode && layer.blendMode !== 'normal' ? layer.blendMode : undefined,
+        // Circle shape clips the effect (and its CSS/canvas children) to an inscribed
+        // ellipse; the export mirrors this with a matching canvas ellipse clip.
+        borderRadius: layer.shape === 'circle' ? '50%' : undefined,
       }}
       onMouseDown={(e) => {
         if (e.button === 0) {
@@ -273,13 +276,23 @@ function GridLayerRenderer({ layer, canvasSize }: { layer: GridLayer; canvasSize
   if (!layer.visible) return null
   return (
     <div className="absolute inset-0 pointer-events-none" style={{ zIndex: layer.zIndex, opacity: layer.opacity }}>
-      <GridOverlay gridSize={layer.gridSize} gridType={layer.gridType} canvasSize={canvasSize} />
+      <GridOverlay gridSize={layer.gridSize} gridType={layer.gridType} canvasSize={canvasSize} color={layer.color} />
     </div>
   )
 }
 
-// Grid overlay
-function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gridType: 'square' | 'hex'; canvasSize: { width: number; height: number } }) {
+// Selectable grid stroke colors. `value: null` = the default lavender (stored as no
+// explicit color, so the exporter's own default applies); white/black are for
+// contrast against busy maps. `swatch` is just the toolbar dot's fill.
+const GRID_COLORS: { label: string; value: string | null; swatch: string }[] = [
+  { label: 'Default', value: null, swatch: '#d6bcfa' },
+  { label: 'White', value: 'rgba(255,255,255,0.6)', swatch: '#ffffff' },
+  { label: 'Black', value: 'rgba(0,0,0,0.6)', swatch: '#111111' },
+]
+
+// Grid overlay. `color` overrides the default lavender stroke (e.g. white or black
+// for contrast against a busy map); it maps to the same stroke the exporter uses.
+function GridOverlay({ gridSize, gridType, canvasSize, color }: { gridSize: number; gridType: 'square' | 'hex'; canvasSize: { width: number; height: number }; color?: string }) {
   if (gridType === 'hex') {
     // Hex grid calculations
     // For pointy-top hexagons:
@@ -323,7 +336,7 @@ function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gri
         width={canvasSize.width}
         height={canvasSize.height}
       >
-        <g className="text-primary/40">
+        <g className={color ? undefined : 'text-primary/40'} style={color ? { color } : undefined}>
           {hexPaths.map((d, i) => (
             <path
               key={i}
@@ -358,7 +371,8 @@ function GridOverlay({ gridSize, gridType, canvasSize }: { gridSize: number; gri
             fill="none"
             stroke="currentColor"
             strokeWidth="1"
-            className="text-primary/40"
+            className={color ? undefined : 'text-primary/40'}
+            style={color ? { color } : undefined}
           />
         </pattern>
       </defs>
@@ -380,6 +394,12 @@ export function MapCanvas() {
   // reads fresh layers without listing the whole project as an effect dep.
   const projectRef = useRef(state.project)
   projectRef.current = state.project
+  // Latest view transform in a ref so paste can drop the copy at the center of
+  // what the user is currently looking at (image coords), regardless of zoom/pan.
+  const viewRef = useRef({ zoom: state.zoom, panOffset: state.panOffset, viewportSize: state.viewportSize })
+  viewRef.current = { zoom: state.zoom, panOffset: state.panOffset, viewportSize: state.viewportSize }
+  // Cascades repeated pastes so they don't stack exactly; reset on each fresh copy.
+  const pasteCountRef = useRef(0)
 
   const [isPanning, setIsPanning] = useState(false)
   const [isSpaceDown, setIsSpaceDown] = useState(false)
@@ -444,6 +464,7 @@ export function MapCanvas() {
         const src = projectRef.current?.layers.find((l) => l.id === state.selectedLayerId)
         if (src && src.type !== 'grid') {
           clipboardRef.current = structuredClone(src)
+          pasteCountRef.current = 0 // start the paste cascade fresh for this copy
         }
       }
       if (!inField && (e.ctrlKey || e.metaKey) && e.code === 'KeyV') {
@@ -452,11 +473,21 @@ export function MapCanvas() {
         if (tpl && project) {
           e.preventDefault()
           const now = new Date().toISOString()
+          // Drop the paste at the center of the current viewport (image coords) so it
+          // lands on screen wherever the user has zoomed/panned. A small per-paste
+          // cascade (wrapping) keeps repeated pastes from stacking exactly.
+          const { zoom, panOffset, viewportSize } = viewRef.current
+          const centerX = (viewportSize.width / 2 - panOffset.x) / zoom
+          const centerY = (viewportSize.height / 2 - panOffset.y) / zoom
+          const cascade = (pasteCountRef.current++ % 5) * 24
           const clone = {
             ...structuredClone(tpl),
             id: crypto.randomUUID(),
             name: /\bcopy\b/i.test(tpl.name) ? tpl.name : `${tpl.name} copy`,
-            position: { x: tpl.position.x + 24, y: tpl.position.y + 24 },
+            position: {
+              x: Math.round(centerX - tpl.size.width / 2 + cascade),
+              y: Math.round(centerY - tpl.size.height / 2 + cascade),
+            },
             zIndex: project.layers.length,
             pinned: false, // a pasted copy shouldn't inherit a pinned lock
             ...(tpl.type === 'effect' ? { createdAt: now, updatedAt: now } : {}),
@@ -472,6 +503,20 @@ export function MapCanvas() {
       if (!inField && (e.ctrlKey || e.metaKey) && e.code === 'KeyY') {
         e.preventDefault()
         redo()
+      }
+
+      // Arrow-key nudge: move the selected layer one pixel at a time (10 with Shift)
+      // for fine placement. Skipped while typing, drawing a zone, or with Ctrl/Cmd
+      // held, and for pinned layers (e.g. the base map).
+      if (!inField && !drawingZoneForRef.current && !e.ctrlKey && !e.metaKey && e.key.startsWith('Arrow')) {
+        const layer = projectRef.current?.layers.find((l) => l.id === state.selectedLayerId)
+        if (layer && !layer.pinned) {
+          e.preventDefault()
+          const step = e.shiftKey ? 10 : 1
+          const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0
+          const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0
+          if (dx || dy) dispatch({ type: 'MOVE_LAYER', layerId: layer.id, deltaX: dx, deltaY: dy })
+        }
       }
     }
     
@@ -943,9 +988,9 @@ export function MapCanvas() {
             <span className="text-[10px] text-muted-foreground w-8 text-center">
               {state.project?.gridSize || 50}px
             </span>
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-6 w-6"
               onClick={() => dispatch({ type: 'SET_GRID_SIZE', size: Math.min(200, (state.project?.gridSize || 50) + 10) })}
               disabled={!hasProject}
@@ -953,6 +998,26 @@ export function MapCanvas() {
             >
               <Plus className="w-3 h-3" />
             </Button>
+
+            {/* Grid color: default lavender, or white / black for contrast. */}
+            <div className="flex items-center gap-1 ml-1">
+              {GRID_COLORS.map((c) => {
+                const active = (gridLayer.color ?? null) === c.value
+                return (
+                  <button
+                    key={c.label}
+                    type="button"
+                    onClick={() => dispatch({ type: 'UPDATE_LAYER', layerId: gridLayer.id, updates: { color: c.value ?? undefined } })}
+                    title={`${c.label} grid`}
+                    className={cn(
+                      'h-4 w-4 rounded-full border transition-transform',
+                      active ? 'ring-2 ring-primary ring-offset-1 ring-offset-background scale-110' : 'border-border hover:scale-110',
+                    )}
+                    style={{ background: c.swatch }}
+                  />
+                )
+              })}
+            </div>
           </div>
         )}
 

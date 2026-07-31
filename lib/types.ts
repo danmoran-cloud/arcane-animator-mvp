@@ -54,6 +54,9 @@ export interface ExpandedEffectLayer extends BaseLayer {
   effectId: string
   category: EffectPack
   settings: Partial<EffectSettings>
+  // How the effect is masked to its layer bounds: a full rectangle (default) or an
+  // inscribed ellipse/circle. Applies identically in the preview and the export.
+  shape?: 'square' | 'circle'
   // Regions the effect must NOT render in (e.g. a house on the map).
   exclusions?: ExclusionZone[]
   // How this layer composites over what's beneath it (preview + export).
