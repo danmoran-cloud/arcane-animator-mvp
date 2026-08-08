@@ -22,6 +22,7 @@ import { CreateCouponForm } from './create-coupon-form'
 import { CouponRow } from './coupon-row'
 import { ManageUserTokensForm } from './manage-user-tokens-form'
 import { ManageAdminsForm } from './manage-admins-form'
+import { ExportUsersButton } from './export-users-button'
 
 // Always render fresh on each visit so newly-signed-up users and updated
 // balances/roles show up immediately (no cached/stale snapshot).
@@ -342,11 +343,16 @@ export default async function AdminPage() {
         {/* User Token Management */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Coins className="w-5 h-5" />
-              User Export Management
-            </CardTitle>
-            <CardDescription>Look up a user by email, set their export balance, or grant lifetime unlimited</CardDescription>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1.5">
+                <CardTitle className="flex items-center gap-2">
+                  <Coins className="w-5 h-5" />
+                  User Export Management
+                </CardTitle>
+                <CardDescription>Look up a user by email, set their export balance, or grant lifetime unlimited</CardDescription>
+              </div>
+              <ExportUsersButton />
+            </div>
           </CardHeader>
           <CardContent>
             <ManageUserTokensForm />
