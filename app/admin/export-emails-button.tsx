@@ -28,10 +28,13 @@ export function ExportEmailsButton() {
         return
       }
 
-      const header = ['Name', 'Email', 'Joined']
+      const header = ['Email', 'Name', 'Role', 'Balance', 'Founder', 'Joined']
       const rows = users.map((u) => [
-        csvField(u.display_name ?? ''),
         csvField(u.email ?? ''),
+        csvField(u.display_name ?? ''),
+        csvField(u.role ?? ''),
+        csvField(String(u.token_balance ?? 0)),
+        csvField(u.is_founder ? 'yes' : 'no'),
         csvField(new Date(u.created_at).toISOString().slice(0, 10)),
       ])
       // Prepend a BOM so Excel reads the file as UTF-8 (accented names, etc.).
