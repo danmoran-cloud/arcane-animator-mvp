@@ -22,6 +22,7 @@ import { CreateCouponForm } from './create-coupon-form'
 import { CouponRow } from './coupon-row'
 import { ManageUserTokensForm } from './manage-user-tokens-form'
 import { ManageAdminsForm } from './manage-admins-form'
+import { ExportEmailsButton } from './export-emails-button'
 
 // Always render fresh on each visit so newly-signed-up users and updated
 // balances/roles show up immediately (no cached/stale snapshot).
@@ -169,7 +170,10 @@ export default async function AdminPage() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <ExportEmailsButton />
+        </div>
 
         {/* Stats Grid */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">

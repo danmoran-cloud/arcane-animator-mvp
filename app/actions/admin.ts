@@ -88,6 +88,27 @@ export async function listAllUsers(): Promise<{ users?: AdminUser[]; error?: str
   return { users: (data ?? []) as AdminUser[] }
 }
 
+// Every user's contact row, for the admin "Export emails (CSV)" download. Admin-
+// only; returns just the fields the CSV needs, oldest signups first.
+export async function exportUserEmails(): Promise<{
+  users?: { email: string | null; display_name: string | null; created_at: string }[]
+  error?: string
+}> {
+  const auth = await requireAdmin()
+  if ('error' in auth) return { error: auth.error }
+
+  // Service role: admins need to read every profile, not just their own.
+  const admin = createAdminClient()
+  const { data, error } = await admin
+    .from('profiles')
+    .select('email, display_name, created_at')
+    .order('created_at', { ascending: true })
+
+  if (error) return { error: error.message }
+  // Drop rows without an email — nothing to export for them.
+  return { users: (data ?? []).filter((u) => u.email) }
+}
+
 export async function setUserRole(
   userId: string,
   role: Role,
