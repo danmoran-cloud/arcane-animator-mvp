@@ -2,7 +2,7 @@
 
 import { stripe } from '@/lib/stripe'
 import { createAdminClient } from '@/lib/supabase/server'
-import { TOKEN_PACKS } from '@/lib/tokens'
+import { TOKEN_PACKS, SUBSCRIPTION } from '@/lib/tokens'
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
@@ -49,6 +49,89 @@ async function syncSubscription(
   }
 }
 
+// Record a successful subscription payment (initial or renewal) as a
+// token_purchases row so it flows into admin revenue and the recent-purchases
+// list. Subscription checkouts don't create a purchase row (see below), so this
+// is the single place subscription revenue is captured. Idempotent per invoice.
+async function recordSubscriptionPayment(
+  supabase: ReturnType<typeof createAdminClient>,
+  invoice: Stripe.Invoice,
+) {
+  // Field locations drift across Stripe API versions; read defensively.
+  const anyInv = invoice as unknown as {
+    id: string
+    amount_paid?: number
+    currency?: string
+    billing_reason?: string | null
+    customer?: string | { id: string } | null
+    subscription?: string | { id: string } | null
+    payment_intent?: string | { id: string } | null
+    parent?: { subscription_details?: { subscription?: string | { id: string } } }
+  }
+
+  // Only count subscription invoices that actually collected money (skip $0
+  // trial/proration invoices). billing_reason is 'subscription_create' on the
+  // first charge and 'subscription_cycle' on each renewal.
+  const isSubscription = typeof anyInv.billing_reason === 'string' && anyInv.billing_reason.startsWith('subscription')
+  const amount = anyInv.amount_paid ?? 0
+  if (!isSubscription || amount <= 0) return
+
+  // Idempotency: the invoice id is stored as the external key, so redelivered
+  // events (and renewals sharing a subscription) never double-count.
+  const { data: existing } = await supabase
+    .from('token_purchases')
+    .select('id')
+    .eq('stripe_checkout_session_id', anyInv.id)
+    .maybeSingle()
+  if (existing) {
+    console.log(`[v0] Subscription invoice ${anyInv.id} already recorded; skipping`)
+    return
+  }
+
+  // Resolve the user: first by the stored Stripe customer id (no API call), then
+  // fall back to the subscription's user_id metadata.
+  const customerId = typeof anyInv.customer === 'string' ? anyInv.customer : anyInv.customer?.id
+  let userId: string | undefined
+  if (customerId) {
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('stripe_customer_id', customerId)
+      .maybeSingle()
+    userId = prof?.id
+  }
+  if (!userId) {
+    const subRef = anyInv.subscription ?? anyInv.parent?.subscription_details?.subscription
+    const subId = typeof subRef === 'string' ? subRef : subRef?.id
+    if (subId) {
+      const sub = await stripe.subscriptions.retrieve(subId)
+      userId = sub.metadata?.user_id
+    }
+  }
+  if (!userId) {
+    console.error(`[v0] Could not attribute subscription invoice ${anyInv.id} to a user`)
+    return
+  }
+
+  const paymentIntentId = typeof anyInv.payment_intent === 'string' ? anyInv.payment_intent : anyInv.payment_intent?.id ?? null
+
+  const { error } = await supabase.from('token_purchases').insert({
+    user_id: userId,
+    stripe_checkout_session_id: anyInv.id, // idempotency key (invoice id)
+    stripe_payment_intent_id: paymentIntentId,
+    pack_name: `${SUBSCRIPTION.name} Subscription`,
+    tokens_added: 0,
+    purchase_amount: amount,
+    currency: anyInv.currency ?? 'usd',
+    status: 'completed',
+  })
+  if (error) {
+    console.error(`[v0] Error recording subscription payment for invoice ${anyInv.id}:`, error)
+  } else {
+    console.log(`[v0] Recorded subscription payment ${anyInv.id} ($${(amount / 100).toFixed(2)}) for user ${userId}`)
+  }
+}
+
 export async function POST(req: Request) {
   const body = await req.text()
   const headersList = await headers()
@@ -81,6 +164,15 @@ export async function POST(req: Request) {
     const sub = event.data.object as Stripe.Subscription
     const supabase = createAdminClient()
     await syncSubscription(supabase, sub)
+    return NextResponse.json({ received: true })
+  }
+
+  // Each successful subscription charge (first payment + every renewal) is
+  // recorded as a purchase so it counts toward admin revenue.
+  if (event.type === 'invoice.payment_succeeded') {
+    const invoice = event.data.object as Stripe.Invoice
+    const supabase = createAdminClient()
+    await recordSubscriptionPayment(supabase, invoice)
     return NextResponse.json({ received: true })
   }
 

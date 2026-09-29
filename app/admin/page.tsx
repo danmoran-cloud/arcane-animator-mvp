@@ -16,7 +16,8 @@ import {
   Plus,
   Share2,
   ShieldCheck,
-  Gem
+  Gem,
+  CreditCard
 } from 'lucide-react'
 import { CreateCouponForm } from './create-coupon-form'
 import { CouponRow } from './coupon-row'
@@ -96,6 +97,16 @@ export default async function AdminPage() {
     .from('profiles')
     .select('*', { count: 'exact', head: true })
     .eq('lifetime_unlimited', true)
+
+  // Active subscribers (Hero monthly). 'active'/'trialing' are the statuses that
+  // grant unlimited access; ordered by soonest renewal.
+  const { data: activeSubscribers } = await admin
+    .from('profiles')
+    .select('id, email, display_name, subscription_status, subscription_current_period_end')
+    .in('subscription_status', ['active', 'trialing'])
+    .order('subscription_current_period_end', { ascending: true })
+
+  const subscriberCount = activeSubscribers?.length ?? 0
 
   // Recent purchases
   const { data: recentPurchases } = await admin
@@ -269,6 +280,52 @@ export default async function AdminPage() {
               </div>
             ) : (
               <p className="text-muted-foreground text-center py-4">No founding members yet</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Active Subscribers (Hero monthly) */}
+        <Card className="mb-8">
+          <CardHeader>
+            <div className="flex items-center justify-between gap-3">
+              <CardTitle className="flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-primary" />
+                Active Subscribers
+              </CardTitle>
+              <Badge variant="secondary">
+                {subscriberCount} active
+              </Badge>
+            </div>
+            <CardDescription>
+              Users on an active or trialing monthly subscription. Renewal payments also flow into Total Revenue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {activeSubscribers && activeSubscribers.length > 0 ? (
+              <div className="space-y-3">
+                {activeSubscribers.map((sub) => (
+                  <div key={sub.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg text-sm">
+                    <div>
+                      <p className="font-medium">{sub.display_name || sub.email || 'Unknown user'}</p>
+                      {sub.display_name && sub.email && (
+                        <p className="text-xs text-muted-foreground">{sub.email}</p>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <Badge variant={sub.subscription_status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                        {sub.subscription_status}
+                      </Badge>
+                      {sub.subscription_current_period_end && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Renews {new Date(sub.subscription_current_period_end).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">No active subscribers yet</p>
             )}
           </CardContent>
         </Card>
