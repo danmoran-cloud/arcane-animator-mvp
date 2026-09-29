@@ -29,37 +29,15 @@ export interface TokenPack {
   badge?: string
 }
 
+// Paid access is two tiers, both UNLIMITED: the Hero monthly subscription (see
+// SUBSCRIPTION below) and the Noble one-time lifetime pass (here). There are no
+// export-credit bundles — free users get exports via signup/daily/referral grants.
 export const TOKEN_PACKS: TokenPack[] = [
   {
-    id: 'adventurer',
-    name: "Adventurer's Pack",
-    tokens: 10,
-    priceInCents: 299, // $2.99
-  },
-  {
-    id: 'hero',
-    name: "Hero's Pack",
-    tokens: 20,
-    priceInCents: 499, // $4.99
-    popular: true,
-    savings: 'Best Value',
-  },
-  {
-    id: 'founders',
-    name: "Founder's Tier",
-    tokens: 0,
-    priceInCents: 6900, // $69 one-time
-    unlimited: true,
-    founder: true,
-    tagline: 'Lifetime unlimited exports — founding member price.',
-    availableUntil: '2026-09-30',
-    badge: 'Founders — ends Sep 30, 2026',
-  },
-  {
     id: 'noble',
-    name: "Noble's Pack",
+    name: 'Noble',
     tokens: 0,
-    priceInCents: 9900, // $99 one-time
+    priceInCents: 999, // $9.99 one-time
     unlimited: true,
     tagline: 'Lifetime unlimited exports, yours forever.',
   },
@@ -76,11 +54,11 @@ export function isPackAvailable(pack: TokenPack, now: Date = new Date()): boolea
 // The unlimited-exports subscription. Recurring monthly; the actual Stripe Price
 // is created in the dashboard and referenced by STRIPE_SUBSCRIPTION_PRICE_ID.
 export const SUBSCRIPTION = {
-  id: 'archmage',
-  name: "Archmage's Pact",
-  priceInCents: 999, // $9.99 / month
+  id: 'hero',
+  name: 'Hero',
+  priceInCents: 299, // $2.99 / month
   interval: 'month' as const,
-  tagline: 'Unlimited exports, every month — create without limits.',
+  tagline: 'Unlimited exports, every month — cancel anytime.',
 }
 
 export type ExportResolution = 'sd' | 'hd'

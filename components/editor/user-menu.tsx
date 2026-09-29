@@ -69,6 +69,12 @@ export function UserMenu() {
   const handleSignOut = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    // Reset the login-splash gate so it shows again on the next login.
+    try {
+      sessionStorage.removeItem('aa-splash-seen')
+    } catch {
+      // sessionStorage may be unavailable (private mode) — safe to ignore.
+    }
     router.refresh()
   }
 

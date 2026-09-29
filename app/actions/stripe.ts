@@ -32,20 +32,12 @@ export async function createTokenPurchaseCheckout(packId: string) {
     return { error: 'Please sign in to purchase exports.', requiresAuth: true }
   }
 
-  let pack = TOKEN_PACKS.find(p => p.id === packId)
+  const pack = TOKEN_PACKS.find(p => p.id === packId)
   if (!pack) {
     return { error: 'Invalid export pack' }
   }
 
-  // While the Founders offer is live, route any OTHER lifetime purchase (e.g.
-  // Noble) to the Founders tier — the access is identical, so nobody should
-  // overpay while the founding-member price is available. They become a Founder.
-  if (pack.unlimited && !pack.founder) {
-    const founders = TOKEN_PACKS.find(p => p.founder && isPackAvailable(p))
-    if (founders) pack = founders
-  }
-
-  // Limited-time offers (e.g. the Founders tier) can't be bought past their date.
+  // Limited-time offers (if any) can't be bought past their date.
   if (!isPackAvailable(pack)) {
     return { error: 'This offer has ended.' }
   }
